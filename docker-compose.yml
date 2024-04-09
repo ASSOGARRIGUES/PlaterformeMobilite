@@ -1,0 +1,48 @@
+services:
+  backend:
+    container_name: "mobilite-backend"
+    build: ./backend
+    restart: no
+    ports:
+      - "3005:8000"
+    links:
+      - postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - external
+      - mobilite-internal
+    env_file:
+      - .env
+
+  postgres:
+    container_name: "mobilite-db"
+    image: bitnami/postgresql:14
+    restart: unless-stopped
+    networks:
+      - mobilite-internal
+    environment:
+      - POSTGRESQL_USERNAME=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRESQL_DATABASE=${DB_NAME}
+      - POSTGRESQL_POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - ./pg_data/:/bitnami/postgresql
+    expose:
+      - 5432
+    hostname: ${DB_ADDR}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      start_period: 5s
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+
+networks:
+  mobilite-internal:
+    driver: bridge
+    internal: true
+  external:
+    driver: bridge

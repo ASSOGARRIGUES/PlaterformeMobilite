@@ -1,0 +1,4 @@
+pg_data/
+*.env
+.idea
+__pycache__/
