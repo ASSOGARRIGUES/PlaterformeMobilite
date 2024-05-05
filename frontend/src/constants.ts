@@ -1,9 +1,10 @@
 import {ReasonEnum} from "./types/schema.d";
 
+
 export const ACCESS_TOKEN_KEY = 'auth_access';
 export const REFRESH_TOKEN_KEY = 'auth_refresh';
 
-export const API_URL = 'http://localhost:8000/api';
+export const API_URL = process.env["BASE_URL"]+"/api" || 'http://localhost:8000/api';
 export const PAGE_SIZE = 10;
 
 export const DEBOUNCE_TIME = 300;

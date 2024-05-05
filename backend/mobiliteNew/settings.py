@@ -77,10 +77,6 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'mobiliteNew.urls'
 
-if PROD:
-    security_middleware_index = MIDDLEWARE.index("django.middleware.security.SecurityMiddleware")
-    MIDDLEWARE.insert(security_middleware_index, "whitenoise.middleware.WhiteNoiseMiddleware")
-# TODO: Add whitenoise middleware in production
 
 TEMPLATES = [
     {

@@ -1,7 +1,7 @@
 services:
   backend:
     container_name: "mobilite-backend"
-    build: ./backend
+    image: ghcr.io/assogarrigues/platerformemobilite_back:latest
     restart: no
     ports:
       - "3005:8000"
@@ -21,10 +21,7 @@ services:
 
   nginx:
     container_name: "mobilite-nginx"
-    build:
-      context: ./frontend
-      args:
-        - BASE_URL=${BASE_URL}
+    image: ghcr.io/assogarrigues/platerformemobilite_front:latest
     restart: unless-stopped
     ports:
       - "80:80"

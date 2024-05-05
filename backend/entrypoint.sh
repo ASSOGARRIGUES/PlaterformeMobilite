@@ -11,7 +11,7 @@ echo "import insert_base_data" | python manage.py shell || { echo "Missing super
 
 if [ "$PROD" == "True" ] && [ "$DEBUG" == "False" ]; then
   echo "Starting Server"
-  gunicorn niki.wsgi:application --bind 0.0.0.0:8000
+  gunicorn mobiliteNew.wsgi:application --bind 0.0.0.0:8000
 else
   echo "Starting Development Server"
   python manage.py runserver 0:8000

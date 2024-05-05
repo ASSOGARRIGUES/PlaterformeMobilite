@@ -1,10 +1,12 @@
 import {BaseKey, FormAction, HttpError, RedirectAction, useList} from "@refinedev/core";
-import {Vehicle, VehicleWritableFields} from "../../types/vehicle";
+import {Vehicle, VehicleTransformedFields, VehicleWritableFields} from "../../types/vehicle";
 import {FuelTypeEnum, TransmissionEnum, TypeEnum} from "../../types/schema.d";
 import {useModalForm} from "@refinedev/mantine";
 import {FormValidateInput} from "@mantine/form/lib/types";
 import {BeneficiaryWritableFields} from "../../types/beneficiary";
 import {useEffect, useState} from "react";
+import {UseModalFormReturnType} from "@refinedev/mantine/dist";
+import {BaseRecord} from "@refinedev/core/dist";
 
 const useVehicleModalForm = ({action, redirect=false}: {action: FormAction | undefined, redirect?:RedirectAction | undefined}) => {
 
@@ -21,11 +23,9 @@ const useVehicleModalForm = ({action, redirect=false}: {action: FormAction | und
         transmission: TransmissionEnum.manuelle,
     };
 
-    const [fleetId, setFleetId] = useState<number | undefined>(undefined);
     const [similarFleetIds, setSimilarFleetIds] = useState<number[]>([]);
 
     const imatRegExp = new RegExp("^[0-9]{2}-?[A-Za-z]{3}-?[0-9]{2}$");
-    var base64regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
 
     const validate: FormValidateInput<VehicleWritableFields> = ({
         transmission: (value) => {
@@ -91,7 +91,7 @@ const useVehicleModalForm = ({action, redirect=false}: {action: FormAction | und
         },
     })
 
-    const modalForm = useModalForm({
+    const modalForm: UseModalFormReturnType<BaseRecord, HttpError, VehicleWritableFields, VehicleTransformedFields> = useModalForm({
         //Provide a default id of 0 to avoid warning in the console (about missing id when provided explicit resource)
         //Id is pass through the show method anyway.
         refineCoreProps: {resource:"vehicle", action: action, redirect: redirect},

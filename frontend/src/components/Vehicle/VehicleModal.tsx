@@ -2,7 +2,7 @@ import {SaveButton, UseModalFormReturnType} from "@refinedev/mantine";
 import React from "react";
 import {BaseRecord, HttpError} from "@refinedev/core";
 import {Box, FileInput, Group, Input, LoadingOverlay, Modal, NumberInput, Select, TextInput} from "@mantine/core";
-import {VehicleWritableFields} from "../../types/vehicle";
+import {VehicleTransformedFields, VehicleWritableFields} from "../../types/vehicle";
 import {FuelTypeEnum, TransmissionEnum, TypeEnum} from "../../types/schema.d";
 import AvatarUpload from "./AvatarUpload";
 import {useId} from "@mantine/hooks";
@@ -10,7 +10,7 @@ import InputMask from "react-input-mask";
 
 
 const VehicleModal: React.FC<
-  UseModalFormReturnType<BaseRecord, HttpError, VehicleWritableFields>
+  UseModalFormReturnType<BaseRecord, HttpError, VehicleWritableFields, VehicleTransformedFields>
 > = ({
     getInputProps,
     errors,
