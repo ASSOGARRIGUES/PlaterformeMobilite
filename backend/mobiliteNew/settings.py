@@ -36,10 +36,10 @@ PROD = getenv("PROD", "False") == "True"
 BASE_URL = getenv("BASE_URL", "http://localhost:8000")
 
 ALLOWED_HOSTS = ["*"]
-# CSRF_TRUSTED_ORIGINS = ["http://localhost:5173"]
+CSRF_TRUSTED_ORIGINS = [getenv("URL_CSRF", "http://localhost:8000")]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
+    getenv("URL_CSRF", "http://localhost:8000"),
 ]
 
 # Application definition
