@@ -137,7 +137,6 @@ dmypy.json
 media/report/*
 
 #migrations
-*/migrations/*
 ldap_data/*
 pg_data/*
 /media/
