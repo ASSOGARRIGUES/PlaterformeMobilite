@@ -4,7 +4,7 @@ import {ReasonEnum} from "./types/schema.d";
 export const ACCESS_TOKEN_KEY = 'auth_access';
 export const REFRESH_TOKEN_KEY = 'auth_refresh';
 
-export const API_URL = process.env["BASE_URL"]+"/api" || 'http://localhost:8000/api';
+export const API_URL = process.env["BASE_URL"] ?  process.env["BASE_URL"]+"/api" : '';
 console.log("BASE_URL", process.env["BASE_URL"]);
 console.log("URL", process.env["BASE_URL"]+"/api")
 console.log("API_URL", API_URL);
