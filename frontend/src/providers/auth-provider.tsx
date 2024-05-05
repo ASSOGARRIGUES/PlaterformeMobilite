@@ -9,6 +9,8 @@ export const authProvider: AuthProvider = {
   login: async ({username, password}) => {
     // Query /token endpoint with username and password
     try {
+      console.log("login url", `${API_URL}/token/`)
+      console.log("API_URL", API_URL)
       const {data} = await axios.post<any, TokenCreate, TokenCreate>(`${API_URL}/token/`, {username, password});
 
         // Save the token to the local storage

@@ -25,9 +25,9 @@ def create_super():
 print()
 start_time = time.time()
 
-print("- Creating Initial Superuser... ", end="")
-create_super()
-print("OK")
+# print("- Creating Initial Superuser... ", end="")
+# create_super()
+# print("OK")
 
 end = time.time()
 print()
