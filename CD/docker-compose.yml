@@ -24,7 +24,7 @@ services:
     image: ghcr.io/assogarrigues/platerformemobilite_front:latest
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8214:80"
     networks:
       - external
       - mobilite-internal
@@ -48,7 +48,7 @@ services:
       - POSTGRESQL_DATABASE=${DB_NAME}
       - POSTGRESQL_POSTGRES_PASSWORD=${DB_PASSWORD}
     volumes:
-      - ./pg_data/:/bitnami/postgresql
+      - pg-data:/var/lib/postgresql/data
     expose:
       - 5432
     hostname: ${DB_ADDR}
@@ -70,3 +70,4 @@ networks:
 volumes:
   staticfiles:
   mediafiles:
+  pg-data:

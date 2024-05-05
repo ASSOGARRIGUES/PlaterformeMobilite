@@ -27,7 +27,7 @@ services:
         - BASE_URL=${BASE_URL}
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8214:80"
     networks:
       - external
       - mobilite-internal
