@@ -1,0 +1,61 @@
+name: Deployment
+
+concurrency:
+  group: production
+  cancel-in-progress: true
+
+on:
+  workflow_run:
+    workflows: ["Build and Publish Image"]
+    types:
+      - completed
+  workflow_dispatch:
+
+
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+    name: deploy image
+    environment: production
+    steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+            
+        - name: Install SSH key
+          uses: shimataro/ssh-key-action@v2
+          with:
+            key: ${{ secrets.SSH_PRIVATE_KEY }}
+            name: id_rsa # optional
+            known_hosts: ${{ secrets.SSH_HOST }}
+            config: ${{ secrets.CONFIG }} # ssh_config; optional
+            if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
+            
+        - name: Copy single file to remote
+          uses: appleboy/scp-action@v0.1.7
+          with:
+            host: ${{ secrets.SSH_HOST }}
+            username: ${{ secrets.SSH_USER }}
+            key: ${{ secrets.SSH_PRIVATE_KEY }}
+            port: ${{ secrets.SSH_PORT }}
+            source: "CD/docker-compose.yml"
+            target: ${{ secrets.WORK_DIR }}
+            overwrite: true
+            
+        - name: connect and pull
+          uses: appleboy/ssh-action@v1.0.3
+          with:
+            host: ${{ secrets.SSH_HOST }}
+            username: ${{ secrets.SSH_USER }}
+            key: ${{ secrets.SSH_PRIVATE_KEY }}
+            port: ${{ secrets.SSH_PORT }}
+            script: |
+              echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+              cd ${{ secrets.WORK_DIR }}
+              mv CD/docker-compose.yml docker-compose.yml
+              rm -r CD
+              docker compose pull
+              docker compose up -d
+              yes | docker system prune
+              
+        - name: cleanup
+          run: rm -rf ~/.ssh
