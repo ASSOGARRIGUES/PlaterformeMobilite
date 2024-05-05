@@ -12,6 +12,7 @@ env:
   REGISTRY: ghcr.io
   BACK_IMAGE_NAME: ${{ github.repository }}_back
   FRONT_IMAGE_NAME: ${{ github.repository }}_front
+  BASE_URL: ${{ vars.BASE_URL }}
 
 # There is a single job in this workflow. It's configured to run on the latest available version of Ubuntu.
 jobs:
@@ -61,6 +62,7 @@ jobs:
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
           context: frontend
+          build-args: "BASE_URL="${{ env.BASE_URL }}
           push: true
           tags: ${{ steps.meta_front.outputs.tags }}
           labels: ${{ steps.meta_front.outputs.labels }}
