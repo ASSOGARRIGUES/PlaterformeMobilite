@@ -32,6 +32,7 @@ import VehicleList from "./pages/vehicle/VehicleList";
 import ContractList from "./pages/contract/ContractList";
 import BeneficiaryShow from "./pages/beneficiary/BeneficiaryShow";
 import VehicleShow from "./pages/vehicle/VehicleShow";
+import { ModalsProvider } from "@mantine/modals";
 
 function App() {
 
@@ -60,112 +61,114 @@ function App() {
                 withNormalizeCSS
                 withGlobalStyles
             >
-                <NotificationsProvider position="bottom-right">
-                    <Refine
-                        dataProvider={dataProvider(API_URL)}
-                        routerProvider={routerBindings}
-                        authProvider={authProvider}
-                        notificationProvider={useNotificationProvider}
-                        resources={[
-                            {
-                                name: "beneficiary",
-                                list: "beneficiary/",
-                                show: "beneficiary/:id",
-                                meta: {
-                                    label: "Bénéficiaires",
+                <ModalsProvider>
+                    <NotificationsProvider position="bottom-right">
+                        <Refine
+                            dataProvider={dataProvider(API_URL)}
+                            routerProvider={routerBindings}
+                            authProvider={authProvider}
+                            notificationProvider={useNotificationProvider}
+                            resources={[
+                                {
+                                    name: "beneficiary",
+                                    list: "beneficiary/",
+                                    show: "beneficiary/:id",
+                                    meta: {
+                                        label: "Bénéficiaires",
+                                    },
                                 },
-                            },
-                            {
-                                name: "vehicle",
-                                list: "vehicle/",
-                                show: "vehicle/:id",
-                                meta: {
-                                    label: "Véhicules",
+                                {
+                                    name: "vehicle",
+                                    list: "vehicle/",
+                                    show: "vehicle/:id",
+                                    meta: {
+                                        label: "Véhicules",
+                                    },
                                 },
-                            },
-                            {
-                                name: "contract",
-                                list: "contract/",
-                                meta: {
-                                    label: "Contrats",
-                                },
-                            }
-                        ]}
-                        options={{
-                            syncWithLocation: true,
-                            warnWhenUnsavedChanges: false,
-                            useNewQueryKeys: true,
-                            disableTelemetry: true,
-                            projectId: "CqrvHj-EYqRMF-oCbV7s",
-                            reactQuery:{clientConfig:{defaultOptions:{queries:{
-                                            retry:(failureCount, error: any)=> {
-                                                if(error.statusCode === 401) {
-                                                    return failureCount < 1
-                                                }else {
-                                                    return failureCount < 3
+                                {
+                                    name: "contract",
+                                    list: "contract/",
+                                    meta: {
+                                        label: "Contrats",
+                                    },
+                                }
+                            ]}
+                            options={{
+                                syncWithLocation: true,
+                                warnWhenUnsavedChanges: false,
+                                useNewQueryKeys: true,
+                                disableTelemetry: true,
+                                projectId: "CqrvHj-EYqRMF-oCbV7s",
+                                reactQuery:{clientConfig:{defaultOptions:{queries:{
+                                                retry:(failureCount, error: any)=> {
+                                                    if(error.statusCode === 401) {
+                                                        return failureCount < 1
+                                                    }else {
+                                                        return failureCount < 3
+                                                    }
                                                 }
                                             }
-                                        }
-                                    } } }
-                        }}
+                                        } } }
+                            }}
 
-                    >
-                        <Routes>
-                            <Route
-                                element={
-                                    <Authenticated
-                                        key="authenticated-inner"
-                                        fallback={<CatchAllNavigate to="/login" />}
-                                    >
-                                        <ThemedLayoutV2 Title={({ collapsed }) => (
-                                            <ThemedTitleV2
-                                                // collapsed is a boolean value that indicates whether the <Sidebar> is collapsed or not
-                                                collapsed={collapsed}
-
-                                                text={APP_TITLE}
-                                            />
-                                        )}>
-                                            <Outlet />
-                                        </ThemedLayoutV2>
-                                    </Authenticated>
-                                }
-                            >
+                        >
+                            <Routes>
                                 <Route
-                                    index
-                                    element={<NavigateToResource resource="blog_posts" />}
-                                />
-                                <Route path="/beneficiary">
-                                    <Route index element={<BeneficiaryList />} />
-                                    <Route path=":id" element={<BeneficiaryShow />} />
-                                </Route>
-                                <Route path="/vehicle">
-                                    <Route index element={<VehicleList />} />
-                                    <Route path=":id" element={<VehicleShow />} />
-                                </Route>
-                                <Route path="/contract">
-                                    <Route index element={<ContractList />} />
-                                </Route>
-                                <Route path="*" element={<ErrorComponent />} />
-                            </Route>
+                                    element={
+                                        <Authenticated
+                                            key="authenticated-inner"
+                                            fallback={<CatchAllNavigate to="/login" />}
+                                        >
+                                            <ThemedLayoutV2 Title={({ collapsed }) => (
+                                                <ThemedTitleV2
+                                                    // collapsed is a boolean value that indicates whether the <Sidebar> is collapsed or not
+                                                    collapsed={collapsed}
 
-                            <Route
-                                element={
-                                    <Authenticated
-                                        key="authenticated-outer"
-                                        fallback={<Outlet />}
-                                    >
-                                        <NavigateToResource />
-                                    </Authenticated>
-                                }
-                            >
-                                <Route path="/login" element={<Login />} />
-                            </Route>
-                        </Routes>
+                                                    text={APP_TITLE}
+                                                />
+                                            )}>
+                                                <Outlet />
+                                            </ThemedLayoutV2>
+                                        </Authenticated>
+                                    }
+                                >
+                                    <Route
+                                        index
+                                        element={<NavigateToResource resource="blog_posts" />}
+                                    />
+                                    <Route path="/beneficiary">
+                                        <Route index element={<BeneficiaryList />} />
+                                        <Route path=":id" element={<BeneficiaryShow />} />
+                                    </Route>
+                                    <Route path="/vehicle">
+                                        <Route index element={<VehicleList />} />
+                                        <Route path=":id" element={<VehicleShow />} />
+                                    </Route>
+                                    <Route path="/contract">
+                                        <Route index element={<ContractList />} />
+                                    </Route>
+                                    <Route path="*" element={<ErrorComponent />} />
+                                </Route>
 
-                        <UnsavedChangesNotifier />
-                        <DocumentTitleHandler />
-                    </Refine>
-                </NotificationsProvider>
+                                <Route
+                                    element={
+                                        <Authenticated
+                                            key="authenticated-outer"
+                                            fallback={<Outlet />}
+                                        >
+                                            <NavigateToResource />
+                                        </Authenticated>
+                                    }
+                                >
+                                    <Route path="/login" element={<Login />} />
+                                </Route>
+                            </Routes>
+
+                            <UnsavedChangesNotifier />
+                            <DocumentTitleHandler />
+                        </Refine>
+                    </NotificationsProvider>
+                </ModalsProvider>
             </MantineProvider>
         </BrowserRouter>
     );

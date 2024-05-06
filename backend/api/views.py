@@ -81,6 +81,13 @@ class ContractViewSet(viewsets.ModelViewSet):
                 return Response(serializer.data, status=200)
             return Response(serializer.errors, status=400)
 
+    @action(detail=True, methods=['post'])
+    def payed(self, request, pk=None):
+        contract = self.get_object()
+        contract.status = 'payed'
+        contract.save()
+        return Response({'status': 'payed'}, status=200)
+
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = get_user_model().objects.all()
