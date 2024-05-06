@@ -134,6 +134,8 @@ class Contract(models.Model):
     def render_bill_pdf(self):
         context = {
             "contract": self,
+            "final_price": self.price - self.discount,
+            "km_overpass":  self.end_kilometer > self.max_kilometer+self.start_kilometer
         }
         pdf = render_to_pdf('invoices/bill.html', context)
         return pdf
