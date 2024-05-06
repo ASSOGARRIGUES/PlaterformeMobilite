@@ -1,8 +1,8 @@
 import {Dropzone, FileWithPath, IMAGE_MIME_TYPE} from "@mantine/dropzone";
-import {Group, useMantineTheme, Text, Avatar, Image, Center, InputProps, FileInput} from "@mantine/core";
+import {Group, useMantineTheme, Text, Avatar, Image, Center} from "@mantine/core";
 import {IconCameraFilled, IconUpload, IconX} from "@tabler/icons-react";
 import carIcon from "../../assets/car.svg";
-import {GetInputProps} from "@mantine/form/lib/types";
+import Compressor from "compressorjs";
 
 function IconPhoto(props: { size: number, stroke: number }) {
     return null;
@@ -12,10 +12,29 @@ const AvatarUpload = ({value, onChange, ...props}: {value:string | undefined, on
     const theme = useMantineTheme();
 
 
-    function fileSelectedHandler(files: FileWithPath[]) {
+    async function fileSelectedHandler(files: FileWithPath[]) {
         const file = files[0];
+
+        //Wrap compressor js in a promise
+        function compress(file: File) : Promise<File> {
+            return new Promise((resolve, reject) => {
+                new Compressor(file, {
+                    quality: 0.4,
+                    success(result) {
+                        resolve(result as File);
+                    },
+                    error(err) {
+                        reject(err);
+                    },
+                });
+            });
+        }
+
+        //Compress the image
+        const compressedFile = await compress(file);
+
         const reader = new FileReader();
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(compressedFile);
         reader.onload = () => {
             onChange(reader.result as string ?? undefined);
         }
