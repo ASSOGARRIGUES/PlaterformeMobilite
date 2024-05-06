@@ -1,7 +1,8 @@
-import {AuthProvider, useApiUrl} from "@refinedev/core";
+import {AuthProvider, HttpError, useApiUrl} from "@refinedev/core";
 import axios from "axios";
 import {TokenCreate} from "../types/auth";
 import {ACCESS_TOKEN_KEY, API_URL, REFRESH_TOKEN_KEY} from "../constants";
+import {AuthActionResponse} from "@refinedev/core/dist/contexts/auth/types";
 
 
 
@@ -11,19 +12,32 @@ export const authProvider: AuthProvider = {
     try {
       const {data} = await axios.post<any, TokenCreate, TokenCreate>(`${API_URL}/token/`, {username, password});
 
-        // Save the token to the local storage
-        localStorage.setItem(ACCESS_TOKEN_KEY, data.access);
-        localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh);
+      // Save the token to the local storage
+      localStorage.setItem(ACCESS_TOKEN_KEY, data.access);
+      localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh);
 
       return {
         success: true, // or false if the login is not successful
         redirectTo: "/",
       };
     }catch (e: any) {
+
+
+      if (e.response && e.response.status === 401) {
+        console.log(e.response.data)
+        return {
+          success: false, // or false if the login is not successful
+          error: {
+            name: "Erreur de connexion",
+            message: e.response.data.detail || "Nom d'utilisateur ou mot de passe incorrect"
+          }
+        };
+      }
+
       return {
-        success: false, // or false if the login is not successful
-        error: e
-      };
+          success: false, // or false if the login is not successful
+          error: e
+        };
     }
   },
 
@@ -45,13 +59,13 @@ export const authProvider: AuthProvider = {
   },
 
   logout: async (props) => {
-      localStorage.removeItem(ACCESS_TOKEN_KEY);
-      localStorage.removeItem(REFRESH_TOKEN_KEY);
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
 
-      return {
-        success: true,
-        redirectTo: props?.redirectPath || "/login",
-      };
+    return {
+      success: true,
+      redirectTo: props?.redirectPath || "/login",
+    };
   },
 
   onError: async (error) => {
@@ -76,18 +90,18 @@ export const authProvider: AuthProvider = {
 
       localStorage.setItem(ACCESS_TOKEN_KEY, data.access);
 
-        return {
-            retry: true,
-        };
+      return {
+        retry: true,
+      };
     } catch (e) {
 
-        localStorage.removeItem(ACCESS_TOKEN_KEY);
-        localStorage.removeItem(REFRESH_TOKEN_KEY);
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
 
-        return {
-            logout: true,
-            redirectTo: "/login",
-        };
+      return {
+        logout: true,
+        redirectTo: "/login",
+      };
     }
 
   },

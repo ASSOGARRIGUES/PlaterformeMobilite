@@ -122,6 +122,8 @@ export const LoginPage: React.FC<LoginProps> = ({
     return null;
   };
 
+  const [loginError, setLoginError] = React.useState<string | null>(null);
+
   const CardContent = (
     <Card style={cardStyles} {...(contentProps ?? {})}>
       <Title
@@ -140,9 +142,20 @@ export const LoginPage: React.FC<LoginProps> = ({
               if (onSubmitProp) {
                 return onSubmitProp(values);
               }
-              return login(values);
+
+              login(values, {
+                onSuccess: (data) => {
+                  if(!data.success){
+                    setLoginError(data.error.message);
+                  }
+                }
+              });
             })}
           >
+            <Text color="red" mt="md">
+              {loginError}
+            </Text>
+
             <TextInput
               name="username"
               label={"Nom d'utilisateur"}
