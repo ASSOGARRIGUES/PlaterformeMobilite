@@ -77,6 +77,8 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'mobiliteNew.urls'
 
+AUTH_USER_MODEL = "api.User"
+
 
 TEMPLATES = [
     {
@@ -94,6 +96,11 @@ TEMPLATES = [
         },
     },
 ]
+
+DECIMAL_SEPARATOR = '.'
+USE_THOUSAND_SEPARATOR = True
+THOUSAND_SEPARATOR = ' '
+NUMBER_GROUPING = 3
 
 WSGI_APPLICATION = 'mobiliteNew.wsgi.application'
 

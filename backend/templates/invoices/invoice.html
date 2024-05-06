@@ -1,280 +1,320 @@
+{% load static %}
 <!DOCTYPE html>
-<!-- saved from url=(0146)https://mobilite.asso-garrigues.fr/wp-admin/admin-ajax.php?action=generate_wpo_wcpdf&document_type=packing-slip&order_ids=9426&_wpnonce=05c31172a1 -->
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-	
-	<title>Contrat de mise à disposition d'un véhicule motorisé</title>
-	<style type="text/css">/* Main Body */
-@page {
-	margin-top: 1cm;
-	margin-bottom: 3cm;
-	margin-left: 2cm;
-	margin-right: 2cm;
-}
-body {
-	background: #fff;
-	color: #000;
-	margin: 0cm;
-	font-family: 'Open Sans', sans-serif;
-	/* want to use custom fonts? http://docs.wpovernight.com/woocommerce-pdf-invoices-packing-slips/using-custom-fonts/ */
-	font-size: 9pt;
-	line-height: 100%; /* fixes inherit dompdf bug */
-}
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+    <meta charset="UTF-8">
 
-h1, h2, h3, h4 {
-	font-weight: bold;
-	margin: 0;
-}
+    <title>Contrat de mise à disposition d'un véhicule motorisé</title>
+    <style type="text/css">/* Main Body */
+    @page {
+        size: a4 portrait;
+        {#margin-top: 1cm;#}
+        {#margin-bottom: 3cm;#}
+        {#margin-left: 2cm;#}
+        {#margin-right: 2cm;#}
 
-h1 {
-	font-size: 16pt;
-	margin: 5mm 0;
-}
+        @frame content_frame {          /* Content Frame */
+            left: 40pt; width: 515pt; top: 28pt; height: 766pt;
+        }
 
-h2 {
-	font-size: 14pt;
-}
+         @frame footer_frame {           /* Another static Frame */
+            -pdf-frame-content: footer_content;
+            left: 40pt; width: 515pt; top: 794pt; height: 20pt;
+        }
+    }
 
-h3, h4 {
-	font-size: 9pt;
-}
+    {#@font-face {#}
+    {#    font-family: Roboto;#}
+    {#    src: url({% static 'fonts/Roboto-Regular.ttf' %});#}
+    {#}#}
 
+    body {
+        background: #fff;
+        color: #000;
+        margin: 0cm;
+        font-family: 'Open Sans', sans-serif;
+        /* want to use custom fonts? http://docs.wpovernight.com/woocommerce-pdf-invoices-packing-slips/using-custom-fonts/ */
+        font-size: 9pt;
+        line-height: 100%; /* fixes inherit dompdf bug */
+    }
 
-ol,
-ul {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-}
+    h1, h2, h3, h4 {
+        font-weight: bold;
+        margin: 0;
+    }
 
-li,
-ul {
-	margin-bottom: 0.75em;
-}
+    h1 {
+        font-size: 16pt;
+        margin: 5mm 0;
+    }
 
-p {
-	margin: 0;
-	padding: 0;
-}
+    h2 {
+        font-size: 14pt;
+    }
 
-p + p {
-	margin-top: 1.25em;
-}
-
-a { 
-	border-bottom: 1px solid; 
-	text-decoration: none; 
-}
-
-/* Basic Table Styling */
-table {
-	border-collapse: collapse;
-	border-spacing: 0;
-	page-break-inside: always;
-	border: 0;
-	margin: 0;
-	padding: 0;
-}
-
-th, td {
-	vertical-align: top;
-	text-align: left;
-}
-
-table.container {
-	width:100%;
-	border: 0;
-}
-
-tr.no-borders,
-td.no-borders {
-	border: 0 !important;
-	border-top: 0 !important;
-	border-bottom: 0 !important;
-	padding: 0 !important;
-	width: auto;
-}
-
-/* Header */
-table.head {
-	margin-bottom: 12mm;
-}
-
-td.header img {
-	max-height: 3cm;
-	width: auto;
-}
-
-td.header {
-	font-size: 16pt;
-	font-weight: 700;
-}
-
-td.shop-info {
-	width: 40%;
-}
-.document-type-label {
-	text-transform: uppercase;
-    text-align: center;
-}
-
-/* Recipient addressses & order data */
-table.order-data-addresses {
-	width: 100%;
-	margin-bottom: 10mm;
-}
-
-td.order-data {
-	width: 40%;
-}
-
-.invoice .shipping-address {
-	width: 30%;
-}
-
-.packing-slip .billing-address {
-	width: 30%;
-}
-
-td.order-data table th {
-	font-weight: normal;
-	padding-right: 2mm;
-}
-
-/* Order details */
-table.order-details {
-	width:100%;
-	margin-bottom: 8mm;
-}
-
-.quantity,
-.price {
-	width: 20%;
-}
-
-.order-details tr {
-	page-break-inside: always;
-	page-break-after: auto;	
-}
-
-.order-details td,
-.order-details th {
-	border-bottom: 1px #ccc solid;
-	border-top: 1px #ccc solid;
-	padding: 0.375em;
-}
-
-.order-details th {
-	font-weight: bold;
-	text-align: left;
-}
-
-.order-details thead th {
-	color: white;
-	background-color: black;
-	border-color: black;
-}
-
-/* product bundles compatibility */
-.order-details tr.bundled-item td.product {
-	padding-left: 5mm;
-}
-
-.order-details tr.product-bundle td,
-.order-details tr.bundled-item td {
-	border: 0;
-}
+    h3, h4 {
+        font-size: 9pt;
+    }
 
 
-/* item meta formatting for WC2.6 and older */
-dl {
-	margin: 4px 0;
-}
+    ol,
+    ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
 
-dt, dd, dd p {
-	display: inline;
-	font-size: 7pt;
-	line-height: 7pt;
-}
+    li,
+    ul {
+        margin-bottom: 0.75em;
+    }
 
-dd {
-	margin-left: 5px;
-}
+    p {
+        margin: 0;
+        padding: 0;
+    }
 
-dd:after {
-	content: "\A";
-	white-space: pre;
-}
-/* item-meta formatting for WC3.0+ */
-.wc-item-meta {
-	margin: 4px 0;
-	font-size: 7pt;
-	line-height: 7pt;
-}
-.wc-item-meta p {
-	display: inline;
-}
-.wc-item-meta li {
-	margin: 0;
-	margin-left: 5px;
-}
+    p + p {
+        margin-top: 1.25em;
+    }
 
-/* Notes & Totals */
-.customer-notes {
-	margin-top: 5mm;
-}
+    a {
+        border-bottom: 1px solid;
+        text-decoration: none;
+    }
 
-table.totals {
-	width: 100%;
-	margin-top: 5mm;
-}
+    /* Basic Table Styling */
+    table {
+        border-collapse: collapse;
+        border-spacing: 0;
+        page-break-inside: always;
+        border: 0;
+        margin: 0;
+        padding: 0;
+    }
 
-table.totals th,
-table.totals td {
-	border: 0;
-	border-top: 1px solid #ccc;
-	border-bottom: 1px solid #ccc;
-}
+    th, td {
+        vertical-align: top;
+        text-align: left;
+    }
 
-table.totals th.description,
-table.totals td.price {
-	width: 50%;
-}
+    table.container {
+        width:100%;
+        border: 0;
+    }
 
-table.totals tr.order_total td,
-table.totals tr.order_total th {
-	border-top: 2px solid #000;
-	border-bottom: 2px solid #000;
-	font-weight: bold;
-}
+    tr.no-borders,
+    td.no-borders {
+        border: 0 !important;
+        border-top: 0 !important;
+        border-bottom: 0 !important;
+        padding: 0 !important;
+        width: auto;
+    }
 
-table.totals tr.payment_method {
-	display: none;
-}
+    /* Header */
+    table.head {
+        margin-bottom: 20px;
+    }
 
-/* Footer Imprint */
-#footer {
-	position: absolute;
-	bottom: -2cm;
-	left: 0;
-	right: 0;
-	height: 2cm; /* if you change the footer height, don't forget to change the bottom (=negative height) and the @page margin-bottom as well! */
-	text-align: center;
-	border-top: 0.1mm solid gray;
-	margin-bottom: 0;
-	padding-top: 2mm;
-}
+    td.header img {
+        max-height: 3cm;
+        width: auto;
+    }
 
-/* page numbers */
-.pagenum:before {
-	content: counter(page);
-}
-.pagenum,.pagecount {
-	font-family: sans-serif;
-}
+    td.header {
+        font-size: 16pt;
+        font-weight: 700;
+    }
 
-.contract-head{
-    display: block;
-}
+    td.shop-info {
+        width: 40%;
+    }
+    .document-type-label {
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+    /* Recipient addressses & order data */
+    table.order-data-addresses {
+        width: 100%;
+        margin-bottom: 10mm;
+    }
+
+    td.order-data {
+        width: 40%;
+    }
+
+    .invoice .shipping-address {
+        width: 30%;
+    }
+
+    .packing-slip .billing-address {
+        width: 30%;
+    }
+
+    td.order-data table th {
+        font-weight: normal;
+        padding-right: 2mm;
+    }
+
+    /* Order details */
+    table.order-details {
+        width:100%;
+        margin-bottom: 20px;
+        margin-top: 16px;
+    }
+
+    .quantity{
+        width: 35%;
+    }
+    .price {
+        width: 20%;
+    }
+
+    .order-details tr {
+        page-break-inside: auto;
+        page-break-after: auto;
+    }
+
+    .order-details td,
+    .order-details th {
+        border-bottom: 1px #ccc solid;
+        border-top: 1px #ccc solid;
+        padding: 0.375em;
+    }
+
+    .order-details th {
+        font-weight: bold;
+        text-align: left;
+    }
+
+    .order-details thead th {
+        color: white;
+        background-color: black;
+        border-color: black;
+    }
+
+    /* product bundles compatibility */
+    .order-details tr.bundled-item td.product {
+        padding-left: 5mm;
+    }
+
+    .order-details tr.product-bundle td,
+    .order-details tr.bundled-item td {
+        border: 0;
+    }
+
+    /* deposit details */
+    table.deposit-details {
+        width: 100%;
+        margin-top: 5px;
+        margin-bottom: 20px;
+    }
+
+        .deposit-details td,
+    .deposit-details th {
+        border-bottom: 1px #ccc solid;
+        border-top: 1px #ccc solid;
+        padding: 0.27em;
+    }
+
+    .deposit-details th {
+        font-weight: bold;
+        text-align: left;
+    }
+
+    .deposit-details thead th {
+        color: white;
+        background-color: black;
+        border-color: black;
+    }
+
+
+    /* item meta formatting for WC2.6 and older */
+    dl {
+        margin: 4px 0;
+    }
+
+    dt, dd, dd p {
+        display: inline;
+        font-size: 7pt;
+        line-height: 7pt;
+    }
+
+    dd {
+        margin-left: 5px;
+    }
+
+    dd:after {
+        content: "\A";
+        white-space: pre;
+    }
+    /* item-meta formatting for WC3.0+ */
+    .wc-item-meta {
+        margin: 4px 0;
+        font-size: 7pt;
+        line-height: 7pt;
+    }
+    .wc-item-meta p {
+        display: inline;
+    }
+    .wc-item-meta li {
+        margin: 0;
+        margin-left: 5px;
+    }
+
+    /* Notes & Totals */
+    .customer-notes {
+        margin-top: 5mm;
+    }
+
+    table.totals {
+        width: 100%;
+        margin-top: 5mm;
+    }
+
+    table.totals th,
+    table.totals td {
+        border: 0;
+        border-top: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+    }
+
+    table.totals th.description,
+    table.totals td.price {
+        width: 50%;
+    }
+
+    table.totals tr.order_total td,
+    table.totals tr.order_total th {
+        border-top: 2px solid #000;
+        border-bottom: 2px solid #000;
+        font-weight: bold;
+    }
+
+
+    .contract-head{
+        display: block;
+    }
+
+    .rules-list {
+        padding-left: 20px;
+    }
+
+    .rules-list li {
+        margin-bottom: 0;
+    }
+
+    .payment-options {
+        white-space: nowrap; /* Prevent wrapping */
+    }
+
+    .payment-options span {
+        display: inline-block; /* Make spans behave as inline-block */
+        margin-right: 10px; /* Adjust spacing between spans */
+    }
 
     </style>
 </head>
@@ -282,149 +322,226 @@ table.totals tr.payment_method {
 <body class="packing-slip" data-new-gr-c-s-check-loaded="14.1165.0" data-gr-ext-installed="">
 
 <table class="head container">
-	<tbody><tr>
-		<td class="header">
-		<img src="./invoice_files/Logo_original.png" width="725" height="565" alt="&lt;font size=&quot;20px&quot; color=&quot;green&quot;&gt;ASSOCIATION GARRIGUES&lt;/font&gt;">		</td>
-		<td class="shop-info">
-			<div class="shop-name"><h3><font size="20px" color="green">ASSOCIATION GARRIGUES</font></h3></div>
-			<div class="shop-address"><p>164 Traverse Saint Jean<br>
-<b>83 470 SAINT-MAXIMIN-LA-SAINTE-BAUME</b><br>
-SIRET : 448 362 160 00013<br>
-tél : 04 94 59 96 63<br>courriel : asso.garrigues@free.fr</p>
-</div>
-		</td>
-	</tr>
-</tbody></table>
+    <tbody><tr>
+        <td class="header" style="text-align: right; padding-right: 25px">
+            <img src="{% static 'invoice_files/Logo_original.png' %}"  height="100" alt="&lt;font size=&quot;20px&quot; color=&quot;green&quot;&gt;ASSOCIATION GARRIGUES&lt;/font&gt;">		</td>
+        <td class="shop-info">
+            <div class="shop-name"><h3><font size="20px" color="green">ASSOCIATION GARRIGUES</font></h3></div>
+            <div class="shop-address"><p>164 Traverse Saint Jean<br>
+                <b>83 470 SAINT-MAXIMIN-LA-SAINTE-BAUME</b><br>
+                SIRET : 448 362 160 00013<br>
+                tél : 04 94 59 96 63<br>courriel : asso.garrigues@free.fr</p>
+            </div>
+        </td>
+    </tr>
+    </tbody></table>
 
 <h1 class="document-type-label">Contrat de mise à disposition d'un véhicule motorisé</h1>
 
 
 <table class="contract-head">
     <tbody>
-        <tr>
-            <td class="billing-address" style="width: 50%">
-                            <h3>Bénéficiaire du contrat (Utilisateur du véhicule):</h3>
-                            {{ contract.beneficiary.first_name  }} {{ contract.beneficiary.last_name  }}<br>{{ contract.beneficiary.address }}<br>{{ contract.beneficiary.postal_code }} {{ contract.beneficiary.city }}<br>{{ contract.beneficiary.email }}
-                <div class="billing-phone">{{ contract.beneficiary.phone }}</div>
-            </td>
+    <tr>
+        <td class="billing-address" style="width: 50%">
+            <h3>Bénéficiaire du contrat (Utilisateur du véhicule):</h3>
+            {{ contract.beneficiary.first_name  }} {{ contract.beneficiary.last_name  }}<br>{{ contract.beneficiary.address }}<br>{{ contract.beneficiary.postal_code }} {{ contract.beneficiary.city }}<br>{{ contract.beneficiary.email }}
+            <div class="billing-phone">{{ contract.beneficiary.phone }}</div>
+        </td>
 
-            <td class="order-data" style="width: 50%">
-                <table>
-                    <tbody>
-                    <tr class="order-number">
-                        <th>Numéro de contrat:</th>
-                        <td>{{ contract.id }}</td>
-                    </tr>
-                    <tr class="order-date">
-                        <th>Date de contrat:</th>
-                        <td>{{ contract.created_at }}</td>
-                    </tr>
-                    <tr class="delivery-date">
-                        <th>Permis de Conduire n°:</th>
-                        <td>{{ contract.beneficiary.license_number }}</td>
-                    </tr>
-                    <tr class="delivery-date">
-                        <th>Délivré par:</th>
-                        <td>{{ contract.created_by }}</td>
-                    </tr>
-                    <tr class="delivery-date">
-                        <th>Le:</th>
-                        <td>{{ contract.created_at }}</td>
-                    </tr>
-                    <tr class="delivery-date">
-                        <th>_____________________________________</th>
-                        <td></td>
-                    </tr>
-                    <tr class="delivery-date">
-                        <th>Référent Garrigues:</th>
-                        <td>{{ contract.referent }}</td>
-                    </tr>
-                    <tr class="delivery-date">
-                        <th>Tél:</th>
-                        <td>{{ contract.referent.phone }}</td>
-                    </tr>
-                    <tr></tr>
-                    <tr class="delivery-date">
-                        <th><i>KM autorisés:</i></th>
-                        <td>{{ contract.max_kilometer }}</td>
-                    </tr>
-                    </tbody>
-                </table>
-            </td>
-        </tr>
+        <td class="order-data" style="width: 50%">
+            <table>
+                <tbody>
+                <tr class="order-number">
+                    <th>Numéro de contrat:</th>
+                    <td>{{ contract.id }}</td>
+                </tr>
+                <tr class="delivery-date">
+                    <th>Permis de Conduire n°:</th>
+                    <td>{{ contract.beneficiary.license_number }}</td>
+                </tr>
+                <tr class="delivery-date">
+                    <th>Délivré par:</th>
+                    <td>{{ contract.created_by.first_name }} {{ contract.created_by.last_name }}</td>
+                </tr>
+                <tr class="delivery-date">
+                    <th>Le:</th>
+                    <td>{{ contract.created_at }}</td>
+                </tr>
+                <tr class="delivery-date">
+                    <th>_____________________________________</th>
+                    <td></td>
+                </tr>
+                <tr class="delivery-date">
+                    <th>Référent Garrigues:</th>
+                    <td>{{ contract.referent.first_name }} {{ contract.referent.last_name }}</td>
+                </tr>
+                <tr class="delivery-date">
+                    <th>Tél:</th>
+                    <td>{{ contract.referent.phone }}</td>
+                </tr>
+                <tr></tr>
+                <tr class="delivery-date">
+                    <th><i>KM autorisés:</i></th>
+                    <td>{{ contract.max_kilometer }}</td>
+                </tr>
+                </tbody>
+            </table>
+        </td>
+    </tr>
     </tbody>
 </table>
 
 
 <table class="order-details">
-	<thead>
-		<tr>
-			<th class="product">Prestations</th>
-			<th class="quantity">Quantité</th>
-			<th class="price">Coûts</th>
-		</tr>
-	</thead>
-	<tbody>
-				<tr class="2046">
-			<td class="product">
-								<span class="item-name">107 ROUGE BK-105-QM</span>
-				<div class="product-description">KM départ :&nbsp;<strong>--- ---</strong> / <span style="color: red">Révision :&nbsp;<strong>--- ---</strong></span></div>				<span class="item-meta"><ul class="wc-item-meta"><li><strong class="wc-item-meta-label">Nombre de jours:</strong> <p>0 jour</p></li><li><strong class="wc-item-meta-label">Nombre de semaines:</strong> <p>4 semaines</p></li></ul></span>
-				<dl class="meta">
-																			</dl>
-							</td>
-			<td class="quantity">1</td>
-			<td class="price"><span class="woocommerce-Price-amount amount">100,00<span class="woocommerce-Price-currencySymbol">€</span></span></td>
-		</tr>
-			</tbody>
-	<tfoot>
-		<tr class="no-borders">
-			<td class="no-borders">
-				<div class="customer-notes">
-																<h3>Détails (dates d'utilisation, nature des pièces...)</h3>
-						<p>DU 3 AVRIL AU 1° MAI 2024</p>
-										<br><i>Le rappel du véhicule est prévu pour la date finale indiquée<br>ci-dessus. <b><font color="red">Tout retard = 10€ par jour.</font></b>
-									</i></div><i>				
-			</i></td>
-			<td class="no-borders" colspan="2">
-				<table class="totals">
-					<tfoot>
-												<tr class="cart_subtotal">
-							<td class="no-borders"></td>
-							<th class="description">Sous-total&nbsp;</th>
-							<td class="price"><span class="totals-price"><span class="woocommerce-Price-amount amount">100,00<span class="woocommerce-Price-currencySymbol">€</span></span></span></td>
-						</tr>
-												<tr class="payment_method">
-							<td class="no-borders"></td>
-							<th class="description">Moyen de paiement&nbsp;</th>
-							<td class="price"><span class="totals-price">Chèque ou Espèces</span></td>
-						</tr>
-												<tr class="order_total">
-							<td class="no-borders"></td>
-							<th class="description">Total&nbsp;</th>
-							<td class="price"><span class="totals-price"><span class="woocommerce-Price-amount amount">100,00<span class="woocommerce-Price-currencySymbol">€</span></span></span></td>
-						</tr>
-											</tfoot>
-				</table>
-			</td>
-</tr>
-	</tfoot>
+    <thead>
+    <tr>
+        <th class="product">Prestations</th>
+        <th class="quantity">Durée</th>
+        <th class="price">Coûts</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td class="product">
+            {#            <span class="item-name">{{ contract.vehicle.fleet_id }}</span>#}
+            <span style="font-size: 16px;"> <strong>{{ contract.vehicle.brand }} {{ contract.vehicle.modele }}</strong></span> <br>
+            Numéro de flotte: <strong>{{ contract.vehicle.fleet_id }}</strong><br>
+            Immatriculation: <strong>{{ contract.vehicle.imat }}</strong>
+            <div style="padding: 0; margin: 0">
+                KM départ :&nbsp;<strong>{{ contract.start_kilometer }}</strong> / <span style="color: red">KM retour max :&nbsp;<strong>{{ contract.start_kilometer|add:contract.max_kilometer }}</strong></span>
+            </div>
+
+        </td>
+        <td class="quantity">
+            Du {{ contract.start_date }} au {{ contract.end_date }}
+        </td>
+        <td class="price">
+            {{ contract.price }}€
+        </td>
+    </tr>
+    </tbody>
+
+    <tfoot>
+    <tr class="no-borders">
+        <td class="no-borders">
+            <div class="customer-notes">
+                <br><i>Le rappel du véhicule est prévu pour la date finale indiquée ci-dessus. <b><font color="red">Tout retard = 10€ par jour.</font></b>
+            </i>
+            </div>
+        </td>
+        <td class="no-borders" colspan="2">
+            <table class="totals">
+                <tfoot>
+                <tr class="cart_subtotal">
+                    <td class="no-borders"></td>
+                    <th class="description">Sous-total&nbsp;</th>
+                    <td class="price">
+                        {{ contract.price }}€
+                    </td>
+                </tr>
+
+                {# if contract.discount is different from 0, then display the discount section #}
+                {% if contract.discount != 0 %}
+                    <tr class="cart_discount">
+                        <td class="no-borders"></td>
+                        <th class="description">Remise&nbsp;</th>
+                        <td class="price">
+                            -{{ contract.discount }}€
+                        </td>
+                    </tr>
+                {% endif %}
+
+                <tr class="order_total">
+                    <td class="no-borders"></td>
+                    <th class="description">Total&nbsp;</th>
+                    <td class="price">
+                        {{ final_price }}€
+                    </td>
+                </tr>
+                </tfoot>
+            </table>
+        </td>
+    </tr>
+    </tfoot>
 </table>
 
-<i><b>Je m'engage à régler le montant de ma participation aux coûts indiqué ci-dessus le jour même du retour.<br>JE M'ENGAGE PAR AILLEURS À :</b> - n'utiliser ce véhicule que pour des déplacements entre mon domicile et le But (géo) tels qu'ils sont définis avec mon référent ;- maintenir le véhicule dans son état initial et le rendre avec le même niveau de carburant ; - ne pas le prêter ; - respecter les règles de sécurité et de circulation routière ; - régler les contraventions éventuelles ainsi que les dommages du véhicule ; - restituer le véhicule dans les délais ; régler ma participation aux frais à chaque fin de contrat ; -ne pas consommer de substances non compatibles avec la conduite (alcool, drogues, médicaments etc.) ; - ne pas fumer dans le véhicule et ne pas transporter d'animaux
-<br>- <u>si ce contrat concerne un scooter</u>, je m'engage également à ne pas transporter de passager.
-</i>
 
-<i>
-</i><br><b>CAUTION : </b>		Montant € : 		Mode : 		Banque : <br><font size="9px">Fait à : 								 																																								Le : <br>
-<br>ERIC DE VERGIE (Lu et approuvé) :																																Pour Garrigues [Nom/prénom] :</font>
+<b style="font-size:13px">Je m'engage à régler le montant de ma participation aux coûts indiqué ci-dessus le jour même du retour.<br></b>
+<br>
+<b>JE M'ENGAGE PAR AILLEURS À :</b> <br>
+<ul class="rules-list">
+    <li> N'utiliser ce véhicule que pour des déplacements entre mon domicile et le But (géo) tels qu'ils sont définis avec mon référent </li>
+    <li> Maintenir le véhicule dans son état initial et le rendre avec le même niveau de carburant </li>
+    <li> Ne pas le prêter </li>
+    <li> Respecter les règles de sécurité et de circulation routière </li>
+    <li> Régler les contraventions éventuelles ainsi que les dommages du véhicule </li>
+    <li> Restituer le véhicule dans les délais régler ma participation aux frais à chaque fin de contrat </li>
+    <li> Ne pas consommer de substances non compatibles avec la conduite (alcool, drogues, médicaments etc.) </li>
+    <li> Ne pas fumer dans le véhicule et ne pas transporter d'animaux</li>
+
+    {% if contract.vehicle.type == "scouter" %}
+        <li style="color:red"><b>Je m'engage également à ne pas transporter de passager.</b></li>
+    {% endif %}
+</ul>
 
 
+<!-- table pour caution, doit contenir: Montant, Mode(checkbox pour cheque, espèce, CB, virement) et Banque -->
+<table class="deposit-details">
+    <thead>
+    <tr>
+        <th>Caution</th>
+        <th> </th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>
+            Montant: <b>{{ contract.deposit }}€</b>
+        </td>
+    </tr>
+    <tr>
+        <td style="width: 60%">
+            Mode de paiement :
+            <div style="display: inline-block">
+                <span>&#x25A2; Chèque  </span>
+                <span>&#x25A2; Espèce</span>
+                <span>&#x25A2; CB</span>
+                <span>&#x25A2; Virement</span>
+            </div>
+        </td>
+         <td>
+            Banque:
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+Fait à _________________________, le _________________________
+<table style="padding-top: 0; margin-bottom: 60px">
+
+    <tr>
+        <td>
+            {{ contract.beneficiary.first_name }} {{ contract.beneficiary.last_name }}(lu et approuvé):
+        </td>
+        <td>
+            Pour l'association Garrigues (Nom et signature):
+        </td>
+    </tr>
+</table>
 
 </body>
 
-<footer>
-	<p><font color="red" size="8px"><b>IMPORTANT !  </b></font><font size="9px">Lors de la restitution, un état du véhicule sera établi. <b> Les frais de remise en état sont à la charge de l’utilisateur. </b><br>Les opération d’entretien et de réparation sont assurées par l’atelier de Garrigues, à l’exclusion de tout autre.<br>Pendant la période de prêt, Garrigues assure l’assurance et l’entretien du véhicule, <b> mais se dégage de toute responsabilité en cas d’accident.</b> <br>Ce véhicule est assuré au tiers collision.</font><br><b><u><font size="9px">LES RENOUVELLEMENTS DE CE CONTRAT SONT LIMITÉS À 4 MOIS.</font></u></b><br>
-<font size="8px" color="red"><i><b>Contacts d’urgence :</b></i></font><i><font size="8px"> Mécaniciens : Dominique LESPILETTE : 07 82 22 33 41 Christophe VALENTIN : 07 82 79 10 13 ; Direction : Mathieu GALAND : 06 07 60 33 72</font></i></p><font size="8px">
-</font><p><font size="8px"></font></p>
-</footer><!-- #letter-footer -->
+<div style="font-size: 11px; border-top: solid; padding: 10px 0 0 0">
+    <p><b style="color:red">IMPORTANT : </b>
+        Lors de la restitution, un état du véhicule sera établi.<b> Les frais de remise en état sont à la charge de l’utilisateur. </b><br>
+        Les opérations d’entretien et de réparation sont assurées par l’atelier de Garrigues, à l’exclusion de tout autre.<br>
+        Pendant la période de prêt, Garrigues assure l’assurance et l’entretien du véhicule, <b> mais se dégage de toute responsabilité en cas d’accident.</b> Ce véhicule est assuré au tiers collision.<br>
+</div>
+<div style="text-align: center; font-size: 11px">
+    <b><u>LES RENOUVELLEMENTS DE CE CONTRAT SONT LIMITÉS À 4 MOIS.</u></b>
+</div>
+<div style="font-size: 11px; font-stretch: condensed">
+    <i style="color: red"><b>Contacts d’urgence :</b></i>
+    <i> Mécaniciens : Dominique LESPILETTE : 07 82 22 33 41 Christophe VALENTIN : 07 82 79 10 13 ;<br> Direction : Mathieu GALAND : 06 07 60 33 72</i></p>
+</div>
 </html>
