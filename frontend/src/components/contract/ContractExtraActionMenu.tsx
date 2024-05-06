@@ -29,7 +29,7 @@ const ContractExtraActionMenu = ({contract, showEndModal}: {contract: Contract,s
                 </ActionIcon>
             </Menu.Target>
             <Menu.Dropdown>
-                {contract.status === ContractStatusEnum.over ? getContractPDFItem : endContractItem}
+                {contract.status === ContractStatusEnum.over || contract.status === ContractStatusEnum.payed ? getContractPDFItem : endContractItem}
             </Menu.Dropdown>
         </Menu>
     )

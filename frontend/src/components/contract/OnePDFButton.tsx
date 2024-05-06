@@ -5,7 +5,7 @@ import ContractPDFButton from "./ContractPDFButton";
 
 const OnePDFButton = ({contract}: {contract: Contract}) => {
     return (
-        contract.status === ContractStatusEnum.over ? <BillPDFButton contract={contract}/> : <ContractPDFButton contract={contract}/>
+        contract.status === ContractStatusEnum.over ||  contract.status === ContractStatusEnum.payed ? <BillPDFButton contract={contract}/> : <ContractPDFButton contract={contract}/>
     )
 }
 

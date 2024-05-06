@@ -1,4 +1,4 @@
-import {Box, Stack, TextInput, Group, ActionIcon, MantineNumberSize, GroupPosition} from "@mantine/core";
+import {Box, Stack, TextInput, Group, ActionIcon, MantineNumberSize, GroupPosition, Tooltip} from "@mantine/core";
 import { IconCirclePlus, IconRefresh, IconSearch } from "@tabler/icons-react";
 import {DataTable, DataTableSortStatus} from "mantine-datatable";
 import React, {CSSProperties, useEffect, useState} from "react";
@@ -195,25 +195,29 @@ function ContractTable<T extends BaseRecord>({
                         {extraButtons}
 
                         {withAddIcon && (
-                            <ActionIcon
-                                style={{ flex: "initial" }}
-                                size={33}
-                                color="green"
-                                onClick={() => addCallback ? addCallback() : ""}
-                            >
-                                <IconCirclePlus size={33} />
-                            </ActionIcon>
+                            <Tooltip label={"Nouveau"} position={"bottom"} openDelay={200} >
+                                <ActionIcon
+                                    style={{ flex: "initial" }}
+                                    size={33}
+                                    color="green"
+                                    onClick={() => addCallback ? addCallback() : ""}
+                                >
+                                    <IconCirclePlus size={33} />
+                                </ActionIcon>
+                            </Tooltip>
                         )}
 
                         {withReloadIcon && (
-                            <ActionIcon
-                                style={{ flex: "initial" }}
-                                size={33}
-                                color="blue"
-                                onClick={() => reloadCallback()}
-                            >
-                                <IconRefresh size={33} />
-                            </ActionIcon>
+                            <Tooltip label={"Rafraichir"} position={"bottom"} openDelay={200} >
+                                <ActionIcon
+                                    style={{ flex: "initial" }}
+                                    size={33}
+                                    color="blue"
+                                    onClick={() => reloadCallback()}
+                                >
+                                    <IconRefresh size={33} />
+                                </ActionIcon>
+                            </Tooltip>
                         )}
                     </Group>
                 )}
