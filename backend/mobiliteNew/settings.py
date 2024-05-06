@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'django_filters',
+    'core',
     'api',
     'drf_spectacular',
 ]
@@ -77,7 +78,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'mobiliteNew.urls'
 
-AUTH_USER_MODEL = "api.User"
+AUTH_USER_MODEL = "core.User"
 
 
 TEMPLATES = [

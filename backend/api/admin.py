@@ -4,8 +4,8 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 # Register your models here.
-from .models import Vehicle, Beneficiary, Contract, User
-from django.utils.translation import gettext_lazy as _
+from .models import Vehicle, Beneficiary, Contract
+
 
 
 class ContractAdmin(admin.ModelAdmin):
@@ -23,22 +23,12 @@ class ContractAdmin(admin.ModelAdmin):
     pdf.allow_tags = True
 
 
-class MyUserAdmin(UserAdmin):
-    # Add the new field to the admin form in the _('Personal info') section
-    # Detach the actual fields and add them to the new field
-    fieldsets = []
-    for fieldset in UserAdmin.fieldsets:
-        if(fieldset[0] == _('Personal info')):
-            current_fields = fieldset[1]['fields']
-            fieldsets.append((_('Personal info'), {'fields': current_fields + ('phone',)}))
-        else:
-            fieldsets.append(fieldset)
-    print(fieldsets)
+
 
 
 admin.site.register(Vehicle)
 admin.site.register(Beneficiary)
 admin.site.register(Contract, ContractAdmin)
 
-admin.site.register(User, MyUserAdmin)
+
 

@@ -1,15 +1,8 @@
 from django.contrib.auth import get_user_model
-from django.contrib.auth.base_user import AbstractBaseUser
-from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 from utils import render_to_pdf
 
-
-class User(AbstractUser):
-    phone = models.CharField(max_length=100)
-
-    REQUIRED_FIELDS = AbstractUser.REQUIRED_FIELDS+['phone', "first_name", "last_name"]
 
 
 class Vehicle(models.Model):

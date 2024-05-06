@@ -34,6 +34,7 @@ urlpatterns = [
         "api/token/refresh/", jwt_views.TokenRefreshView.as_view(), name="token_refresh"
     ),
     path('api-schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('', include('core.urls')),
 ]
 
 if settings.DEBUG:
