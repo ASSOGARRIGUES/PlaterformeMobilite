@@ -187,13 +187,13 @@ export const ThemedSiderV2: React.FC<RefineThemedLayoutV2SiderProps> = ({
   };
 
   const logout = isExistAuthentication && (
-    <Tooltip label={t("buttons.logout", "Logout")} {...commonTooltipProps}>
+    <Tooltip label={t("buttons.logout", "Déconnexion")} {...commonTooltipProps}>
       <NavLink
         key="logout"
         label={
           siderCollapsed && !mobileSiderOpen
             ? null
-            : t("buttons.logout", "Logout")
+            : t("buttons.logout", "Déconnexion")
         }
         icon={<IconPower size={20} />}
         pl={siderCollapsed || mobileSiderOpen ? "12px" : "18px"}

@@ -128,7 +128,7 @@ export const LoginPage: React.FC<LoginProps> = ({
         style={titleStyles}
         color={theme.colorScheme === "dark" ? "brand.5" : "brand.8"}
       >
-        {"Connection à votre compte"}
+        {"Connexion à votre compte"}
       </Title>
       <Space h="sm" />
       <Space h="lg" />
@@ -174,7 +174,7 @@ export const LoginPage: React.FC<LoginProps> = ({
               type="submit"
               loading={isLoading}
             >
-              {translate("pages.login.signin", "Connection")}
+              {translate("pages.login.signin", "Connexion")}
             </Button>
           </form>
         </FormProvider>
