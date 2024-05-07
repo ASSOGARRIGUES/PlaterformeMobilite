@@ -47,8 +47,8 @@ class ContractViewSet(viewsets.ModelViewSet):
         'vehicle': ["in", "exact"],
         'referent': ["in", "exact"],
         'status': ["in", "exact"],
-        'start_date': ['gte', 'lte'],
-        'end_date': ['gte', 'lte'],
+        'start_date': ['gte', 'lte', 'gt', 'lt'],
+        'end_date': ['gte', 'lte', 'gt', 'lt']
     }
 
     @action(detail=True, methods=['get'])
@@ -96,5 +96,15 @@ class UserViewSet(viewsets.ModelViewSet):
 
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['username', 'email', 'first_name', 'last_name']
+
+
+#WhoAmIViewSet is a viewset that returns the current user information using the WhoAmISerializer
+
+class WhoAmIViewSet(viewsets.ViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = UserSerializer
+    def list(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
 
 

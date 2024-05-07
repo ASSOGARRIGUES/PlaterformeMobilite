@@ -136,6 +136,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/contract/{id}/payed/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_contract_payed_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/token/": {
         parameters: {
             query?: never;
@@ -234,6 +250,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["api_vehicle_partial_update"];
+        trace?: never;
+    };
+    "/api/whoami/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_whoami_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
 }
@@ -462,7 +494,7 @@ export interface components {
          */
         ReasonEnum: ReasonEnum;
         TokenObtainPair: {
-            username: string;
+            email: string;
             password: string;
             readonly access: string;
             readonly refresh: string;
@@ -494,7 +526,7 @@ export interface components {
              * Adresse électronique
              * Format: email
              */
-            email?: string;
+            email: string;
             /** Prénom */
             first_name?: string;
             /** Nom */
@@ -985,6 +1017,34 @@ export interface operations {
             };
         };
     };
+    api_contract_payed_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this contract. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Contract"];
+                "application/x-www-form-urlencoded": components["schemas"]["Contract"];
+                "multipart/form-data": components["schemas"]["Contract"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Contract"];
+                };
+            };
+        };
+    };
     api_token_create: {
         parameters: {
             query?: never;
@@ -1342,6 +1402,25 @@ export interface operations {
             };
         };
     };
+    api_whoami_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"][];
+                };
+            };
+        };
+    };
 }
 export enum PathsApiSchemaGetParametersQueryFormat {
     json = "json",
@@ -1455,7 +1534,7 @@ export enum PathsApiContractGetParametersQueryStatus {
     waiting = "waiting"
 }
 export enum BlankEnum {
-     ""
+    ""
 }
 export enum ContractStatusEnum {
     waiting = "waiting",

@@ -33,6 +33,8 @@ import ContractList from "./pages/contract/ContractList";
 import BeneficiaryShow from "./pages/beneficiary/BeneficiaryShow";
 import VehicleShow from "./pages/vehicle/VehicleShow";
 import { ModalsProvider } from "@mantine/modals";
+import Dashboard from "./pages/dashboard/Dashboard";
+import {IconDashboard} from "@tabler/icons-react";
 
 function App() {
 
@@ -69,6 +71,14 @@ function App() {
                             authProvider={authProvider}
                             notificationProvider={useNotificationProvider}
                             resources={[
+                                {
+                                    name:"dashboard",
+                                    list:"/",
+                                    meta: {
+                                        label: "Tableau de bord",
+                                        icon: <IconDashboard/>,
+                                    },
+                                },
                                 {
                                     name: "beneficiary",
                                     list: "beneficiary/",
@@ -134,7 +144,7 @@ function App() {
                                 >
                                     <Route
                                         index
-                                        element={<NavigateToResource resource="blog_posts" />}
+                                        element={<Dashboard/>}
                                     />
                                     <Route path="/beneficiary">
                                         <Route index element={<BeneficiaryList />} />

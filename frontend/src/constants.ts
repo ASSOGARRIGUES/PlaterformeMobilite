@@ -1,4 +1,4 @@
-import {ReasonEnum} from "./types/schema.d";
+import {ContractStatusEnum, ReasonEnum} from "./types/schema.d";
 
 
 export const ACCESS_TOKEN_KEY = 'auth_access';
@@ -21,3 +21,5 @@ export const contractReasonLabelMap: Record<string,string> = {
     [ReasonEnum.job_seeking]: "Recherche d'emploi",
     [ReasonEnum.part_time]: "Alternance",
 }
+
+export const StatusConsideredOngoing = [ContractStatusEnum.pending,ContractStatusEnum.over,ContractStatusEnum.waiting];

@@ -45,7 +45,9 @@ type SearchableDataTableProps<T> = {
     secondBarNodes?: any;
     style?: CSSProperties;
     permanentFilters?: CrudFilters;
-    syncWithLocation?: boolean
+    syncWithLocation?: boolean;
+    withoutSearch?: boolean;
+    pageSize?: number;
     othersProps?: DataTableProps<T>;
 };
 
@@ -65,6 +67,8 @@ function ContractTable<T extends BaseRecord>({
                                                  style,
                                                  permanentFilters,
                                                  syncWithLocation,
+                                                 withoutSearch,
+                                                 pageSize = PAGE_SIZE,
                                                  ...othersProps
                                              }: SearchableDataTableProps<T>) {
     const [sortStatus, setSortStatus] = useState({
@@ -85,13 +89,13 @@ function ContractTable<T extends BaseRecord>({
         tableQueryResult,
         current: currentPage,
         setCurrent: setCurrentPage,
-        pageSize,
+        pageSize: apiPageSize,
         setSorters,
         setFilters,
     } = useTable<T, HttpError>({
         resource: "contract",
         syncWithLocation: syncWithLocation === undefined ? true : syncWithLocation,
-        pagination: { pageSize: PAGE_SIZE },
+        pagination: { pageSize: pageSize },
         sorters: {
             initial: [
                 {
@@ -109,6 +113,7 @@ function ContractTable<T extends BaseRecord>({
     let data = tableQueryResult?.data?.data ?? [];
 
 
+    //Retrieve the vehicle data
     const vehicleIds = data.map((contract) => contract.vehicle);
 
     const { data: vehicleMany, isLoading } = useMany<Vehicle>({
@@ -128,6 +133,7 @@ function ContractTable<T extends BaseRecord>({
         });
     }
 
+    //Retrieve the beneficiary data
     const beneficiaryIds = data.map((contract) => contract.beneficiary);
 
     const { data: beneficiaryMany } = useMany<Beneficiary>({
@@ -171,57 +177,63 @@ function ContractTable<T extends BaseRecord>({
         tableQueryResult.refetch();
     };
 
+
     return (
         <Stack spacing={elementSpacing} style={{ height: "100%", width:"100%", ...style}}>
-            <Group
-                spacing="xs"
-                position={searchBarPosition}
-                style={styles?.searchBar}
-            >
-                <TextInput
-                    placeholder={searchPlaceHolder}
-                    icon={<IconSearch size={14} stroke={1.5} />}
-                    style={styles?.input}
-                    value={search}
-                    onChange={(event) => setSearch(event.currentTarget.value)}
-                />
+            {(withAddIcon || withReloadIcon || extraButtons || !withoutSearch) && (
+                <Group
+                    spacing="xs"
+                    position={searchBarPosition}
+                    style={styles?.searchBar}
+                >
+                    {/* Ajout du champ de recherche si withoutSearch n'est pas défini*/}
+                    {!withoutSearch && (
+                        <TextInput
+                            placeholder={searchPlaceHolder}
+                            icon={<IconSearch size={14} stroke={1.5} />}
+                            style={styles?.input}
+                            value={search}
+                            onChange={(event) => setSearch(event.currentTarget.value)}
+                        />
+                    )}
 
-                {/* Ajout des boutons d'ajout et de refresh si demandé par l'utilisateur*/}
-                {(withAddIcon || withReloadIcon || extraButtons) && (
-                    <Group style={{ alignItems: "center", ...styles?.buttons }}>
-                        {/* Ajout du selector si demandé par l'utilisateur*/}
-                        {categoriesSelector}
+                    {/* Ajout des boutons d'ajout et de refresh si demandé par l'utilisateur*/}
+                    {(withAddIcon || withReloadIcon || extraButtons) && (
+                        <Group style={{ alignItems: "center", ...styles?.buttons }}>
+                            {/* Ajout du selector si demandé par l'utilisateur*/}
+                            {categoriesSelector}
 
-                        {extraButtons}
+                            {extraButtons}
 
-                        {withAddIcon && (
-                            <Tooltip label={"Nouveau"} position={"bottom"} openDelay={200} >
-                                <ActionIcon
-                                    style={{ flex: "initial" }}
-                                    size={33}
-                                    color="green"
-                                    onClick={() => addCallback ? addCallback() : ""}
-                                >
-                                    <IconCirclePlus size={33} />
-                                </ActionIcon>
-                            </Tooltip>
-                        )}
+                            {withAddIcon && (
+                                <Tooltip label={"Nouveau"} position={"bottom"} openDelay={200} >
+                                    <ActionIcon
+                                        style={{ flex: "initial" }}
+                                        size={33}
+                                        color="green"
+                                        onClick={() => addCallback ? addCallback() : ""}
+                                    >
+                                        <IconCirclePlus size={33} />
+                                    </ActionIcon>
+                                </Tooltip>
+                            )}
 
-                        {withReloadIcon && (
-                            <Tooltip label={"Rafraichir"} position={"bottom"} openDelay={200} >
-                                <ActionIcon
-                                    style={{ flex: "initial" }}
-                                    size={33}
-                                    color="blue"
-                                    onClick={() => reloadCallback()}
-                                >
-                                    <IconRefresh size={33} />
-                                </ActionIcon>
-                            </Tooltip>
-                        )}
-                    </Group>
-                )}
-            </Group>
+                            {withReloadIcon && (
+                                <Tooltip label={"Rafraichir"} position={"bottom"} openDelay={200} >
+                                    <ActionIcon
+                                        style={{ flex: "initial" }}
+                                        size={33}
+                                        color="blue"
+                                        onClick={() => reloadCallback()}
+                                    >
+                                        <IconRefresh size={33} />
+                                    </ActionIcon>
+                                </Tooltip>
+                            )}
+                        </Group>
+                    )}
+                </Group>
+            )}
 
             {secondBarNodes}
 
@@ -241,9 +253,9 @@ function ContractTable<T extends BaseRecord>({
                     sortStatus={sortStatus as DataTableSortStatus}
                     onSortStatusChange={setSortStatus}
                     totalRecords={tableQueryResult.data?.total ?? 0}
-                    page={currentPage}
+                    page={(data.length==0 )? undefined : currentPage }
                     onPageChange={setCurrentPage}
-                    recordsPerPage={pageSize}
+                    recordsPerPage={apiPageSize}
                     style={styles?.datatable}
                     {...othersProps}
                 />

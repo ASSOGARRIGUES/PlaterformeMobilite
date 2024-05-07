@@ -5,6 +5,8 @@ export const mapOperator = (operator: CrudOperators): string => {
     case "ne":
     case "gte":
     case "lte":
+    case "lt":
+    case "gt":
     case "in":
       return `__${operator}`;
     case "contains":

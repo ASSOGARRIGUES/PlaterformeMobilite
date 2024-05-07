@@ -5,7 +5,6 @@ import React, {CSSProperties, useEffect, useState} from "react";
 import {DataTableColumn} from "mantine-datatable/dist/types/DataTableColumn";
 import {DataTableProps} from "mantine-datatable/dist/types";
 import {BaseRecord, CrudFilters, HttpError, useParsed, useTable} from "@refinedev/core";
-import {Beneficiary} from "../types/beneficiary";
 import {PAGE_SIZE} from "../constants";
 import {useDebouncedValue} from "@mantine/hooks";
 
@@ -43,10 +42,12 @@ type SearchableDataTableProps<T> = {
     secondBarNodes?: any,
     style?: CSSProperties;
     defaultFilters?: CrudFilters;
+    withoutSearch?: boolean;
+    pageSize?: number;
     othersProps?: DataTableProps<T>
 }
 
-function SearchableDataTable<T extends BaseRecord>({searchPlaceHolder, columns , defaultSortedColumn, styles, elementSpacing="xs", searchBarPosition = "apart", withAddIcon, withReloadIcon, addCallback, extraButtons, categoriesSelector, secondBarNodes, style, defaultFilters, ...othersProps}: SearchableDataTableProps<T>)
+function SearchableDataTable<T extends BaseRecord>({searchPlaceHolder, columns , defaultSortedColumn, styles, elementSpacing="xs", searchBarPosition = "apart", withAddIcon, withReloadIcon, addCallback, extraButtons, categoriesSelector, secondBarNodes, style, defaultFilters,withoutSearch, pageSize = PAGE_SIZE, ...othersProps}: SearchableDataTableProps<T>)
 {
     const [sortStatus, setSortStatus] = useState({ columnAccessor: (defaultSortedColumn ? defaultSortedColumn : columns[0].accessor as keyof T), direction: 'asc' as 'asc' | 'desc'});
 
@@ -62,12 +63,12 @@ function SearchableDataTable<T extends BaseRecord>({searchPlaceHolder, columns ,
         tableQueryResult,
         current: currentPage,
         setCurrent: setCurrentPage,
-        pageSize,
+        pageSize: apiPageSize,
         setSorters,
         setFilters,
     } = useTable<T, HttpError>({
         syncWithLocation: true,
-        pagination: {pageSize: PAGE_SIZE},
+        pagination: {pageSize: pageSize},
         sorters: {initial: [{field: String(sortStatus.columnAccessor), order: sortStatus.direction}]},
         filters: {
             initial: [{ field: "search", operator: "eq", value: search }],
@@ -102,44 +103,52 @@ function SearchableDataTable<T extends BaseRecord>({searchPlaceHolder, columns ,
 
     return (
         <Stack spacing={elementSpacing} style={{ height: "100%", width:"100%", ...style}}>
-            <Group spacing="xs" position={searchBarPosition} style={styles?.searchBar}>
-                <TextInput
-                    placeholder={searchPlaceHolder}
+            {(withAddIcon || withReloadIcon || extraButtons || !withoutSearch) && (
+                <Group
+                    spacing="xs"
+                    position={searchBarPosition}
+                    style={styles?.searchBar}
+                >
+                    {/* Ajout du champ de recherche si withoutSearch n'est pas défini*/}
+                    {!withoutSearch && (
+                        <TextInput
+                            placeholder={searchPlaceHolder}
+                            icon={<IconSearch size={14} stroke={1.5} />}
+                            style={styles?.input}
+                            value={search}
+                            onChange={(event) => setSearch(event.currentTarget.value)}
+                        />
+                    )}
 
-                    icon={<IconSearch size={14} stroke={1.5} />}
-                    style = {styles?.input}
-                    value={search}
-                    onChange={(event) => setSearch(event.currentTarget.value)}
-                />
+                    {/* Ajout des boutons d'ajout et de refresh si demandé par l'utilisateur*/}
+                    {(withAddIcon || withReloadIcon || extraButtons) && (
+                        <Group style={{alignItems: "center", ...styles?.buttons}}>
+                            {/* Ajout du selector si demandé par l'utilisateur*/}
+                            {categoriesSelector}
 
-                {/* Ajout des boutons d'ajout et de refresh si demandé par l'utilisateur*/}
-                {(withAddIcon || withReloadIcon || extraButtons) && (
-                    <Group style={{alignItems: "center", ...styles?.buttons}}>
-                        {/* Ajout du selector si demandé par l'utilisateur*/}
-                        {categoriesSelector}
+                            {extraButtons}
 
-                        {extraButtons}
+                            {withAddIcon && (
+                                <Tooltip label={"Nouveau"} position={"bottom"} openDelay={200} >
+                                    <ActionIcon  style={{flex:"initial"}} size={33} color = "green" onClick={()=>addCallback ? addCallback() : ""}>
+                                        <IconCirclePlus size={33}/>
+                                    </ActionIcon>
+                                </Tooltip>
+                            )}
 
-                        {withAddIcon && (
-                            <Tooltip label={"Nouveau"} position={"bottom"} openDelay={200} >
-                                <ActionIcon  style={{flex:"initial"}} size={33} color = "green" onClick={()=>addCallback ? addCallback() : ""}>
-                                    <IconCirclePlus size={33}/>
-                                </ActionIcon>
-                            </Tooltip>
-                        )}
+                            {withReloadIcon && (
+                                <Tooltip label={"Rafraichir"} position={"bottom"} openDelay={200} >
+                                    <ActionIcon style={{flex:"initial"}} size={33} color = "blue" onClick={()=>reloadCallback()}>
+                                        <IconRefresh size={33}/>
+                                    </ActionIcon>
+                                </Tooltip>
+                            )}
 
-                        {withReloadIcon && (
-                            <Tooltip label={"Rafraichir"} position={"bottom"} openDelay={200} >
-                                <ActionIcon style={{flex:"initial"}} size={33} color = "blue" onClick={()=>reloadCallback()}>
-                                    <IconRefresh size={33}/>
-                                </ActionIcon>
-                            </Tooltip>
-                        )}
+                        </Group>
+                    )}
 
-                    </Group>
-                )}
-
-            </Group>
+                </Group>
+            )}
 
             {secondBarNodes}
 
@@ -160,7 +169,7 @@ function SearchableDataTable<T extends BaseRecord>({searchPlaceHolder, columns ,
                     totalRecords={tableQueryResult.data?.total ?? 0}
                     page={currentPage}
                     onPageChange={setCurrentPage}
-                    recordsPerPage={pageSize}
+                    recordsPerPage={apiPageSize}
 
                     style = {styles?.datatable}
 

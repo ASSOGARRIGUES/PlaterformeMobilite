@@ -3,6 +3,7 @@ import axios from "axios";
 import {TokenCreate} from "../types/auth";
 import {ACCESS_TOKEN_KEY, API_URL, REFRESH_TOKEN_KEY} from "../constants";
 import {AuthActionResponse} from "@refinedev/core/dist/contexts/auth/types";
+import {axiosInstance} from "./rest-data-provider/utils";
 
 
 
@@ -143,11 +144,18 @@ export const authProvider: AuthProvider = {
   },
 
   getIdentity: async (params) => {
-    console.log("getIdentity", params);
+    const {data} = await axiosInstance["get"](`${API_URL}/whoami/`)
 
-    // TODO: send request to the API to get identity
+    if (!data) {
+      return undefined;
+    }
 
-    return {};
+    return {
+        id: data.id,
+        fullName: data.full_name,
+        email: data.email,
+        avatar: data.avatar,
+    };
   },
 
 
