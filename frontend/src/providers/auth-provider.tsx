@@ -7,10 +7,10 @@ import {AuthActionResponse} from "@refinedev/core/dist/contexts/auth/types";
 
 
 export const authProvider: AuthProvider = {
-  login: async ({username, password}) => {
+  login: async ({email, password}) => {
     // Query /token endpoint with username and password
     try {
-      const {data} = await axios.post<any, TokenCreate, TokenCreate>(`${API_URL}/token/`, {username, password});
+      const {data} = await axios.post<any, TokenCreate, TokenCreate>(`${API_URL}/token/`, {email, password});
 
       // Save the token to the local storage
       localStorage.setItem(ACCESS_TOKEN_KEY, data.access);

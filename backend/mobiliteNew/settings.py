@@ -152,6 +152,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+PASSWORD_RESET_TIMEOUT = 3600*24 # 24 hours
+LOGIN_URL = BASE_URL + "/login"
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/

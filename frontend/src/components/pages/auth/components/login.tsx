@@ -62,12 +62,12 @@ export const LoginPage: React.FC<LoginProps> = ({
 
   const form = useForm({
     initialValues: {
-      username: "",
+      email: "",
       password: "",
       remember: false,
     },
     validate: {
-      username: (value: any) => value === "",
+      email: (value: any) => value === "",
       password: (value: any) => value === "",
     },
     ...useFormProps,
@@ -145,7 +145,9 @@ export const LoginPage: React.FC<LoginProps> = ({
 
               login(values, {
                 onSuccess: (data) => {
+                  // @ts-ignore
                   if(!data.success){
+                    // @ts-ignore
                     setLoginError(data.error.message);
                   }
                 }
@@ -157,11 +159,11 @@ export const LoginPage: React.FC<LoginProps> = ({
             </Text>
 
             <TextInput
-              name="username"
-              label={"Nom d'utilisateur"}
-              placeholder={"Nom d'utilisateur"}
-              autoComplete={"username"}
-              {...getInputProps("username")}
+              name="email"
+              label={"Adresse email"}
+              placeholder={"Adresse email"}
+              autoComplete={"email"}
+              {...getInputProps("email")}
             />
             <PasswordInput
               name="password"
