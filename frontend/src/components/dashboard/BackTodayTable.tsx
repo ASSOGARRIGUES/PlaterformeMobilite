@@ -67,7 +67,8 @@ const BackTodayTable = ({onlyForUser}: {onlyForUser?: WhoAmI} ) => {
             verticalSpacing="md"
             noRecordsText="Aucun retour aujourd'hui"
             permanentFilters={[{field: "end_date", operator: "lte", value: todayDate}, {field: "end_date", operator: "gte", value: todayDate}, ...userFilter]}
-            pageSize={4}
+            pageSize={3}
+            syncWithLocation={false}
         />
     );
 }

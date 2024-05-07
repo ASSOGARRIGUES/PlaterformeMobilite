@@ -67,7 +67,8 @@ const WaitingForPaymentTable = ({onlyForUser}: {onlyForUser?: WhoAmI} ) => {
             verticalSpacing="md"
             noRecordsText="Aucun contrat en attente de paiement."
             permanentFilters={[{field: "status", operator: "eq", value: ContractStatusEnum.over}, ...userFilter]}
-            pageSize={4}
+            pageSize={3}
+            syncWithLocation={false}
         />
     );
 }

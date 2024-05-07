@@ -86,6 +86,7 @@ const LateReturnTable = ({onlyForUser}: {onlyForUser?: WhoAmI} ) => {
             noRecordsText="Aucun contrat en retard"
             permanentFilters={[{field: "end_date", operator: "lt", value: todayDate}, {field: "status", operator: "eq", value: ContractStatusEnum.pending}, ...userFilter]}
             pageSize={4}
+            syncWithLocation={false}
         />
     );
 }

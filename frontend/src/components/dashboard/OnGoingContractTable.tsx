@@ -73,12 +73,13 @@ const OnGoingContractTable = ({onlyForUser}: {onlyForUser?: WhoAmI} ) => {
         <ContractTable
             searchPlaceHolder={"Rechercher un contrat"}
             columns={columns}
-            withoutSearch
+
             /*@ts-ignore*/
             verticalSpacing="md"
             noRecordsText="Vous n'êtes référent d'aucun contrat en cours"
             permanentFilters={[{field: "status", operator: "in", value: StatusConsideredOngoing}, ...userFilter]}
-            pageSize={4}
+            pageSize={6}
+            syncWithLocation={false}
         />
     );
 }
