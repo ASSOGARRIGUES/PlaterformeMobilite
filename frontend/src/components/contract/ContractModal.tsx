@@ -8,58 +8,21 @@ import "dayjs/locale/fr";
 import dayjs from "dayjs";
 import {ReasonEnum} from "../../types/schema.d";
 import {contractReasonLabelMap, DEBOUNCE_TIME} from "../../constants";
+import type {ContractModalReturnType} from "../../hooks/contract/useContractModalForm";
+
 
 
 const ContractModal : React.FC<
-    UseModalFormReturnType<BaseRecord, HttpError, ContractWritableFields>
+    ContractModalReturnType
 > = ({
          getInputProps,
+         getSelectProps,
          errors,
          modal: { visible, close, title },
          saveButtonProps,
          refineCore
      }) => {
 
-    const {selectProps: vehicleSelectProps, queryResult: {isFetching: isVehicleLoading}} = useSelect({
-        resource: "vehicle",
-        optionLabel: (vehicle) => `${vehicle.fleet_id} - ${vehicle.brand} ${vehicle.modele} - ${vehicle.imat}`,
-        filters:[{field: "status", operator: "in", value: ["available"]}],
-        onSearch: (value) => [
-            {
-                field: "search",
-                operator: "eq",
-                value,
-            },
-        ],
-        debounce: DEBOUNCE_TIME
-    })
-
-
-    const {selectProps: beneficiarySelectProps, queryResult: {isFetching: isBeneficiaryLoading}} = useSelect({
-        resource: "beneficiary",
-        optionLabel: (beneficiary) => `${beneficiary.first_name} ${beneficiary.last_name}`,
-        onSearch: (value) => [
-            {
-                field: "search",
-                operator: "eq",
-                value,
-            },
-        ],
-        debounce: DEBOUNCE_TIME,
-    })
-
-    const {selectProps: userSelectProps, queryResult: {isFetching: isUserLoading}} = useSelect({
-        resource: "user",
-        optionLabel: (user) => `${user.first_name} ${user.last_name}`,
-        onSearch: (value) => [
-            {
-                field: "search",
-                operator: "eq",
-                value,
-            },
-        ],
-        debounce: DEBOUNCE_TIME,
-    })
 
     const reasonOptions = Object.values(ReasonEnum).map((reason) => ({ value: reason, label: contractReasonLabelMap[reason] }));
 
@@ -73,6 +36,10 @@ const ContractModal : React.FC<
         startDateInputProps.onChange(dayjs(value[0]).format("YYYY-MM-DD"));
         endDateInputProps.onChange(dayjs(value[1]).format("YYYY-MM-DD"));
     }
+
+    const {isLoading: isBeneficiaryLoading, ...beneficiarySelectProps} = getSelectProps("beneficiary");
+    const {isLoading: isVehicleLoading, ...vehicleSelectProps} = getSelectProps("vehicle");
+    const {isLoading: isReferentLoading, ...referentSelectProps} = getSelectProps("referent");
 
 
     return (
@@ -92,7 +59,7 @@ const ContractModal : React.FC<
 
             <Select label="Motif" {...getInputProps("reason")} error={errors.reason} data={reasonOptions}/>
 
-            <Select label="Référent" {...getInputProps("referent")} error={errors.referent}  {...userSelectProps} rightSection={isUserLoading ? <Loader  size="xs" variant="bars"/>: undefined}/>
+            <Select label="Référent" {...getInputProps("referent")} error={errors.referent}  {...referentSelectProps} rightSection={isReferentLoading ? <Loader  size="xs" variant="bars"/>: undefined}/>
 
             <Box mt={8} sx={{ display: "flex", justifyContent: "flex-end" }}>
                 <SaveButton {...saveButtonProps} />
