@@ -148,7 +148,12 @@ export const LoginPage: React.FC<LoginProps> = ({
                   // @ts-ignore
                   if(!data.success){
                     // @ts-ignore
-                    setLoginError(data.error.message);
+                    if(data.error.message === "No active account found with the given credentials") {
+                      setLoginError("Identifiants incorrects. Veuillez réessayer.");
+                    }else{
+                      // @ts-ignore
+                      setLoginError(data.error.message);
+                    }
                   }
                 }
               });

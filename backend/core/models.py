@@ -10,6 +10,8 @@ class User(AbstractUser):
             "unique": _("A user with that email already exists."),
         },)
 
-    REQUIRED_FIELDS = ['phone', "first_name", "last_name"]
+    REQUIRED_FIELDS = ['phone', "first_name", "last_name", "username"]
     USERNAME_FIELD = "email"
+
+
 
