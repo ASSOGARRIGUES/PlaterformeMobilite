@@ -5,10 +5,6 @@ from django.contrib.auth import get_user_model
 from django.db.utils import IntegrityError
 
 user_model = get_user_model()
-
-print(environ["DEFAULT_SUPER_USER"],
-      environ["DEFAULT_SUPER_EMAIL"],
-      environ["DEFAULT_SUPER_PASSWORD"],)
 def create_super():
     try:
         user_model.objects.create_superuser(
