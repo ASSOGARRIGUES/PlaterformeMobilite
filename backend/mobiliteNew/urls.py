@@ -23,6 +23,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    path('admin/', include('core.urls')),
     path('admin/', admin.site.urls),
     path("status/", include("health_check.urls")),
     path('api/', include('api.urls')),
@@ -34,7 +35,6 @@ urlpatterns = [
         "api/token/refresh/", jwt_views.TokenRefreshView.as_view(), name="token_refresh"
     ),
     path('api-schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('', include('core.urls')),
 ]
 
 if settings.DEBUG:
