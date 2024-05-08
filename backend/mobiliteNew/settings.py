@@ -21,8 +21,6 @@ load_dotenv(".env")
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -63,6 +61,7 @@ INSTALLED_APPS = [
     'core',
     'api',
     'drf_spectacular',
+    'dbbackup',
 ]
 
 MIDDLEWARE = [
@@ -79,7 +78,6 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'mobiliteNew.urls'
 
 AUTH_USER_MODEL = "core.User"
-
 
 TEMPLATES = [
     {
@@ -215,3 +213,8 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 }
+
+
+#Backup
+DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
+DBBACKUP_STORAGE_OPTIONS = {'location': os.path.join(BASE_DIR, 'db_backups')}

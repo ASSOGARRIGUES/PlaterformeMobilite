@@ -18,6 +18,7 @@ services:
     volumes:
       - staticfiles:/backend/static
       - mediafiles:/backend/media
+      - ./db_backups:/backend/db_backups
 
   nginx:
     container_name: "mobilite-nginx"
