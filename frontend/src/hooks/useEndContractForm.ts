@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {FormErrors, useForm} from "@mantine/form";
 import {GetInputProps, IsValid} from "@mantine/form/lib/types";
-import {BaseKey, useApiUrl, useForm as useRefineForm} from "@refinedev/core";
+import {BaseKey, useForm as useRefineForm} from "@refinedev/core";
 import {EndContract, EndContractWritableFields} from "../types/contract";
 
 
@@ -21,10 +21,6 @@ export type UseEndContractFormType = {
 const useEndContractForm = (): UseEndContractFormType => {
     const[modaVisible, setModalVisible] = useState(false);
     const modalTitle = "Clôturer un contrat";
-
-    // const [id, setId] = useState<BaseKey | undefined>(undefined);
-
-    const apiUrl = useApiUrl();
 
     const {onFinish, queryResult, setId} = useRefineForm({
         resource: "contract",
