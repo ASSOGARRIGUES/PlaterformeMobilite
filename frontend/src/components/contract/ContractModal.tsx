@@ -8,58 +8,21 @@ import "dayjs/locale/fr";
 import dayjs from "dayjs";
 import {ReasonEnum} from "../../types/schema.d";
 import {contractReasonLabelMap, DEBOUNCE_TIME} from "../../constants";
+import type {ContractModalReturnType} from "../../hooks/contract/useContractModalForm";
+
 
 
 const ContractModal : React.FC<
-    UseModalFormReturnType<BaseRecord, HttpError, ContractWritableFields>
+    ContractModalReturnType
 > = ({
          getInputProps,
+         getSelectProps,
          errors,
          modal: { visible, close, title },
          saveButtonProps,
          refineCore
      }) => {
 
-    const {selectProps: vehicleSelectProps, queryResult: {isFetching: isVehicleLoading}} = useSelect({
-        resource: "vehicle",
-        optionLabel: (vehicle) => `${vehicle.fleet_id} - ${vehicle.brand} ${vehicle.modele} - ${vehicle.imat}`,
-        filters:[{field: "status", operator: "in", value: ["available"]}],
-        onSearch: (value) => [
-            {
-                field: "search",
-                operator: "eq",
-                value,
-            },
-        ],
-        debounce: DEBOUNCE_TIME
-    })
-
-
-    const {selectProps: beneficiarySelectProps, queryResult: {isFetching: isBeneficiaryLoading}} = useSelect({
-        resource: "beneficiary",
-        optionLabel: (beneficiary) => `${beneficiary.first_name} ${beneficiary.last_name}`,
-        onSearch: (value) => [
-            {
-                field: "search",
-                operator: "eq",
-                value,
-            },
-        ],
-        debounce: DEBOUNCE_TIME,
-    })
-
-    const {selectProps: userSelectProps, queryResult: {isFetching: isUserLoading}} = useSelect({
-        resource: "user",
-        optionLabel: (user) => `${user.first_name} ${user.last_name}`,
-        onSearch: (value) => [
-            {
-                field: "search",
-                operator: "eq",
-                value,
-            },
-        ],
-        debounce: DEBOUNCE_TIME,
-    })
 
     const reasonOptions = Object.values(ReasonEnum).map((reason) => ({ value: reason, label: contractReasonLabelMap[reason] }));
 
@@ -74,14 +37,18 @@ const ContractModal : React.FC<
         endDateInputProps.onChange(dayjs(value[1]).format("YYYY-MM-DD"));
     }
 
+    const beneficiarySelectProps = getSelectProps("beneficiary");
+    const vehicleSelectProps = getSelectProps("vehicle");
+    const userSelectProps = getSelectProps("referent");
+
 
     return (
         <Modal opened={visible} onClose={close} title={title}>
             <LoadingOverlay visible={refineCore.formLoading} overlayBlur={2} />
 
-            <Select label="Bénéficiaire" {...getInputProps("beneficiary")} error={errors.beneficiary}  {...beneficiarySelectProps}  rightSection={isBeneficiaryLoading ? <Loader  size="xs" variant="bars"/>: undefined}/>
+            <Select label="Bénéficiaire" {...getInputProps("beneficiary")} error={errors.beneficiary}  {...beneficiarySelectProps}  rightSection={beneficiarySelectProps.isLoading ? <Loader  size="xs" variant="bars"/>: undefined}/>
 
-            <Select label="Véhicule" {...getInputProps("vehicle")} error={errors.vehicle}  {...vehicleSelectProps} rightSection={isVehicleLoading ? <Loader  size="xs" variant="bars"/>: undefined}/>
+            <Select label="Véhicule" {...getInputProps("vehicle")} error={errors.vehicle}  {...vehicleSelectProps} rightSection={vehicleSelectProps.isLoading ? <Loader  size="xs" variant="bars"/>: undefined}/>
 
             <DateRangePicker locale="fr" label="Période du contrat" inputFormat="DD MMMM YYYY" labelFormat="DD-MM-YYYY" value={dateValue} onChange={handleDateChange} error={errors.start_date} placeholder="Début" />
 
@@ -92,7 +59,7 @@ const ContractModal : React.FC<
 
             <Select label="Motif" {...getInputProps("reason")} error={errors.reason} data={reasonOptions}/>
 
-            <Select label="Référent" {...getInputProps("referent")} error={errors.referent}  {...userSelectProps} rightSection={isUserLoading ? <Loader  size="xs" variant="bars"/>: undefined}/>
+            <Select label="Référent" {...getInputProps("referent")} error={errors.referent}  {...userSelectProps} rightSection={userSelectProps.isLoading ? <Loader  size="xs" variant="bars"/>: undefined}/>
 
             <Box mt={8} sx={{ display: "flex", justifyContent: "flex-end" }}>
                 <SaveButton {...saveButtonProps} />
