@@ -23,6 +23,7 @@ const ContractModal : React.FC<
     const {selectProps: vehicleSelectProps, queryResult: {isFetching: isVehicleLoading}} = useSelect({
         resource: "vehicle",
         optionLabel: (vehicle) => `${vehicle.fleet_id} - ${vehicle.brand} ${vehicle.modele} - ${vehicle.imat}`,
+        filters:[{field: "status", operator: "in", value: ["available"]}],
         onSearch: (value) => [
             {
                 field: "search",

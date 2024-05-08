@@ -13,6 +13,7 @@ import {Beneficiary} from "../../types/beneficiary";
 import {useGetToPath, useGo} from "@refinedev/core";
 import useVehicleModalForm from "../../hooks/vehicle/useVehicleModalForm";
 import EditButton from "../../components/EditButton";
+import VehicleStatusBadge from "../../components/Vehicle/VehicleStatusBadge";
 
 
 const VehicleList = () => {
@@ -61,6 +62,12 @@ const VehicleList = () => {
                 accessor: 'imat',
                 title: 'IMMAT',
                 sortable: true,
+            },
+             {
+                accessor: 'status',
+                title: 'Statut',
+                sortable: true,
+                 render:(vehicle) => (<VehicleStatusBadge vehicle={vehicle}/>)
             },
             {
                 accessor: "actions",

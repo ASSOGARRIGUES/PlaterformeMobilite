@@ -19,6 +19,7 @@ import carIcon from "../../assets/car.svg";
 import {VehicleStatusEnum} from "../../types/schema.d";
 import {CSSProperties} from "react";
 import {humanizeNumber} from "../../constants";
+import VehicleStatusBadge from "./VehicleStatusBadge";
 
 const VehicleCard = ({vehicle, withEdit=false, title="Informations", style}: {vehicle: Vehicle | undefined, withEdit?: boolean, title?:string, style?:CSSProperties}) => {
 
@@ -54,6 +55,7 @@ const VehicleCard = ({vehicle, withEdit=false, title="Informations", style}: {ve
             </Avatar>
             <SimpleGrid cols={2} verticalSpacing={0}>
                 <Text><span style={{fontWeight: "bold"}}>Numéro de flotte: </span> {vehicle?.fleet_id}</Text>
+                <Text><span style={{fontWeight: "bold"}}>Statut: </span> <VehicleStatusBadge vehicle={vehicle}/></Text>
                 <Text><span style={{fontWeight: "bold"}}>Type: </span> {vehicle?.type}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Marque: </span> {vehicle?.brand}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Modèle: </span> {vehicle?.modele}</Text>
@@ -62,7 +64,6 @@ const VehicleCard = ({vehicle, withEdit=false, title="Informations", style}: {ve
                 <Text><span style={{fontWeight: "bold"}}>Kilométrage: </span> {humanizeNumber(vehicle?.kilometer)}km</Text>
                 <Text><span style={{fontWeight: "bold"}}>Transmission: </span> {vehicle?.transmission}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Carburant: </span> {vehicle?.fuel_type}</Text>
-                <Text><span style={{fontWeight: "bold"}}>Statut: </span> {VehicleStatusEnum[vehicle?.status as VehicleStatusEnum]}</Text>
 
             </SimpleGrid>
         </Group>

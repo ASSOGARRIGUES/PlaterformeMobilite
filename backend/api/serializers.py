@@ -31,7 +31,15 @@ class ContractSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data['created_by'] = self.context['request'].user
-        return super().create(validated_data)
+        contract = super().create(validated_data)
+        contract.vehicle.status = 'rented'
+        contract.vehicle.save()
+        return contract
+
+    def validate_vehicle(self, value):
+        if value.status != 'available':
+            raise serializers.ValidationError("Le véhicule n'est pas disponible")
+        return value
 
 
 class EndContractSerializer(serializers.ModelSerializer):

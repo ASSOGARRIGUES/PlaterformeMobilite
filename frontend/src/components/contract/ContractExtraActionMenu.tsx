@@ -30,19 +30,19 @@ const ContractExtraActionMenu = ({contract, showEndModal}: {contract: Contract |
     };
 
     const endContractItem = (
-        <Menu.Item onClick={() => {showEndModal(contract.id)}}>
+        <Menu.Item onClick={(e) => {e.stopPropagation(); showEndModal(contract.id)}}>
             Clôturer
         </Menu.Item>
     )
 
     const payContractItem = (
-        <Menu.Item onClick={openModal}>
+        <Menu.Item onClick={(e)=>{e.stopPropagation(); openModal}}>
             Marquer comme payé
         </Menu.Item>
     )
 
     const getContractPDFItem = (
-        <Menu.Item component="a" href={`${apiUrl}/${resource?.name}/${contract.id}/get_contract_pdf/`} target="_blank">
+        <Menu.Item component="a" href={`${apiUrl}/${resource?.name}/${contract.id}/get_contract_pdf/`} target="_blank" onClick={(e)=>e.stopPropagation()}>
             Télécharger le contrat
         </Menu.Item>
     )
@@ -51,7 +51,7 @@ const ContractExtraActionMenu = ({contract, showEndModal}: {contract: Contract |
     return (
         <Menu>
             <Menu.Target>
-                <ActionIcon color="blue">
+                <ActionIcon color="blue" onClick={(e)=>e.stopPropagation()}>
                     <IconDots size={25} />
                 </ActionIcon>
             </Menu.Target>

@@ -23,7 +23,8 @@ class VehicleViewSet(viewsets.ModelViewSet):
     filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]
     search_fields = ['brand', 'fleet_id', 'fuel_type', 'imat', 'kilometer', 'modele', 'status', 'transmission', 'type', 'year']
     filterset_fields = {
-        'fleet_id': ["in", "exact"]
+        'fleet_id': ["in", "exact"],
+        'status': ["in", "exact"],
     }
 
 
@@ -79,6 +80,7 @@ class ContractViewSet(viewsets.ModelViewSet):
                 contract.status = 'over'
                 contract.vehicle.kilometer = contract.end_kilometer
                 contract.ended_at = datetime.now()
+                contract.vehicle.status = 'available'
                 contract.save()
                 contract.vehicle.save()
                 return Response(serializer.data, status=200)

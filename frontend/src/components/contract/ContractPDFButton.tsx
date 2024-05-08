@@ -20,6 +20,7 @@ const ContractPDFButton = ({contract, variant="icon"}: {contract: Contract | Com
                 href = {`${apiUrl}/${resource}/${contract.id}/get_contract_pdf/`}
                 target = "_blank"
                 variant="outline"
+                onClick={(e)=>e.stopPropagation()}
             >
                  <img src = {ContractIcon} width="20px" style={{marginRight: 5}}/> Télécharger le contrat
             </Button>
@@ -31,6 +32,7 @@ const ContractPDFButton = ({contract, variant="icon"}: {contract: Contract | Com
                 href = {`${apiUrl}/${resource}/${contract.id}/get_contract_pdf/`}
                 target = "_blank"
                 color = "blue"
+                onClick={(e)=>e.stopPropagation()}
             >
                 <img src = {ContractIcon}/>
             </ActionIcon>

@@ -24,13 +24,14 @@ const BillPDFButton = ({contract, variant="icon"}: {contract: Contract | Complet
                 target="_blank"
                 variant="outline"
                 disabled={disabled}
+                onClick={(e)=>e.stopPropagation()}
             >
                 <IconCurrencyEuro color="black" style={{width:20, height:"auto", marginRight:5}} /> Télécharger la facture
             </Button>
         )
     }else{
         content = (
-            <ActionIcon style={{width:"100%"}} component="a" href={`${apiUrl}/${resource}/${contract.id}/get_bill_pdf/`} target="_blank" color="blue" disabled={disabled}>
+            <ActionIcon style={{width:"100%"}} component="a" href={`${apiUrl}/${resource}/${contract.id}/get_bill_pdf/`} target="_blank" color="blue" disabled={disabled} onClick={(e)=>e.stopPropagation()}>
                 <IconCurrencyEuro color="black" style={{width:29, height:"auto", backgroundColor: "rgba(1,1,1,0)"}} />
             </ActionIcon>
         )
