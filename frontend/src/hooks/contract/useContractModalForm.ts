@@ -168,7 +168,7 @@ const useContractModalForm = ({action, redirect=false}: {action: FormAction | un
         resource: "beneficiary",
         optionLabel: (beneficiary) => `${beneficiary.first_name} ${beneficiary.last_name}`,
 
-        onSearch: (value) => {console.log("search benef",value); return  [
+        onSearch: (value) => {return  [
             {
                 field: "search",
                 operator: "eq",
