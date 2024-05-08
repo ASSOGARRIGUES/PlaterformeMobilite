@@ -20,8 +20,6 @@ axiosInstance.interceptors.response.use(
       return response;
     },
     async (error) => {
-      console.log(error)
-
 
       let customError: HttpError = {
         ...error,

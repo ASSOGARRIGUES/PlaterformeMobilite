@@ -87,7 +87,6 @@ export const authProvider: AuthProvider = {
     try {
       console.log("refreshing token")
       const {data} = await axios.post<any, TokenCreate, TokenCreate>(`${API_URL}/token/refresh/`, {refresh: refreshToken});
-      console.log(data)
 
       localStorage.setItem(ACCESS_TOKEN_KEY, data.access);
 

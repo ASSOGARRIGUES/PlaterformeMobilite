@@ -275,7 +275,7 @@ function ContractTable<T extends BaseRecord>({
                     sortStatus={sortStatus as DataTableSortStatus}
                     onSortStatusChange={setSortStatus}
                     totalRecords={tableQueryResult.data?.total ?? 0}
-                    page={(data.length==0 )? undefined : currentPage }
+                    page={((data.length==0 )? undefined : currentPage ) as number}
                     onPageChange={setCurrentPage}
                     recordsPerPage={apiPageSize}
                     style={styles?.datatable}
