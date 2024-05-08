@@ -82,7 +82,7 @@ class Contract(models.Model):
         ('part_time', 'Alternance'),
     )
 
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='contracts')
     beneficiary = models.ForeignKey(Beneficiary, on_delete=models.CASCADE)
     start_date = models.DateField()
     end_date = models.DateField()

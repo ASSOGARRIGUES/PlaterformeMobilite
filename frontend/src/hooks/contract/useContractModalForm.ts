@@ -1,10 +1,11 @@
-import {FormAction,RedirectAction} from "@refinedev/core";
+import {BaseKey, CrudFilters, FormAction, RedirectAction} from "@refinedev/core";
 import {ContractWritableFields} from "../../types/contract";
 import {BlankEnum, ReasonEnum} from "../../types/schema.d";
 import {useModalForm, UseSelectReturnType,UseModalFormReturnType, useSelect} from "@refinedev/mantine";
 import {FormValidateInput, LooseKeys} from "@mantine/form/lib/types";
 import {BaseRecord, HttpError} from "@refinedev/core/dist";
 import {DEBOUNCE_TIME} from "../../constants";
+import {useEffect, useState} from "react";
 
 //Building a GetSelectProps function to get the selectProps of a specific field just as the getInputProps function does
 export type ContractGetSelectPropsFields<Values> = <Field extends LooseKeys<Values>>(path: Field) => UseSelectReturnType["selectProps"] & {isLoading: boolean};
@@ -18,6 +19,8 @@ export type ContractSelectableFields = Pick<ContractWritableFields, "vehicle" | 
 export type ContractModalReturnType = UseModalFormReturnType<BaseRecord, HttpError, ContractWritableFields> & {getSelectProps: ContractGetSelectPropsFields<ContractSelectableFields>};
 
 const useContractModalForm = ({action, redirect=false}: {action: FormAction | undefined, redirect?:RedirectAction | undefined}) => {
+
+
     const initialValues: ContractWritableFields = {
         vehicle: 0,
         beneficiary: 0,
@@ -91,23 +94,70 @@ const useContractModalForm = ({action, redirect=false}: {action: FormAction | un
     }
 
     /*
+        ################
+        #  MODAL FORM  #
+        ################
+        */
+
+    let modalForm = useModalForm({
+        refineCoreProps: {
+            resource:"contract",
+            action: action,
+            redirect: redirect,
+
+        },
+        initialValues,
+        validate: validate,
+        validateInputOnBlur: true,
+        transformValues: (values) => ({
+          ...values,
+            vehicle: action!=="edit" ? values.vehicle : undefined,
+            beneficiary: action!=="edit" ? values.beneficiary : undefined,
+        })
+    }) as ContractModalReturnType;
+
+
+    //update the vehicle filters when the contract id changes
+    useEffect(() => {
+
+
+        if(action === "edit"){
+            if(!modalForm.refineCore.id)
+                return
+
+            setVehicleFilters([{field: "contracts", operator: "eq", value: modalForm.refineCore.id}]);
+        }else{
+            setVehicleFilters([{field: "status", operator: "in", value: ["available"]}]);
+        }
+
+
+    }, [modalForm.refineCore.id, action]);
+
+
+    /*
         ##############
         #  VEHICLE   #
         ##############
      */
-     const {selectProps: vehicleSelectProps, queryResult: {isFetching: isVehicleLoading}} = useSelect({
+    const [vehicleFilters, setVehicleFilters] = useState<CrudFilters>([]);
+
+    const {selectProps: vehicleSelectProps, queryResult: {isFetching: isVehicleLoading}, } = useSelect({
         resource: "vehicle",
         optionLabel: (vehicle) => `${vehicle.fleet_id} - ${vehicle.brand} ${vehicle.modele} - ${vehicle.imat}`,
-        filters:[{field: "status", operator: "in", value: ["available"]}],
-        onSearch: (value) => [
+        filters:vehicleFilters,
+        onSearch: (value) => {return [
             {
                 field: "search",
                 operator: "eq",
                 value,
             },
-        ],
+        ]},
         debounce: DEBOUNCE_TIME
     })
+
+
+    //Disable the vehicle select if the action is edit
+    vehicleSelectProps.disabled = action === "edit";
 
     /*
         ##################
@@ -117,15 +167,21 @@ const useContractModalForm = ({action, redirect=false}: {action: FormAction | un
     const {selectProps: beneficiarySelectProps, queryResult: {isFetching: isBeneficiaryLoading}} = useSelect({
         resource: "beneficiary",
         optionLabel: (beneficiary) => `${beneficiary.first_name} ${beneficiary.last_name}`,
-        onSearch: (value) => [
+
+        onSearch: (value) => {console.log("search benef",value); return  [
             {
                 field: "search",
                 operator: "eq",
                 value,
             },
-        ],
+        ]},
         debounce: DEBOUNCE_TIME,
     })
+
+
+    //Disable the beneficiary select if the action is edit
+    beneficiarySelectProps.disabled = action === "edit";
+
 
     /*
         ###############
@@ -145,18 +201,8 @@ const useContractModalForm = ({action, redirect=false}: {action: FormAction | un
         debounce: DEBOUNCE_TIME,
     })
 
-    /*
-        ################
-        #  MODAL FORM  #
-        ################
-     */
 
-    let modalForm = useModalForm({
-        refineCoreProps: {resource:"contract", action: action, redirect: redirect},
-        initialValues,
-        validate: validate,
-        validateInputOnBlur: true,
-    }) as ContractModalReturnType;
+
 
 
 
@@ -177,6 +223,16 @@ const useContractModalForm = ({action, redirect=false}: {action: FormAction | un
                 throw new Error(`Field ${field} is not a select field of the form`);
         }
     }
+
+
+    // //Deep copy the modalForm.modal.show function to add retrieve the id of the record to show
+    // const modal = modalForm.modal;
+    // const show = modal["show"];
+    // const origShow = show;
+    // modal["show"] = (...args)=> {
+    //     console.log("ID ", args[0]);
+    //     return Reflect.apply(origShow, modal, args);
+    // }
 
 
     return modalForm;

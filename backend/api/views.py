@@ -10,6 +10,7 @@ from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.response import Response
 
+from .filters import VehicleFilter
 from .models import Vehicle, Beneficiary, Contract
 from .serializers import VehicleSerializer, BeneficiarySerializer, ContractSerializer, UserSerializer, \
     EndContractSerializer
@@ -22,11 +23,7 @@ class VehicleViewSet(viewsets.ModelViewSet):
 
     filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]
     search_fields = ['brand', 'fleet_id', 'fuel_type', 'imat', 'kilometer', 'modele', 'status', 'transmission', 'type', 'year']
-    filterset_fields = {
-        'fleet_id': ["in", "exact"],
-        'status': ["in", "exact"],
-    }
-
+    filterset_class = VehicleFilter
 
 class BeneficiaryViewSet(viewsets.ModelViewSet):
     queryset = Beneficiary.objects.all()
@@ -53,6 +50,7 @@ class ContractViewSet(viewsets.ModelViewSet):
         'start_date': ['gte', 'lte', 'gt', 'lt'],
         'end_date': ['gte', 'lte', 'gt', 'lt']
     }
+
 
     @action(detail=True, methods=['get'])
     def get_contract_pdf(self, request, pk=None):

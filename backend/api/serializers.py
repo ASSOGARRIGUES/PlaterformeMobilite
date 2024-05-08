@@ -30,6 +30,7 @@ class ContractSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
+        print("create contract serializer")
         validated_data['created_by'] = self.context['request'].user
         contract = super().create(validated_data)
         contract.vehicle.status = 'rented'
