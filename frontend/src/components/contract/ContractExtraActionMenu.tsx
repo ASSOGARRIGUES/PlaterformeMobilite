@@ -1,20 +1,22 @@
-import {Contract} from "../../types/contract";
+import {CompleteContract, Contract} from "../../types/contract";
 import {ActionIcon, Menu, Text} from "@mantine/core";
 import {IconDots} from "@tabler/icons-react";
 import {ContractStatusEnum} from "../../types/schema.d";
 import {useApiUrl, useResource, useInvalidate} from "@refinedev/core";
 import {openConfirmModal} from "@mantine/modals";
 import {axiosInstance} from "../../providers/rest-data-provider/utils";
+import usePayContract from "../../hooks/contract/usePayContract";
 
-const ContractExtraActionMenu = ({contract, showEndModal}: {contract: Contract,showEndModal: (id: number)=>any}) => {
+const ContractExtraActionMenu = ({contract, showEndModal}: {contract: Contract | CompleteContract,showEndModal: (id: number)=>any}) => {
 
     const apiUrl = useApiUrl();
     const {resource} = useResource()
 
     const invalidate = useInvalidate()
+    const {handlePayContract} = usePayContract()
 
 
-    const handlePayContract = async () => {
+    const openModal = async () => {
 
         openConfirmModal({
             title: "Marquer le contrat comme payé",
@@ -22,14 +24,7 @@ const ContractExtraActionMenu = ({contract, showEndModal}: {contract: Contract,s
                 <Text>Êtes-vous certain de vouloir marquer ce contrat comme payé ?</Text>
             ),
             labels: {confirm: "Oui", cancel: "Non"},
-            onConfirm: async () => {
-                await axiosInstance["post"](`${apiUrl}/${resource?.name}/${contract.id}/payed/`)
-                invalidate({
-                    resource: resource?.name,
-                    invalidates: ["detail", "list"],
-                    id: contract.id
-                })
-            }
+            onConfirm: () => {handlePayContract(contract.id)}
         });
 
     };
@@ -41,7 +36,7 @@ const ContractExtraActionMenu = ({contract, showEndModal}: {contract: Contract,s
     )
 
     const payContractItem = (
-        <Menu.Item onClick={handlePayContract}>
+        <Menu.Item onClick={openModal}>
             Marquer comme payé
         </Menu.Item>
     )

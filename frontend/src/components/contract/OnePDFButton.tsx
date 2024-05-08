@@ -1,9 +1,9 @@
-import {Contract} from "../../types/contract";
+import {CompleteContract, Contract} from "../../types/contract";
 import {ContractStatusEnum} from "../../types/schema.d";
 import BillPDFButton from "./BillPDFButton";
 import ContractPDFButton from "./ContractPDFButton";
 
-const OnePDFButton = ({contract}: {contract: Contract}) => {
+const OnePDFButton = ({contract}: {contract: Contract | CompleteContract}) => {
     return (
         contract.status === ContractStatusEnum.over ||  contract.status === ContractStatusEnum.payed ? <BillPDFButton contract={contract}/> : <ContractPDFButton contract={contract}/>
     )

@@ -4,12 +4,13 @@ import {DataTable, DataTableSortStatus} from "mantine-datatable";
 import React, {CSSProperties, useEffect, useState} from "react";
 import { DataTableColumn } from "mantine-datatable/dist/types/DataTableColumn";
 import { DataTableProps } from "mantine-datatable/dist/types";
-import {BaseRecord, CrudFilter, CrudFilters, HttpError, useParsed, useTable} from "@refinedev/core";
+import {BaseRecord, CrudFilter, CrudFilters, HttpError, useParsed, useResource, useTable} from "@refinedev/core";
 import { Beneficiary } from "../../types/beneficiary";
 import { PAGE_SIZE } from "../../constants";
 import { useDebouncedValue } from "@mantine/hooks";
-import { useMany } from "@refinedev/core";
+import { useMany, useGetToPath, useGo} from "@refinedev/core";
 import { Vehicle } from "../../types/vehicle";
+import {CompleteContract} from "../../types/contract";
 
 /*
 Ce composant donne une datable triable avec un champ de recherche et la logique de tri intégré.
@@ -77,6 +78,10 @@ function ContractTable<T extends BaseRecord>({
             : (columns[0].accessor as keyof T),
         direction: "asc" as "asc" | "desc",
     });
+
+    const go = useGo();
+    const getToPath = useGetToPath();
+    const {resource: contractResourceItem} = useResource("contract");
 
     const {params: urlParams} = useParsed()
     const urlSearch = urlParams?.filters?.find((filter: any) => filter.field === "search")?.value
@@ -178,6 +183,21 @@ function ContractTable<T extends BaseRecord>({
     };
 
 
+    const rowClickHandler = (contract: T, rowIndex: number) => {
+        const path = getToPath({
+            resource: contractResourceItem,
+            action: "show",
+            meta: {
+                id: contract.id
+            }
+        });
+
+        go({
+            to: path
+        });
+    }
+
+
     return (
         <Stack spacing={elementSpacing} style={{ height: "100%", width:"100%", ...style}}>
             {(withAddIcon || withReloadIcon || extraButtons || !withoutSearch) && (
@@ -257,6 +277,7 @@ function ContractTable<T extends BaseRecord>({
                     onPageChange={setCurrentPage}
                     recordsPerPage={apiPageSize}
                     style={styles?.datatable}
+                    onRowClick={rowClickHandler}
                     {...othersProps}
                 />
             </Box>

@@ -17,8 +17,10 @@ import useVehicleModalForm from "../../hooks/vehicle/useVehicleModalForm";
 import VehicleModal from "./VehicleModal";
 import carIcon from "../../assets/car.svg";
 import {VehicleStatusEnum} from "../../types/schema.d";
+import {CSSProperties} from "react";
+import {humanizeNumber} from "../../constants";
 
-const VehicleCard = ({vehicle, withEdit}: {vehicle: Vehicle | undefined, withEdit: boolean}) => {
+const VehicleCard = ({vehicle, withEdit=false, title="Informations", style}: {vehicle: Vehicle | undefined, withEdit?: boolean, title?:string, style?:CSSProperties}) => {
 
     const editModalForm = useVehicleModalForm({action: "edit"});
     const {modal: { show: showEditModal},  getInputProps} = editModalForm;
@@ -45,8 +47,8 @@ const VehicleCard = ({vehicle, withEdit}: {vehicle: Vehicle | undefined, withEdi
         </>
     )
 
-    const content = (
-        <Group align="start">
+    const content = vehicle ? (
+        <Group align="start" position="center">
             <Avatar src={vehicle?.photo} alt="it's me" size={120} radius={60} color={theme.colors.gray[1]}>
                 <Image src={carIcon} alt="Voiture"/>
             </Avatar>
@@ -57,23 +59,23 @@ const VehicleCard = ({vehicle, withEdit}: {vehicle: Vehicle | undefined, withEdi
                 <Text><span style={{fontWeight: "bold"}}>Modèle: </span> {vehicle?.modele}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Année: </span> {vehicle?.year}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Immatriculation: </span> {vehicle?.imat}</Text>
-                <Text><span style={{fontWeight: "bold"}}>Kilométrage: </span> {vehicle?.kilometer}</Text>
+                <Text><span style={{fontWeight: "bold"}}>Kilométrage: </span> {humanizeNumber(vehicle?.kilometer)}km</Text>
                 <Text><span style={{fontWeight: "bold"}}>Transmission: </span> {vehicle?.transmission}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Carburant: </span> {vehicle?.fuel_type}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Statut: </span> {VehicleStatusEnum[vehicle?.status as VehicleStatusEnum]}</Text>
 
             </SimpleGrid>
         </Group>
-    )
+    ): skeleton;
 
 
     return (
         <>
             <VehicleModal {...editModalForm}/>
 
-            <Paper shadow="sm" p="md">
+            <Paper shadow="sm" p="md" style={style}>
                 <Flex direction="column" align="center" gap="xs">
-                    <Title order={2}>Informations {edit}</Title>
+                    <Title order={2}>{title} {edit}</Title>
                     {vehicle ? content : skeleton}
                 </Flex>
             </Paper>

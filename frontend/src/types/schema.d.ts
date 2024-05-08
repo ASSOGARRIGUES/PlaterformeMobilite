@@ -309,6 +309,8 @@ export interface components {
             deposit: number;
             /** Format: int64 */
             discount?: number;
+            /** Format: date-time */
+            ended_at?: string | null;
             vehicle: number;
             beneficiary: number;
             referent: number;
@@ -434,6 +436,8 @@ export interface components {
             deposit?: number;
             /** Format: int64 */
             discount?: number;
+            /** Format: date-time */
+            ended_at?: string | null;
             vehicle?: number;
             beneficiary?: number;
             referent?: number;
@@ -757,7 +761,9 @@ export interface operations {
                 beneficiary?: number;
                 /** @description Les valeurs multiples doivent être séparées par des virgules. */
                 beneficiary__in?: number[];
+                end_date__gt?: string;
                 end_date__gte?: string;
+                end_date__lt?: string;
                 end_date__lte?: string;
                 /** @description Number of results to return per page. */
                 limit?: number;
@@ -770,7 +776,9 @@ export interface operations {
                 referent__in?: number[];
                 /** @description A search term. */
                 search?: string;
+                start_date__gt?: string;
                 start_date__gte?: string;
+                start_date__lt?: string;
                 start_date__lte?: string;
                 /** @description * `waiting` - En attente d'EDL
                  *     * `pending` - En cours
@@ -1534,7 +1542,7 @@ export enum PathsApiContractGetParametersQueryStatus {
     waiting = "waiting"
 }
 export enum BlankEnum {
-    ""
+     ""
 }
 export enum ContractStatusEnum {
     waiting = "waiting",

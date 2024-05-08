@@ -337,7 +337,17 @@ paths:
         explode: false
         style: form
       - in: query
+        name: end_date__gt
+        schema:
+          type: string
+          format: date
+      - in: query
         name: end_date__gte
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: end_date__lt
         schema:
           type: string
           format: date
@@ -384,7 +394,17 @@ paths:
         schema:
           type: string
       - in: query
+        name: start_date__gt
+        schema:
+          type: string
+          format: date
+      - in: query
         name: start_date__gte
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: start_date__lt
         schema:
           type: string
           format: date
@@ -1234,6 +1254,10 @@ components:
           maximum: 9223372036854775807
           minimum: -9223372036854775808
           format: int64
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
         vehicle:
           type: integer
         beneficiary:
@@ -1490,6 +1514,10 @@ components:
           maximum: 9223372036854775807
           minimum: -9223372036854775808
           format: int64
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
         vehicle:
           type: integer
         beneficiary:

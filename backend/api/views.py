@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -76,6 +78,7 @@ class ContractViewSet(viewsets.ModelViewSet):
                 serializer.save()
                 contract.status = 'over'
                 contract.vehicle.kilometer = contract.end_kilometer
+                contract.ended_at = datetime.now()
                 contract.save()
                 contract.vehicle.save()
                 return Response(serializer.data, status=200)

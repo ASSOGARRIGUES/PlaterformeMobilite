@@ -3,8 +3,9 @@ import {ActionIcon, Center, Flex, Group, Paper, Skeleton, Stack, Title} from "@m
 import {IconEdit} from "@tabler/icons-react";
 import useBeneficiaryModalForm from "../../hooks/beneficiary/useBeneficiaryModalForm";
 import BeneficiaryModal from "./BeneficiaryModal";
+import {CSSProperties, ReactElement} from "react";
 
-const BeneficiaryCard = ({beneficiary, withEdit = false}: {beneficiary: Beneficiary | undefined, withEdit?: boolean}) =>{
+const BeneficiaryCard = ({beneficiary, withEdit = false, title=(<>"Informations"</>), style}: {beneficiary: Beneficiary | undefined, withEdit?: boolean, title?: ReactElement, style?:CSSProperties}) =>{
 
     const editModalForm = useBeneficiaryModalForm({action: "edit"});
     const {modal: { show: showEditModal },  } = editModalForm;
@@ -51,9 +52,9 @@ const BeneficiaryCard = ({beneficiary, withEdit = false}: {beneficiary: Benefici
         <>
             <BeneficiaryModal {...editModalForm}/>
 
-            <Paper shadow="sm" p="md">
+            <Paper shadow="sm" p="md" style={style}>
                 <Flex direction="column" align="center" gap="xs">
-                    <Title order={2}>Informations {edit}</Title>
+                    <Title order={2}>{title} {edit}</Title>
                     {beneficiary ? content : skeleton}
                 </Flex>
             </Paper>

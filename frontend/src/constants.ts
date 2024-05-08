@@ -23,3 +23,16 @@ export const contractReasonLabelMap: Record<string,string> = {
 }
 
 export const StatusConsideredOngoing = [ContractStatusEnum.pending,ContractStatusEnum.over,ContractStatusEnum.waiting];
+
+
+export function capitalizeFirstLetter(string: string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+export function humanizeDate(date: string) {
+    return new Date(date).toLocaleDateString('fr-FR');
+}
+
+export function humanizeNumber(number: number) {
+    return number.toLocaleString('fr-FR');
+}

@@ -98,6 +98,7 @@ class Contract(models.Model):
 
     start_kilometer = models.IntegerField()
     end_kilometer = models.IntegerField(default=None, null=True)
+    ended_at = models.DateTimeField(default=None, null=True) # Date when the contract is ended
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='contracts_created_by', null=True, blank=True)
 
