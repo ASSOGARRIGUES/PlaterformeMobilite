@@ -2,6 +2,8 @@ import {CompleteContract, Contract} from "../../types/contract";
 import {ActionIcon, Button, Tooltip} from "@mantine/core";
 import ContractIcon from "../../assets/contract.svg";
 import {useApiUrl, useResource} from "@refinedev/core";
+import {axiosInstance} from "../../providers/rest-data-provider/utils";
+import {downloadInBrowser, openPdfInNewTab} from "../../constants";
 
 type ContractButtonVariant = "icon" | "button"
 
@@ -13,14 +15,15 @@ const ContractPDFButton = ({contract, variant="icon"}: {contract: Contract | Com
 
     let content = (<></>);
 
+    async function openPDF() {
+        openPdfInNewTab(`${apiUrl}/${resource}/${contract.id}/get_contract_pdf/`)
+    }
+
     if (variant === "button") {
         content = (
             <Button
-                component = "a"
-                href = {`${apiUrl}/${resource}/${contract.id}/get_contract_pdf/`}
-                target = "_blank"
                 variant="outline"
-                onClick={(e)=>e.stopPropagation()}
+                onClick={(e)=>{e.stopPropagation(); openPDF()}}
             >
                  <img src = {ContractIcon} width="20px" style={{marginRight: 5}}/> Télécharger le contrat
             </Button>
@@ -28,11 +31,8 @@ const ContractPDFButton = ({contract, variant="icon"}: {contract: Contract | Com
     }else {
         content = (
              <ActionIcon
-                component = "a"
-                href = {`${apiUrl}/${resource}/${contract.id}/get_contract_pdf/`}
-                target = "_blank"
                 color = "blue"
-                onClick={(e)=>e.stopPropagation()}
+                onClick={(e)=>{e.stopPropagation(); openPDF()}}
             >
                 <img src = {ContractIcon}/>
             </ActionIcon>

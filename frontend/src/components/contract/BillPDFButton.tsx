@@ -3,6 +3,7 @@ import {ActionIcon, Button, Tooltip} from "@mantine/core";
 import {useApiUrl, useResource} from "@refinedev/core";
 import {IconCurrencyEuro} from "@tabler/icons-react";
 import {ContractStatusEnum} from "../../types/schema.d";
+import {openPdfInNewTab} from "../../constants";
 
 type ContractButtonVariant = "icon" | "button"
 const BillPDFButton = ({contract, variant="icon"}: {contract: Contract | CompleteContract, variant?:ContractButtonVariant}) => {
@@ -10,6 +11,10 @@ const BillPDFButton = ({contract, variant="icon"}: {contract: Contract | Complet
     const apiUrl = useApiUrl();
     const {select} = useResource()
     const resource = select("contract").identifier
+
+        async function openPDF() {
+        openPdfInNewTab(`${apiUrl}/${resource}/${contract.id}/get_bill_pdf/`)
+    }
 
     let content = (<></>);
 
@@ -19,19 +24,21 @@ const BillPDFButton = ({contract, variant="icon"}: {contract: Contract | Complet
         content = (
             <Button
                 style={{width:"100%"}}
-                component="a"
-                href={`${apiUrl}/${resource}/${contract.id}/get_bill_pdf/`}
-                target="_blank"
                 variant="outline"
                 disabled={disabled}
-                onClick={(e)=>e.stopPropagation()}
+                onClick={(e)=>{e.stopPropagation(); openPDF()}}
             >
                 <IconCurrencyEuro color="black" style={{width:20, height:"auto", marginRight:5}} /> Télécharger la facture
             </Button>
         )
     }else{
         content = (
-            <ActionIcon style={{width:"100%"}} component="a" href={`${apiUrl}/${resource}/${contract.id}/get_bill_pdf/`} target="_blank" color="blue" disabled={disabled} onClick={(e)=>e.stopPropagation()}>
+            <ActionIcon
+                style={{width:"100%"}}
+                color="blue"
+                disabled={disabled}
+                onClick={(e)=>{e.stopPropagation(); openPDF()}}
+            >
                 <IconCurrencyEuro color="black" style={{width:29, height:"auto", backgroundColor: "rgba(1,1,1,0)"}} />
             </ActionIcon>
         )

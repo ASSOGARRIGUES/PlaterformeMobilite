@@ -1,4 +1,5 @@
 import {ContractStatusEnum, ReasonEnum, VehicleStatusEnum} from "./types/schema.d";
+import {axiosInstance} from "./providers/rest-data-provider/utils";
 
 
 export const ACCESS_TOKEN_KEY = 'auth_access';
@@ -37,4 +38,39 @@ export function humanizeDate(date: string) {
 
 export function humanizeNumber(number: number) {
     return number.toLocaleString('fr-FR');
+}
+
+export const downloadInBrowser = (
+    content: string,
+    type?: string,
+) => {
+    if (typeof window === "undefined") {
+        return;
+    }
+
+    const blob = new Blob([content], { type });
+
+    const link = document.createElement("a");
+    link.setAttribute("visibility", "hidden");
+    //link.download = filename;
+    link.target = "_blank";
+    const blobUrl = URL.createObjectURL(blob);
+    link.href = blobUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    // As per documentation, call URL.revokeObjectURL to remove the blob from memory.
+    setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+    });
+};
+
+export const openPdfInNewTab = async (pdfUrl: string) => {
+    try{
+        const pdfData = await axiosInstance["get"](pdfUrl);
+
+        downloadInBrowser(pdfData.data, "application/pdf");
+    }catch (e){
+        console.error(e);
+    }
 }
