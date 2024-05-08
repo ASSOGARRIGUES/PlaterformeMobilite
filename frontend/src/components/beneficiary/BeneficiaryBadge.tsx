@@ -21,7 +21,7 @@ const BeneficiaryBadge = ({ beneficiary }: { beneficiary: Beneficiary }) => {
     }
 
     return (
-        <Anchor onClick={click}>
+        <Anchor onClick={(e) => {e.stopPropagation(); click(e)}}>
             {beneficiary.first_name} {beneficiary.last_name}
         </Anchor>
     );

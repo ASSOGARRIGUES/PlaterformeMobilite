@@ -116,7 +116,7 @@ const useVehicleModalForm = ({action, redirect=false}: {action: FormAction | und
         const similarFleetIds = data?.data?.filter(vehicle => vehicle.id!==selfId).map(vehicle => vehicle.fleet_id) || [];
         setSimilarFleetIds(similarFleetIds);
 
-    }, [modalForm.refineCore.id]);
+    }, [modalForm.refineCore.id, data?.data]);
 
     return modalForm;
 }
