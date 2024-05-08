@@ -31,6 +31,7 @@ type SearchableDataTableProps<T> = {
     searchPlaceHolder: string,
     columns: DataTableColumn<T>[],
     defaultSortedColumn?: keyof T,
+    defaultSortedDirection?: "asc" | "desc";
     styles?: any,
     elementSpacing?: MantineNumberSize;
     searchBarPosition?: GroupPosition;
@@ -47,9 +48,31 @@ type SearchableDataTableProps<T> = {
     othersProps?: DataTableProps<T>
 }
 
-function SearchableDataTable<T extends BaseRecord>({searchPlaceHolder, columns , defaultSortedColumn, styles, elementSpacing="xs", searchBarPosition = "apart", withAddIcon, withReloadIcon, addCallback, extraButtons, categoriesSelector, secondBarNodes, style, defaultFilters,withoutSearch, pageSize = PAGE_SIZE, ...othersProps}: SearchableDataTableProps<T>)
+function SearchableDataTable<T extends BaseRecord>({
+                                                       searchPlaceHolder,
+                                                       columns ,
+                                                       defaultSortedColumn,
+                                                       styles,
+                                                       elementSpacing="xs",
+                                                       searchBarPosition = "apart",
+                                                       withAddIcon,
+                                                       withReloadIcon,
+                                                       addCallback,
+                                                       extraButtons,
+                                                       categoriesSelector,
+                                                       secondBarNodes,
+                                                       style,
+                                                       defaultFilters,
+                                                       withoutSearch,
+                                                       pageSize = PAGE_SIZE,
+                                                       defaultSortedDirection = "asc",
+                                                       ...othersProps
+                                                   }: SearchableDataTableProps<T>)
 {
-    const [sortStatus, setSortStatus] = useState({ columnAccessor: (defaultSortedColumn ? defaultSortedColumn : columns[0].accessor as keyof T), direction: 'asc' as 'asc' | 'desc'});
+    const [sortStatus, setSortStatus] = useState({
+        columnAccessor: (defaultSortedColumn ? defaultSortedColumn : columns[0].accessor as keyof T),
+        direction: defaultSortedDirection
+    });
 
 
     const {params: urlParams} = useParsed()

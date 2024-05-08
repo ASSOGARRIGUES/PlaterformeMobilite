@@ -20,6 +20,8 @@ import EndContractModal from "../../components/contract/EndContractModal";
 import useContractModalForm from "../../hooks/contract/useContractModalForm";
 import useEndContractForm from "../../hooks/useEndContractForm";
 import ContractStatusBadge from "../../components/contract/ContractStatusBadge";
+import ContractEditButton from "../../components/contract/ContractEditButton";
+import {humanizeDate} from "../../constants";
 
 
 const BeneficiaryShow = () => {
@@ -49,11 +51,13 @@ const BeneficiaryShow = () => {
                 accessor: 'start_date', //normal accessorKey
                 title: 'Début',
                 sortable: true,
+                render: (contract) => (humanizeDate(contract.start_date)),
             },
             {
                 accessor: 'end_date',
                 title: 'Fin',
                 sortable: true,
+                render: (contract) => (humanizeDate(contract.end_date)),
             },
             {
                 accessor: "status",
@@ -68,7 +72,7 @@ const BeneficiaryShow = () => {
                 render: (contract) => {
                     return (
                         <Group>
-                            <EditButton record={contract} showEditModal={showEditModal} />
+                            <ContractEditButton  contract={contract} showEditModal={showEditModal} />
                             <OnePDFButton contract={contract}/>
                             <ContractExtraActionMenu contract={contract} showEndModal={showEndModal}/>
                         </Group>
@@ -102,6 +106,8 @@ const BeneficiaryShow = () => {
                         style={{flex: "auto", minHeight:0}}
                         permanentFilters={[{field: "beneficiary", operator: "in", value: [beneficiary?.id]}]}
                         syncWithLocation={false}
+                        defaultSortedColumn="start_date"
+                        defaultSortedDirection="desc"
                     />
                 </Paper>
 

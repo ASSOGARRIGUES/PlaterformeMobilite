@@ -1,28 +1,24 @@
-import {List, useModalForm} from "@refinedev/mantine";
-import {ActionIcon, Group, Menu} from "@mantine/core";
-import {IconCurrencyEuro, IconDots, IconEdit} from "@tabler/icons-react";
+import {List} from "@refinedev/mantine";
+import {Group} from "@mantine/core";
 import {useMemo} from "react";
 import {DataTableColumn} from "mantine-datatable/dist/types/DataTableColumn";
 import ContractModal from "../../components/contract/ContractModal";
-import {CompleteContract, Contract, ContractWritableFields} from "../../types/contract";
+import {CompleteContract} from "../../types/contract";
 import {Vehicle} from "../../types/vehicle";
 import ContractTable from "../../components/contract/ContractTable";
 import {Beneficiary} from "../../types/beneficiary";
-import ContractIcon from "../../assets/contract.svg";
-import BillIcon from "../../assets/bill.svg";
-import {BlankEnum, ContractStatusEnum} from "../../types/schema.d";
+import {ContractStatusEnum} from "../../types/schema.d";
 import useEndContractForm from "../../hooks/useEndContractForm";
 import EndContractModal from "../../components/contract/EndContractModal";
-import {BaseRecord, useApiUrl, useResource} from "@refinedev/core";
 import VehicleBadge from "../../components/Vehicle/VehicleBadge";
 import BeneficiaryBadge from "../../components/beneficiary/BeneficiaryBadge";
-import BillPDFButton from "../../components/contract/BillPDFButton";
-import ContractPDFButton from "../../components/contract/ContractPDFButton";
 import ContractExtraActionMenu from "../../components/contract/ContractExtraActionMenu";
 import EditButton from "../../components/EditButton";
 import useContractModalForm from "../../hooks/contract/useContractModalForm";
 import OnePDFButton from "../../components/contract/OnePDFButton";
 import ContractStatusBadge from "../../components/contract/ContractStatusBadge";
+import ContractEditButton from "../../components/contract/ContractEditButton";
+import {humanizeDate} from "../../constants";
 
 const ContractList = () => {
 
@@ -61,11 +57,13 @@ const ContractList = () => {
                 accessor: 'start_date', //normal accessorKey
                 title: 'Début',
                 sortable: true,
+                render: (contract) => (humanizeDate(contract.start_date)),
             },
             {
                 accessor: 'end_date',
                 title: 'Fin',
                 sortable: true,
+                render: (contract) => (humanizeDate(contract.end_date)),
             },
             {
                 accessor: "status",
@@ -80,7 +78,7 @@ const ContractList = () => {
                 render: (contract) => {
                     return (
                         <Group>
-                            <EditButton record={contract} showEditModal={showEditModal} />
+                            <ContractEditButton contract={contract} showEditModal={showEditModal} />
                             <OnePDFButton contract={contract}/>
                             <ContractExtraActionMenu contract={contract} showEndModal={showEndModal}/>
                         </Group>
@@ -109,6 +107,8 @@ const ContractList = () => {
 
                     /*@ts-ignore*/
                     verticalSpacing="md"
+                    defaultSortedColumn="start_date"
+                    defaultSortedDirection="desc"
                 />
             </List>
         </>

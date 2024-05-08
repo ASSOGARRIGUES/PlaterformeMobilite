@@ -10,7 +10,6 @@ import {Show} from "@refinedev/mantine";
 import ContractTable from "../../components/contract/ContractTable";
 import BeneficiaryBadge from "../../components/beneficiary/BeneficiaryBadge";
 import VehicleCard from "../../components/Vehicle/VehicleCard";
-import EditButton from "../../components/EditButton";
 import ContractExtraActionMenu from "../../components/contract/ContractExtraActionMenu";
 import OnePDFButton from "../../components/contract/OnePDFButton";
 import ContractModal from "../../components/contract/ContractModal";
@@ -18,6 +17,8 @@ import EndContractModal from "../../components/contract/EndContractModal";
 import useContractModalForm from "../../hooks/contract/useContractModalForm";
 import useEndContractForm from "../../hooks/useEndContractForm";
 import ContractStatusBadge from "../../components/contract/ContractStatusBadge";
+import ContractEditButton from "../../components/contract/ContractEditButton";
+import {humanizeDate} from "../../constants";
 
 const VehicleShow = (props: any) => {
     const { queryResult: showResponse } = useShow<Vehicle>()
@@ -46,11 +47,13 @@ const VehicleShow = (props: any) => {
                 accessor: 'start_date', //normal accessorKey
                 title: 'Début',
                 sortable: true,
+                render: (contract) => (humanizeDate(contract.start_date)),
             },
             {
                 accessor: 'end_date',
                 title: 'Fin',
                 sortable: true,
+                render: (contract) => (humanizeDate(contract.end_date)),
             },
             {
                 accessor: "status",
@@ -65,7 +68,7 @@ const VehicleShow = (props: any) => {
                 render: (contract) => {
                     return (
                         <Group>
-                            <EditButton record={contract} showEditModal={showEditModal} />
+                            <ContractEditButton  contract={contract} showEditModal={showEditModal} />
                             <OnePDFButton contract={contract}/>
                             <ContractExtraActionMenu contract={contract} showEndModal={showEndModal}/>
                         </Group>
@@ -98,6 +101,8 @@ const VehicleShow = (props: any) => {
                         style={{flex: "auto", minHeight:0}}
                         permanentFilters={[{field: "vehicle", operator: "in", value: [vehicle?.id]}]}
                         syncWithLocation={false}
+                        defaultSortedColumn="start_date"
+                        defaultSortedDirection="desc"
                     />
                 </Paper>
 

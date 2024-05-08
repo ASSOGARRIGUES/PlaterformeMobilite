@@ -10,7 +10,7 @@ import ContractTable from "../contract/ContractTable";
 import {WhoAmI} from "../../types/auth";
 import {CrudFilter} from "@refinedev/core";
 import {ContractStatusEnum} from "../../types/schema.d";
-import {StatusConsideredOngoing} from "../../constants";
+import {humanizeDate, StatusConsideredOngoing} from "../../constants";
 
 const OnGoingContractTable = ({onlyForUser}: {onlyForUser?: WhoAmI} ) => {
 
@@ -41,15 +41,17 @@ const OnGoingContractTable = ({onlyForUser}: {onlyForUser?: WhoAmI} ) => {
                     return beneficiary.hasOwnProperty("id") ? <BeneficiaryBadge beneficiary={beneficiary}/> : "Loading..."
                 }
             },
-                        {
+            {
                 accessor: 'start_date', //normal accessorKey
                 title: 'Début',
                 sortable: true,
+                render: (contract) => (humanizeDate(contract.start_date)),
             },
             {
                 accessor: 'end_date',
                 title: 'Fin',
                 sortable: true,
+                render: (contract) => (humanizeDate(contract.end_date)),
             },
             {
                 accessor: "status",
@@ -80,6 +82,8 @@ const OnGoingContractTable = ({onlyForUser}: {onlyForUser?: WhoAmI} ) => {
             permanentFilters={[{field: "status", operator: "in", value: StatusConsideredOngoing}, ...userFilter]}
             pageSize={6}
             syncWithLocation={false}
+            defaultSortedColumn="start_date"
+            defaultSortedDirection="desc"
         />
     );
 }

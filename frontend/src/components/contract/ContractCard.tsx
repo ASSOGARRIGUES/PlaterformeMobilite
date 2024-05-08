@@ -1,13 +1,12 @@
 import {Flex, Group, Paper, SimpleGrid, Skeleton, Text, Title, useMantineTheme} from "@mantine/core";
 import {ContractStatusEnum} from "../../types/schema.d";
-import {CompleteContract, Contract} from "../../types/contract";
+import {CompleteContract} from "../../types/contract";
 import useContractModalForm from "../../hooks/contract/useContractModalForm";
-import EditButton from "../EditButton";
 import ContractStatusBadge from "./ContractStatusBadge";
 import ContractModal from "./ContractModal";
-import dayjs from "dayjs";
 import {humanizeDate, humanizeNumber} from "../../constants";
 import {CSSProperties} from "react";
+import ContractEditButton from "./ContractEditButton";
 
 const ContractCard = ({contract, withEdit, style}: {contract: CompleteContract | undefined, withEdit: boolean, style?:CSSProperties}) => {
 
@@ -17,7 +16,7 @@ const ContractCard = ({contract, withEdit, style}: {contract: CompleteContract |
     const theme = useMantineTheme();
 
 
-    const edit = withEdit && contract ? <EditButton  record={contract} showEditModal={showEditModal}/> : ""
+    const edit = withEdit && contract ? <ContractEditButton  contract={contract} showEditModal={showEditModal}/> : ""
 
     const skeleton = (
         <>

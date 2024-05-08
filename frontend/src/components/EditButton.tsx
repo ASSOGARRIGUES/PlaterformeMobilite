@@ -8,10 +8,12 @@ type MinimalRecord = {
     [key: string]: any
 }
 
-const EditButton = ({record, showEditModal}: {record: MinimalRecord, showEditModal:(id:number)=>any}) => {
+export type EditButtonProps = {record: MinimalRecord, showEditModal:(id:number)=>any, disabled?:boolean}
+
+const EditButton = ({record, showEditModal, disabled}: EditButtonProps) => {
     return (
         <Tooltip label={"Editer"} position="bottom" openDelay={300}>
-            <ActionIcon onClick={(e)=>{e.stopPropagation(); showEditModal(record.id)}}  color="blue">
+            <ActionIcon onClick={(e)=>{e.stopPropagation(); showEditModal(record.id)}}  color="blue" disabled={disabled}>
                 <IconEdit size={25} />
             </ActionIcon>
         </Tooltip>

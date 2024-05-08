@@ -1,6 +1,6 @@
-import {BaseKey, CrudFilters, FormAction, RedirectAction} from "@refinedev/core";
+import {CrudFilters, FormAction, RedirectAction} from "@refinedev/core";
 import {ContractWritableFields} from "../../types/contract";
-import {BlankEnum, ReasonEnum} from "../../types/schema.d";
+import {BlankEnum} from "../../types/schema.d";
 import {useModalForm, UseSelectReturnType,UseModalFormReturnType, useSelect} from "@refinedev/mantine";
 import {FormValidateInput, LooseKeys} from "@mantine/form/lib/types";
 import {BaseRecord, HttpError} from "@refinedev/core/dist";
@@ -201,11 +201,6 @@ const useContractModalForm = ({action, redirect=false}: {action: FormAction | un
         debounce: DEBOUNCE_TIME,
     })
 
-
-
-
-
-
     //Building the getSelectProps function with the same method as the one used for getInputProps (see type definition above)
     /**
      * Get the selectProps of a specific field
@@ -223,17 +218,6 @@ const useContractModalForm = ({action, redirect=false}: {action: FormAction | un
                 throw new Error(`Field ${field} is not a select field of the form`);
         }
     }
-
-
-    // //Deep copy the modalForm.modal.show function to add retrieve the id of the record to show
-    // const modal = modalForm.modal;
-    // const show = modal["show"];
-    // const origShow = show;
-    // modal["show"] = (...args)=> {
-    //     console.log("ID ", args[0]);
-    //     return Reflect.apply(origShow, modal, args);
-    // }
-
 
     return modalForm;
 }

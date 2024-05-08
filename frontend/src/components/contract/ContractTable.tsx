@@ -35,6 +35,7 @@ type SearchableDataTableProps<T> = {
     searchPlaceHolder: string;
     columns: DataTableColumn<T>[];
     defaultSortedColumn?: keyof T;
+    defaultSortedDirection?: "asc" | "desc";
     styles?: any;
     elementSpacing?: MantineNumberSize;
     searchBarPosition?: GroupPosition;
@@ -70,13 +71,14 @@ function ContractTable<T extends BaseRecord>({
                                                  syncWithLocation,
                                                  withoutSearch,
                                                  pageSize = PAGE_SIZE,
+                                                 defaultSortedDirection = "asc",
                                                  ...othersProps
                                              }: SearchableDataTableProps<T>) {
     const [sortStatus, setSortStatus] = useState({
         columnAccessor: defaultSortedColumn
             ? defaultSortedColumn
             : (columns[0].accessor as keyof T),
-        direction: "asc" as "asc" | "desc",
+        direction: defaultSortedDirection,
     });
 
     const go = useGo();
