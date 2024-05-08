@@ -20,12 +20,19 @@ axiosInstance.interceptors.response.use(
       return response;
     },
     async (error) => {
+      console.log(error)
+
 
       let customError: HttpError = {
         ...error,
-        message: error.response?.data?.message,
-        statusCode: error.response?.status,
+        message: error.response?.data ? JSON.stringify(error.response?.data) : error.message,
+        statusCode: error.response?.status || error.code ,
+
       };
+
+      if (customError.statusCode === 404){
+        customError.message = error.message + " - Ressource introuvable";
+      }
 
       if (customError.statusCode === 401) {
         if(localStorage.getItem(ACCESS_TOKEN_KEY)) {
