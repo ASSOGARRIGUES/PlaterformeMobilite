@@ -1,3 +1,5 @@
+echo "Starting backend with PROD=$PROD and DEBUG=$DEBUG"
+
 echo "Running migrations"
 python manage.py migrate || exit 2
 

@@ -151,7 +151,9 @@ export const authProvider: AuthProvider = {
 
     return {
         id: data.id,
-        fullName: data.full_name,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        phone: data.phone,
         email: data.email,
         avatar: data.avatar,
     };

@@ -1,11 +1,8 @@
 import { Authenticated, Refine } from "@refinedev/core";
-import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
-import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 
 import {
     ErrorComponent,
     RefineThemes,
-    AuthPage,
     useNotificationProvider, ThemedTitleV2
 } from "@refinedev/mantine";
 

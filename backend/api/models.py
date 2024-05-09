@@ -3,8 +3,6 @@ from django.db import models
 
 from utils import render_to_pdf
 
-
-
 class Vehicle(models.Model):
     FUEL_CHOICES = (
         ('essence', 'Essence'),
@@ -87,7 +85,7 @@ class Contract(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
     #Status should be a choice field with values: 'en attente de paiement', 'en cours', 'terminé'
-    status = models.CharField(max_length=100, choices=STATUS_CHOICES, default='waiting')
+    status = models.CharField(max_length=100, choices=STATUS_CHOICES, default='pending')
     comment = models.TextField(blank=True, null=True)
     reason = models.TextField(choices=REASON_CHOICES, blank=True, null=True)
 

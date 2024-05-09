@@ -10,7 +10,6 @@ import {closeAllModals, closeModal, openModal} from "@mantine/modals";
 
 
 const Dashboard = () => {
-
     const {data: myIdentity} = useGetIdentity();
 
     function info() {
