@@ -34,7 +34,7 @@ def link_callback(uri, rel):
     # make sure that file exists
     if not os.path.isfile(path):
         raise RuntimeError(
-            'media URI must start with %s or %s' % (sUrl, mUrl)
+            'media URI must start with %s or %s. Uri: %s Path: %s' % (sUrl, mUrl,uri,path)
         )
     return path
 
