@@ -9,4 +9,4 @@ RUN pip install --no-cache-dir -r requirements-postgres.txt
 
 FROM deps as build
 COPY . .
-CMD ["sh", "entrypoint.sh"]
+CMD ["bash", "entrypoint.sh"]
