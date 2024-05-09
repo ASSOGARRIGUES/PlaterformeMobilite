@@ -4,6 +4,7 @@ import {defineConfig, loadEnv} from "vite";
 
 const envAvailableKeys = [
     'BASE_URL',
+    'VERSION',
     ];
 
 type processEnvKeys = typeof envAvailableKeys[number];

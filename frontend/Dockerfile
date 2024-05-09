@@ -14,6 +14,7 @@ RUN npm install
 
 FROM deps as build
 ARG BASE_URL
+ARG VERSION
 
 WORKDIR /frontend
 

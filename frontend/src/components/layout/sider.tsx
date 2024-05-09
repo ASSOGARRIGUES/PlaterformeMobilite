@@ -35,6 +35,7 @@ import {
   Flex,
 } from "@mantine/core";
 import type { RefineThemedLayoutV2SiderProps } from "@refinedev/mantine";
+import {VERSION} from "../../constants";
 
 const defaultNavIcon = <IconList size={20} />;
 
@@ -217,6 +218,7 @@ export const ThemedSiderV2: React.FC<RefineThemedLayoutV2SiderProps> = ({
         {dashboard}
         {items}
         {logout}
+        <span style={{position:"absolute", bottom:5, left:20}}>{VERSION}</span>
       </>
     );
   };
