@@ -13,7 +13,7 @@ env:
   BACK_IMAGE_NAME: ${{ github.repository }}_back
   FRONT_IMAGE_NAME: ${{ github.repository }}_front
   BASE_URL: ${{ vars.BASE_URL }}
-  VERSION: ${{ github.ref }}
+  VERSION: ${{ github.ref_name }}
 
 # There is a single job in this workflow. It's configured to run on the latest available version of Ubuntu.
 jobs:

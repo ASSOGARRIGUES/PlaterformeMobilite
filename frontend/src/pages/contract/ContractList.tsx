@@ -13,12 +13,12 @@ import EndContractModal from "../../components/contract/EndContractModal";
 import VehicleBadge from "../../components/Vehicle/VehicleBadge";
 import BeneficiaryBadge from "../../components/beneficiary/BeneficiaryBadge";
 import ContractExtraActionMenu from "../../components/contract/ContractExtraActionMenu";
-import EditButton from "../../components/EditButton";
 import useContractModalForm from "../../hooks/contract/useContractModalForm";
 import OnePDFButton from "../../components/contract/OnePDFButton";
 import ContractStatusBadge from "../../components/contract/ContractStatusBadge";
 import ContractEditButton from "../../components/contract/ContractEditButton";
 import {humanizeDate} from "../../constants";
+import PayedContractButton from "../../components/contract/PayedContractButton";
 
 const ContractList = () => {
 
@@ -78,7 +78,8 @@ const ContractList = () => {
                 render: (contract) => {
                     return (
                         <Group>
-                            <ContractEditButton contract={contract} showEditModal={showEditModal} />
+                            {contract.status !== ContractStatusEnum.over && <ContractEditButton contract={contract} showEditModal={showEditModal} />}
+                            {contract.status === ContractStatusEnum.over && <PayedContractButton contract={contract}/> }
                             <OnePDFButton contract={contract}/>
                             <ContractExtraActionMenu contract={contract} showEndModal={showEndModal}/>
                         </Group>

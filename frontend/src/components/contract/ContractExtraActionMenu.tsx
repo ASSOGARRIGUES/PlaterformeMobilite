@@ -42,7 +42,7 @@ const ContractExtraActionMenu = ({contract, showEndModal}: {contract: Contract |
     )
 
     const getContractPDFItem = (
-        <Menu.Item component="a" href={`${apiUrl}/${resource?.name}/${contract.id}/get_contract_pdf/`} target="_blank" onClick={(e)=>e.stopPropagation()}>
+        <Menu.Item component="a" href={`${apiUrl}/${resource?.name}/${contract.id}/get_contract_pdf/`} target="_blank" onClick={(e)=>{e.stopPropagation(); openModal()}}>
             Télécharger le contrat
         </Menu.Item>
     )

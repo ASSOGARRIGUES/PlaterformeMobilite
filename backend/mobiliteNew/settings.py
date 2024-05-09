@@ -219,3 +219,6 @@ SIMPLE_JWT = {
 #Backup
 DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
 DBBACKUP_STORAGE_OPTIONS = {'location': os.path.join(BASE_DIR, 'db_backups')}
+
+
+ADMINS = [("Simon", "simon.galand43@gmail.com")]
