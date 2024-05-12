@@ -1,4 +1,4 @@
-import {ContractStatusEnum, ReasonEnum, VehicleStatusEnum} from "./types/schema.d";
+import {ContractStatusEnum, ReasonEnum, TypeEnum, VehicleStatusEnum} from "./types/schema.d";
 import {axiosInstance} from "./providers/rest-data-provider/utils";
 
 
@@ -25,7 +25,10 @@ export const contractReasonLabelMap: Record<string,string> = {
     [ReasonEnum.part_time]: "Alternance",
 }
 
-
+export const vehicleTypeLabelMap: Record<string,string> = {
+    [TypeEnum.voiture]: "Voiture",
+    [TypeEnum.scouter]: "Scooter",
+}
 
 export const StatusConsideredOngoing = [ContractStatusEnum.pending,ContractStatusEnum.over,ContractStatusEnum.waiting];
 

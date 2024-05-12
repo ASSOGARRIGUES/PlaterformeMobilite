@@ -66,14 +66,13 @@ const useBeneficiaryModalForm = ({action, redirect=false}: {action: FormAction |
                 return "Le code postal n'est pas valide";
             }
         },
-        license_number: (value) => {
-            if (!value) {
-                return "Le numéro de permis est requis";
-            }
-            // else if(!licenseNumberRegExp.test(value)) {
-            //     return "Le numéro de permis n'est pas un numéro de permis français valide";
-            // }
-        },
+        // license_number: (value) => {
+        //     if (!value) {
+        //         return "Le numéro de permis est requis";
+        //     }else if(!licenseNumberRegExp.test(value)) {
+        //         return "Le numéro de permis n'est pas un numéro de permis français valide";
+        //     }
+        // },
     }
 
     const modalForm = useModalForm({
