@@ -5,7 +5,7 @@ import useBeneficiaryModalForm from "../../hooks/beneficiary/useBeneficiaryModal
 import BeneficiaryModal from "./BeneficiaryModal";
 import {CSSProperties, ReactElement} from "react";
 
-const BeneficiaryCard = ({beneficiary, withEdit = false, title=(<>"Informations"</>), style}: {beneficiary: Beneficiary | undefined, withEdit?: boolean, title?: ReactElement, style?:CSSProperties}) =>{
+const BeneficiaryCard = ({beneficiary, withEdit = false, title=(<>Informations</>), style}: {beneficiary: Beneficiary | undefined, withEdit?: boolean, title?: ReactElement, style?:CSSProperties}) =>{
 
     const editModalForm = useBeneficiaryModalForm({action: "edit"});
     const {modal: { show: showEditModal },  } = editModalForm;
@@ -43,7 +43,7 @@ const BeneficiaryCard = ({beneficiary, withEdit = false, title=(<>"Informations"
             <Stack spacing={0}>
                 <div><span style={{fontWeight: "bold"}}>Email:</span> <a href={`mailto:${beneficiary?.email}`}>{beneficiary?.email}</a></div>
                 <div><span style={{fontWeight: "bold"}}>Téléphone:</span> <a href={`tel:${beneficiary?.phone}`}>{beneficiary?.phone}</a></div>
-                <div><span style={{fontWeight: "bold"}}>Numéro de licence:</span> {beneficiary?.license_number}</div>
+                <div><span style={{fontWeight: "bold"}}>Numéro de permis:</span> {beneficiary?.license_number!=="" ? beneficiary?.license_number : "pas de permis"}</div>
             </Stack>
         </Group>
     )
