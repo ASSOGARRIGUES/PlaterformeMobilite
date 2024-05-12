@@ -19,6 +19,7 @@ import ContractStatusBadge from "../../components/contract/ContractStatusBadge";
 import ContractEditButton from "../../components/contract/ContractEditButton";
 import {humanizeDate} from "../../constants";
 import PayedContractButton from "../../components/contract/PayedContractButton";
+import ContractSearchTooltip from "../../components/contract/ContractSearchTooltip";
 
 const ContractList = () => {
 
@@ -110,6 +111,7 @@ const ContractList = () => {
                     verticalSpacing="md"
                     defaultSortedColumn="start_date"
                     defaultSortedDirection="desc"
+                    searchInfoTooltip={ContractSearchTooltip}
                 />
             </List>
         </>

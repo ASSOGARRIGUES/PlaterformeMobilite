@@ -1,5 +1,15 @@
-import {Box, Stack, TextInput, Group, ActionIcon, MantineNumberSize, GroupPosition, Tooltip} from "@mantine/core";
-import {IconCirclePlus, IconRefresh, IconSearch} from "@tabler/icons-react";
+import {
+    Box,
+    Stack,
+    TextInput,
+    Group,
+    ActionIcon,
+    MantineNumberSize,
+    GroupPosition,
+    Tooltip,
+    MediaQuery, useMantineTheme
+} from "@mantine/core";
+import {IconCirclePlus, IconInfoCircle, IconRefresh, IconSearch} from "@tabler/icons-react";
 import {DataTable, DataTableSortStatus} from "mantine-datatable";
 import React, {CSSProperties, useEffect, useState} from "react";
 import {DataTableColumn} from "mantine-datatable/dist/types/DataTableColumn";
@@ -45,6 +55,7 @@ type SearchableDataTableProps<T> = {
     defaultFilters?: CrudFilters;
     withoutSearch?: boolean;
     pageSize?: number;
+    searchInfoTooltip?: React.ReactNode
     othersProps?: DataTableProps<T>
 }
 
@@ -66,6 +77,7 @@ function SearchableDataTable<T extends BaseRecord>({
                                                        withoutSearch,
                                                        pageSize = PAGE_SIZE,
                                                        defaultSortedDirection = "asc",
+                                                       searchInfoTooltip,
                                                        ...othersProps
                                                    }: SearchableDataTableProps<T>)
 {
@@ -73,6 +85,8 @@ function SearchableDataTable<T extends BaseRecord>({
         columnAccessor: (defaultSortedColumn ? defaultSortedColumn : columns[0].accessor as keyof T),
         direction: defaultSortedDirection
     });
+
+    const theme = useMantineTheme();
 
 
     const {params: urlParams} = useParsed()
@@ -134,13 +148,23 @@ function SearchableDataTable<T extends BaseRecord>({
                 >
                     {/* Ajout du champ de recherche si withoutSearch n'est pas défini*/}
                     {!withoutSearch && (
-                        <TextInput
-                            placeholder={searchPlaceHolder}
-                            icon={<IconSearch size={14} stroke={1.5} />}
-                            style={styles?.input}
-                            value={search}
-                            onChange={(event) => setSearch(event.currentTarget.value)}
-                        />
+                        <Group style={{flex: "auto", maxWidth:"40em",}} spacing="xs">
+                            <TextInput
+                                placeholder={searchPlaceHolder}
+                                icon={<IconSearch size={14} stroke={1.5} />}
+                                style={{flex: "auto", maxWidth:"35em", ...styles?.input}}
+                                value={search}
+                                onChange={(event) => setSearch(event.currentTarget.value)}
+                            />
+
+                            {searchInfoTooltip && (
+                                <MediaQuery smallerThan="md" styles={{display:"none"}}>
+                                    <Tooltip label={searchInfoTooltip}>
+                                        <IconInfoCircle color={theme.colors.blue[6]} />
+                                    </Tooltip>
+                                </MediaQuery>
+                            )}
+                        </Group>
                     )}
 
                     {/* Ajout des boutons d'ajout et de refresh si demandé par l'utilisateur*/}
