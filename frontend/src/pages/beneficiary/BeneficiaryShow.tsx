@@ -22,6 +22,7 @@ import useEndContractForm from "../../hooks/useEndContractForm";
 import ContractStatusBadge from "../../components/contract/ContractStatusBadge";
 import ContractEditButton from "../../components/contract/ContractEditButton";
 import {humanizeDate} from "../../constants";
+import ContractSearchTooltip from "../../components/contract/ContractSearchTooltip";
 
 
 const BeneficiaryShow = () => {
@@ -108,6 +109,7 @@ const BeneficiaryShow = () => {
                         syncWithLocation={false}
                         defaultSortedColumn="start_date"
                         defaultSortedDirection="desc"
+                        searchInfoTooltip={ContractSearchTooltip}
                     />
                 </Paper>
 

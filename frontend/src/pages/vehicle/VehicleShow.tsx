@@ -19,6 +19,7 @@ import useEndContractForm from "../../hooks/useEndContractForm";
 import ContractStatusBadge from "../../components/contract/ContractStatusBadge";
 import ContractEditButton from "../../components/contract/ContractEditButton";
 import {humanizeDate} from "../../constants";
+import ContractSearchTooltip from "../../components/contract/ContractSearchTooltip";
 
 const VehicleShow = (props: any) => {
     const { queryResult: showResponse } = useShow<Vehicle>()
@@ -103,6 +104,7 @@ const VehicleShow = (props: any) => {
                         syncWithLocation={false}
                         defaultSortedColumn="start_date"
                         defaultSortedDirection="desc"
+                        searchInfoTooltip={ContractSearchTooltip}
                     />
                 </Paper>
 

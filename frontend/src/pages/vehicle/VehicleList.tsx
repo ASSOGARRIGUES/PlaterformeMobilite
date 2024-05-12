@@ -14,6 +14,7 @@ import {useGetToPath, useGo} from "@refinedev/core";
 import useVehicleModalForm from "../../hooks/vehicle/useVehicleModalForm";
 import EditButton from "../../components/EditButton";
 import VehicleStatusBadge from "../../components/Vehicle/VehicleStatusBadge";
+import VehicleSearchTooltip from "../../components/Vehicle/VehicleSearchTooltip";
 
 
 const VehicleList = () => {
@@ -109,6 +110,7 @@ const VehicleList = () => {
                     /*@ts-ignore*/
                     verticalSpacing="md"
                     onRowClick={rowClickHandler}
+                    searchInfoTooltip={VehicleSearchTooltip}
                 />
             </List>
         </>

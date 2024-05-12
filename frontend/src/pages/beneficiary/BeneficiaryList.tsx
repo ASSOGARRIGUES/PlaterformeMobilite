@@ -8,6 +8,7 @@ import {ActionIcon, Center} from "@mantine/core";
 import {IconEdit} from "@tabler/icons-react";
 import {useGetToPath, useGo} from "@refinedev/core";
 import useBeneficiaryModalForm from "../../hooks/beneficiary/useBeneficiaryModalForm";
+import BeneficiarySearchTooltip from "../../components/beneficiary/BeneficiarySearchTooltip";
 
 
 function BeneficiaryList() {
@@ -95,6 +96,7 @@ function BeneficiaryList() {
                     /*@ts-ignore*/
                     verticalSpacing="md"
                     onRowClick={rowClickHandler}
+                    searchInfoTooltip={BeneficiarySearchTooltip}
                 />
             </List>
         </>
