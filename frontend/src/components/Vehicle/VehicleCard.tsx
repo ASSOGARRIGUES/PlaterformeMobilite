@@ -16,9 +16,8 @@ import {IconEdit} from "@tabler/icons-react";
 import useVehicleModalForm from "../../hooks/vehicle/useVehicleModalForm";
 import VehicleModal from "./VehicleModal";
 import carIcon from "../../assets/car.svg";
-import {VehicleStatusEnum} from "../../types/schema.d";
 import {CSSProperties} from "react";
-import {humanizeNumber} from "../../constants";
+import {humanizeNumber, vehicleTypeLabelMap} from "../../constants";
 import VehicleStatusBadge from "./VehicleStatusBadge";
 
 const VehicleCard = ({vehicle, withEdit=false, title="Informations", style}: {vehicle: Vehicle | undefined, withEdit?: boolean, title?:string, style?:CSSProperties}) => {
@@ -56,7 +55,7 @@ const VehicleCard = ({vehicle, withEdit=false, title="Informations", style}: {ve
             <SimpleGrid cols={2} verticalSpacing={0}>
                 <Text><span style={{fontWeight: "bold"}}>Numéro de flotte: </span> {vehicle?.fleet_id}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Statut: </span> <VehicleStatusBadge vehicle={vehicle}/></Text>
-                <Text><span style={{fontWeight: "bold"}}>Type: </span> {vehicle?.type}</Text>
+                <Text><span style={{fontWeight: "bold"}}>Type: </span> {vehicle?.type ? vehicleTypeLabelMap[vehicle?.type] : "Inconnu"}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Marque: </span> {vehicle?.brand}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Modèle: </span> {vehicle?.modele}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Année: </span> {vehicle?.year}</Text>
