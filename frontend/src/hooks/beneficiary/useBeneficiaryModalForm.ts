@@ -69,9 +69,10 @@ const useBeneficiaryModalForm = ({action, redirect=false}: {action: FormAction |
         license_number: (value) => {
             if (!value) {
                 return "Le numéro de permis est requis";
-            }else if(!licenseNumberRegExp.test(value)) {
-                return "Le numéro de permis n'est pas un numéro de permis français valide";
             }
+            // else if(!licenseNumberRegExp.test(value)) {
+            //     return "Le numéro de permis n'est pas un numéro de permis français valide";
+            // }
         },
     }
 
