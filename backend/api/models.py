@@ -12,7 +12,7 @@ class Vehicle(models.Model):
 
     VEHICLE_TYPE_CHOICES = (
         ('voiture', 'Voiture'),
-        ('scouter', 'Scouter'),
+        ('scouter', 'Scooter'),
     )
 
     TRANSMISSION_CHOICES = (

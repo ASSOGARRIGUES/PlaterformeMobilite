@@ -7,6 +7,7 @@ import {FuelTypeEnum, TransmissionEnum, TypeEnum} from "../../types/schema.d";
 import AvatarUpload from "./AvatarUpload";
 import {useId} from "@mantine/hooks";
 import InputMask from "react-input-mask";
+import {vehicleTypeLabelMap} from "../../constants";
 
 
 const VehicleModal: React.FC<
@@ -24,7 +25,7 @@ const VehicleModal: React.FC<
 
     const fueltypedata = Object.keys(FuelTypeEnum).map((key) =>  ({value: key, label: FuelTypeEnum[key as keyof typeof FuelTypeEnum]}));
     const transmissiondata = Object.keys(TransmissionEnum).map((key) =>  ({value: key, label: TransmissionEnum[key as keyof typeof TransmissionEnum]}));
-    const vehicledata = Object.keys(TypeEnum).map((key) =>  ({value: key, label: TypeEnum[key as keyof typeof TypeEnum]}));
+    const vehicledata = Object.keys(TypeEnum).map((key) =>  ({value: key, label: vehicleTypeLabelMap[key]}));
 
     const imat_in_id = useId();
 
