@@ -108,11 +108,10 @@ class Contract(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.pk:  # This is a new contract
-            self.start_kilometer = self.vehicle.kilometer
+            #if the start_kilometer is not passed to save method, we set it to the current vehicle kilometer
+            if not self.start_kilometer:
+                self.start_kilometer = self.vehicle.kilometer
 
-            created_by_id = kwargs.pop('created_by_id', None)
-            if created_by_id:
-                self.created_by = get_user_model().objects.get(pk=created_by_id)
         super(Contract, self).save(*args, **kwargs)
 
     def render_contract_pdf(self):

@@ -20,7 +20,7 @@ class BeneficiarySerializer(serializers.ModelSerializer):
 
 
 class ContractSerializer(serializers.ModelSerializer):
-    start_kilometer = serializers.IntegerField(read_only=True)
+    start_kilometer = serializers.IntegerField(required=False)
     end_kilometer = serializers.IntegerField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     created_by = serializers.PrimaryKeyRelatedField(read_only=True)
