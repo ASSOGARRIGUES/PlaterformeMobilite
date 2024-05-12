@@ -40,7 +40,7 @@ const VehicleModal: React.FC<
             {/*<TextInput label="Immatriculation" {...getInputProps("imat")} error={errors.imat} />*/}
 
             <Input.Wrapper id={imat_in_id} label="Immatriculation"  error={errors.imat}>
-                <Input component={InputMask} mask="99-aaa-99" id={imat_in_id} {...getInputProps("imat")} />
+                <Input component={InputMask} mask="aa-999-aa" id={imat_in_id} {...getInputProps("imat")} />
             </Input.Wrapper>
 
             <Group grow>

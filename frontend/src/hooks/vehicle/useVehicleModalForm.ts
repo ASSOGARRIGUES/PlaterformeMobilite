@@ -25,7 +25,7 @@ const useVehicleModalForm = ({action, redirect=false}: {action: FormAction | und
 
     const [similarFleetIds, setSimilarFleetIds] = useState<number[]>([]);
 
-    const imatRegExp = new RegExp("^[0-9]{2}-?[A-Za-z]{3}-?[0-9]{2}$");
+    const imatRegExp = new RegExp("^[A-Za-z]{2}-?[0-9]{3}-?[A-Za-z]{2}$");
 
     const validate: FormValidateInput<VehicleWritableFields> = ({
         transmission: (value) => {
