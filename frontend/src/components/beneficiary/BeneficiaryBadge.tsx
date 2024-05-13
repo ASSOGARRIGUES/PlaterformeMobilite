@@ -2,7 +2,7 @@ import {Beneficiary} from "../../types/beneficiary";
 import {Anchor} from "@mantine/core";
 import {IResourceItem, useGetToPath, useGo, useResource} from "@refinedev/core";
 
-const BeneficiaryBadge = ({ beneficiary }: { beneficiary: Beneficiary }) => {
+const BeneficiaryBadge = ({ beneficiary, noLink }: { beneficiary: Beneficiary | undefined, noLink?:boolean }) => {
 
     const go = useGo();
     const getToPath = useGetToPath();
@@ -12,7 +12,7 @@ const BeneficiaryBadge = ({ beneficiary }: { beneficiary: Beneficiary }) => {
         resource: select("beneficiary").resource,
         action: "show",
         meta: {
-            id: beneficiary.id
+            id: beneficiary?.id
         }
     })
 
@@ -20,9 +20,15 @@ const BeneficiaryBadge = ({ beneficiary }: { beneficiary: Beneficiary }) => {
         go({to: path})
     }
 
+    const content = (<>{beneficiary?.first_name} {beneficiary?.last_name}</>)
+
+    if(noLink){
+        return content
+    }
+
     return (
         <Anchor onClick={(e) => {e.stopPropagation(); click(e)}}>
-            {beneficiary.first_name} {beneficiary.last_name}
+            {content}
         </Anchor>
     );
 

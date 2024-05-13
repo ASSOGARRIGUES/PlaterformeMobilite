@@ -1,5 +1,5 @@
 import {Show} from "@refinedev/mantine";
-import {Button, Center, Divider, Group, Paper, Skeleton, Stack, Text, Title, Tooltip} from "@mantine/core";
+import {Anchor, Button, Center, Divider, Group, Paper, Skeleton, Stack, Text, Title, Tooltip} from "@mantine/core";
 import {useOne, useShow} from "@refinedev/core";
 import {CompleteContract, Contract} from "../../types/contract";
 import ContractCard from "../../components/contract/ContractCard";
@@ -17,6 +17,7 @@ import {ContractStatusEnum} from "../../types/schema.d";
 import {openConfirmModal} from "@mantine/modals";
 import usePayContract from "../../hooks/contract/usePayContract";
 import ContractComment from "../../components/contract/ContractComment";
+import {useGetToPath, useGo, useResource} from "@refinedev/core";
 
 const ContractShow = () => {
 
@@ -78,6 +79,25 @@ const ContractShow = () => {
         ))
     }
 
+    //Vehicle information title with a link to the vehicle show page
+    const go = useGo();
+    const getToPath = useGetToPath();
+    const { select } = useResource();
+
+    const path = getToPath({
+        resource: select("vehicle").resource,
+        action: "show",
+        meta: {
+            id: vehicle?.data?.id
+        }
+    })
+
+    const vehicleTitle = (
+       <Anchor onClick={(e) => {e.stopPropagation(); go({to:path})}}>
+           Véhicule
+       </Anchor>
+    )
+
     return (
         <>
             <EndContractModal {...endModalForm}/>
@@ -89,7 +109,7 @@ const ContractShow = () => {
                 <Group grow style={{alignItems:"stretch"}}>
                     <BeneficiaryCard style={{flex:"1 1 8%", minWidth:"290px", maxWidth:"100%"}} beneficiary={beneficiary?.data} title={benefTitle}/>
 
-                    <VehicleCard style={{flex:"1 1 30%", minWidth:"432px", maxWidth:"100%"}} vehicle={vehicle?.data} title="Véhicule" withEdit={false}/>
+                    <VehicleCard style={{flex:"1 1 30%", minWidth:"432px", maxWidth:"100%"}} vehicle={vehicle?.data} title={vehicleTitle} withEdit={false}/>
 
                     <ContractCard style={{flex:"1 1 30%", minWidth:"420px", maxWidth:"100%"}} contract={completeContract} withEdit/>
                 </Group>

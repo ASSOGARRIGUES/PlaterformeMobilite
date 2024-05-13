@@ -87,7 +87,7 @@ const VehicleShow = (props: any) => {
 
             <Stack style={{height:"100%"}}>
 
-                <Show title={<Title><VehicleBadge vehicle={vehicle}/> </Title>} contentProps={{style:{padding:0}}}/>
+                <Show title={<Title><VehicleBadge vehicle={vehicle} noLink/> </Title>} contentProps={{style:{padding:0}}}/>
 
                 <VehicleCard vehicle={vehicle} withEdit />
 

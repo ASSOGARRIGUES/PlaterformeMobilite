@@ -23,6 +23,7 @@ import ContractStatusBadge from "../../components/contract/ContractStatusBadge";
 import ContractEditButton from "../../components/contract/ContractEditButton";
 import {humanizeDate} from "../../constants";
 import ContractSearchTooltip from "../../components/contract/ContractSearchTooltip";
+import BeneficiaryBadge from "../../components/beneficiary/BeneficiaryBadge";
 
 
 const BeneficiaryShow = () => {
@@ -92,7 +93,7 @@ const BeneficiaryShow = () => {
 
             <Stack style={{height:"100%"}}>
 
-                <Show title={<Title>{beneficiary?.first_name} {beneficiary?.last_name}</Title>} contentProps={{style:{padding:0}}}/>
+                <Show title={<Title><BeneficiaryBadge beneficiary={beneficiary} noLink/></Title>} contentProps={{style:{padding:0}}}/>
 
                 <BeneficiaryCard beneficiary={beneficiary} withEdit />
 

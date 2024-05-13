@@ -20,7 +20,7 @@ import {CSSProperties} from "react";
 import {humanizeNumber, vehicleTypeLabelMap} from "../../constants";
 import VehicleStatusBadge from "./VehicleStatusBadge";
 
-const VehicleCard = ({vehicle, withEdit=false, title="Informations", style}: {vehicle: Vehicle | undefined, withEdit?: boolean, title?:string, style?:CSSProperties}) => {
+const VehicleCard = ({vehicle, withEdit=false, title=(<>Informations</>), style}: {vehicle: Vehicle | undefined, withEdit?: boolean, title?:React.ReactElement, style?:CSSProperties}) => {
 
     const editModalForm = useVehicleModalForm({action: "edit"});
     const {modal: { show: showEditModal},  getInputProps} = editModalForm;
