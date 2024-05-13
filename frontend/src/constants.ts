@@ -13,7 +13,7 @@ export const PAGE_SIZE = 10;
 
 export const DEBOUNCE_TIME = 300;
 
-export const APP_TITLE = 'Platforme Mobilité';
+export const APP_TITLE = 'Plateforme Mobilité';
 
 export const contractReasonLabelMap: Record<string,string> = {
     [ReasonEnum.aided_contract]: "Contrat aidé",
