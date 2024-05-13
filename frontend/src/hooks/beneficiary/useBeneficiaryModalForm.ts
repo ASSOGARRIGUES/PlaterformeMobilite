@@ -1,12 +1,13 @@
 import {Beneficiary, BeneficiaryWritableFields} from "../../types/beneficiary";
 import {useModalForm} from "@refinedev/mantine";
 import {FormAction} from "@refinedev/core";
-import {RedirectAction} from "@refinedev/core/dist";
+import {BaseRecord, HttpError, RedirectAction} from "@refinedev/core/dist";
 import {FormValidateInput} from "@mantine/form/lib/types";
 import {humanizeFirstName, humanizeLastName} from "../../constants";
+import {UseModalFormReturnType} from "@refinedev/mantine/dist/index";
 
 
-const useBeneficiaryModalForm = ({action, redirect=false}: {action: FormAction | undefined, redirect?:RedirectAction | undefined}) => {
+const useBeneficiaryModalForm = ({action, redirect=false}: {action: FormAction | undefined, redirect?:RedirectAction | undefined}):UseModalFormReturnType<BaseRecord, HttpError, BeneficiaryWritableFields> => {
 
     const initialValues: BeneficiaryWritableFields = {
         first_name: "",
@@ -76,7 +77,7 @@ const useBeneficiaryModalForm = ({action, redirect=false}: {action: FormAction |
         // },
     }
 
-    const modalForm = useModalForm({
+    const modalForm = useModalForm<BaseRecord,HttpError,BeneficiaryWritableFields>({
         //Provide a default id of 0 to avoid warning in the console (about missing id when provided explicit resource)
         //Id is pass through the show method anyway.
         refineCoreProps: {resource:"beneficiary", action: action, redirect: redirect },
@@ -85,7 +86,7 @@ const useBeneficiaryModalForm = ({action, redirect=false}: {action: FormAction |
         transformValues: (values) => ({
              ...values,
             phone: values.phone.replace(/\s/g, ""),
-            license_number: values.license_number.toUpperCase(),
+            license_number: values.license_number?.toUpperCase() ?? "",
             first_name: humanizeFirstName(values.first_name),
             last_name: humanizeLastName(values.last_name),
         }),
