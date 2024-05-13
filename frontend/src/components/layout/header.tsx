@@ -39,7 +39,7 @@ export const ThemedHeaderV2: React.FC<RefineThemedLayoutV2HeaderProps> = ({
       zIndex: 1,
     };
   }
-console.log(user)
+
   return (
     <MantineHeader
       zIndex={199}
@@ -49,6 +49,7 @@ console.log(user)
       sx={{
         borderBottom: `1px solid ${borderColor}`,
         ...stickyStyles,
+        backgroundColor:theme.colorScheme === "dark" ? "dark" : theme.colors.cyan[8],
       }}
     >
       <Flex
