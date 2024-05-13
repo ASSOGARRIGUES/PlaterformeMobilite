@@ -15,6 +15,7 @@ import useVehicleModalForm from "../../hooks/vehicle/useVehicleModalForm";
 import EditButton from "../../components/EditButton";
 import VehicleStatusBadge from "../../components/Vehicle/VehicleStatusBadge";
 import VehicleSearchTooltip from "../../components/Vehicle/VehicleSearchTooltip";
+import VehicleAvatar from "../../components/Vehicle/VehicleAvatar";
 
 
 const VehicleList = () => {
@@ -44,6 +45,13 @@ const VehicleList = () => {
                 title: 'ID',
                 sortable: true,
                 width:80,
+            },
+            {
+                accessor: 'photo',
+                title: 'Photo',
+                render: (vehicle) => (<VehicleAvatar vehicle={vehicle} size={40}/>),
+                width: 60,
+                cellsStyle: {paddingTop: 0, paddingBottom: 0}
             },
             {
                 accessor: 'type-icon',

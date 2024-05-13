@@ -19,6 +19,7 @@ import carIcon from "../../assets/car.svg";
 import {CSSProperties} from "react";
 import {humanizeNumber, vehicleTypeLabelMap} from "../../constants";
 import VehicleStatusBadge from "./VehicleStatusBadge";
+import VehicleAvatar from "./VehicleAvatar";
 
 const VehicleCard = ({vehicle, withEdit=false, title=(<>Informations</>), style}: {vehicle: Vehicle | undefined, withEdit?: boolean, title?:React.ReactElement, style?:CSSProperties}) => {
 
@@ -49,9 +50,7 @@ const VehicleCard = ({vehicle, withEdit=false, title=(<>Informations</>), style}
 
     const content = vehicle ? (
         <Group align="start" position="center">
-            <Avatar src={vehicle?.photo} alt="it's me" size={120} radius={60} color={theme.colors.gray[1]}>
-                <Image src={carIcon} alt="Voiture"/>
-            </Avatar>
+            <VehicleAvatar vehicle={vehicle} size={120} radius={60}/>
             <SimpleGrid cols={2} verticalSpacing={0}>
                 <Text><span style={{fontWeight: "bold"}}>Numéro de flotte: </span> {vehicle?.fleet_id}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Statut: </span> <VehicleStatusBadge vehicle={vehicle}/></Text>
