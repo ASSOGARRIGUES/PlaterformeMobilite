@@ -13,3 +13,4 @@ psutil==5.9.8
 gnupg==2.3.1
 gunicorn==22.0.0
 django-dbbackup-admin==1.5.0
+django_crontab==0.7.1
