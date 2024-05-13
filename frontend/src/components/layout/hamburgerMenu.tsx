@@ -20,7 +20,7 @@ export const HamburgerMenu: React.FC = () => {
       <MediaQuery smallerThan="md" styles={{ display: "none" }}>
         <ActionIcon
           variant="subtle"
-          color="gray"
+          color="dark"
           sx={{
             border: "none",
           }}
