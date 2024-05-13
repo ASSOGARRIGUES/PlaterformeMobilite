@@ -3,6 +3,7 @@ import {useModalForm} from "@refinedev/mantine";
 import {FormAction} from "@refinedev/core";
 import {RedirectAction} from "@refinedev/core/dist";
 import {FormValidateInput} from "@mantine/form/lib/types";
+import {humanizeFirstName, humanizeLastName} from "../../constants";
 
 
 const useBeneficiaryModalForm = ({action, redirect=false}: {action: FormAction | undefined, redirect?:RedirectAction | undefined}) => {
@@ -85,6 +86,8 @@ const useBeneficiaryModalForm = ({action, redirect=false}: {action: FormAction |
              ...values,
             phone: values.phone.replace(/\s/g, ""),
             license_number: values.license_number.toUpperCase(),
+            first_name: humanizeFirstName(values.first_name),
+            last_name: humanizeLastName(values.last_name),
         }),
         validateInputOnBlur: true,
     });

@@ -45,6 +45,14 @@ export function humanizeNumber(number: number) {
     return number.toLocaleString('fr-FR');
 }
 
+export function humanizeFirstName(name: string){
+    return capitalizeFirstLetter(name.toLowerCase());
+}
+
+export function humanizeLastName(name: string){
+    return name.toUpperCase();
+}
+
 export const downloadInBrowser = (
     content: string,
     type?: string,
