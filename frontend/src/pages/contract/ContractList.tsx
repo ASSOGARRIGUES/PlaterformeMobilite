@@ -36,6 +36,12 @@ const ContractList = () => {
     const columns = useMemo<DataTableColumn<CompleteContract>[]>(
         () => [
             {
+                accessor:"id",
+                title: "ID",
+                sortable: true,
+                width: 80,
+            },
+            {
                 accessor: 'vehicle', //access nested data with dot notation
                 title: 'Véhicule',
                 sortable: true,
