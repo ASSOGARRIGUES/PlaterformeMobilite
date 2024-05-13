@@ -12,3 +12,5 @@ xhtml2pdf==0.2.15
 psutil==5.9.8
 django-dbbackup==4.1.0
 gnupg==2.3.1
+gunicorn==22.0.0
+
