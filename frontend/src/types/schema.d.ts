@@ -281,7 +281,7 @@ export interface components {
             address_complement?: string | null;
             /** Format: email */
             email: string;
-            license_number: string;
+            license_number?: string | null;
             city: string;
             postal_code: string;
         };
@@ -410,7 +410,7 @@ export interface components {
             address_complement?: string | null;
             /** Format: email */
             email?: string;
-            license_number?: string;
+            license_number?: string | null;
             city?: string;
             postal_code?: string;
         };
@@ -477,6 +477,7 @@ export interface components {
             fuel_type?: components["schemas"]["FuelTypeEnum"];
             brand?: string;
             modele?: string;
+            color?: string | null;
             /** Format: int64 */
             year?: number;
             imat?: string;
@@ -515,7 +516,7 @@ export interface components {
         TransmissionEnum: TransmissionEnum;
         /**
          * @description * `voiture` - Voiture
-         *     * `scouter` - Scouter
+         *     * `scouter` - Scooter
          * @enum {string}
          */
         TypeEnum: TypeEnum;
@@ -545,6 +546,7 @@ export interface components {
             fuel_type?: components["schemas"]["FuelTypeEnum"];
             brand: string;
             modele: string;
+            color?: string | null;
             /** Format: int64 */
             year: number;
             imat: string;
@@ -1258,6 +1260,10 @@ export interface operations {
     api_vehicle_list: {
         parameters: {
             query?: {
+                contracts?: number[];
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                contracts__in?: number[];
+                contracts__or?: number;
                 fleet_id?: number;
                 /** @description Les valeurs multiples doivent être séparées par des virgules. */
                 fleet_id__in?: number[];
@@ -1269,6 +1275,18 @@ export interface operations {
                 ordering?: string;
                 /** @description A search term. */
                 search?: string;
+                /** @description * `available` - Disponible
+                 *     * `rented` - A dispo
+                 *     * `maintenance` - En maintenance */
+                status?: PathsApiVehicleGetParametersQueryStatus;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                status__in?: string[];
+                /** @description Status or
+                 *
+                 *     * `available` - Disponible
+                 *     * `rented` - A dispo
+                 *     * `maintenance` - En maintenance */
+                status__or?: PathsApiVehicleGetParametersQueryStatus__or;
             };
             header?: never;
             path?: never;
@@ -1540,6 +1558,16 @@ export enum PathsApiContractGetParametersQueryStatus {
     payed = "payed",
     pending = "pending",
     waiting = "waiting"
+}
+export enum PathsApiVehicleGetParametersQueryStatus {
+    available = "available",
+    maintenance = "maintenance",
+    rented = "rented"
+}
+export enum PathsApiVehicleGetParametersQueryStatus__or {
+    available = "available",
+    maintenance = "maintenance",
+    rented = "rented"
 }
 export enum BlankEnum {
      ""

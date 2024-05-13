@@ -34,6 +34,7 @@ class Vehicle(models.Model):
 
     brand = models.CharField(max_length=50)
     modele = models.CharField(max_length=50)
+    color = models.CharField(max_length=50, blank=True, null=True)
     year = models.IntegerField()
     imat = models.CharField(max_length=9)
     fleet_id = models.IntegerField(unique=True)

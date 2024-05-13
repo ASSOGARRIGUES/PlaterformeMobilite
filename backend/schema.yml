@@ -952,6 +952,27 @@ paths:
       operationId: api_vehicle_list
       parameters:
       - in: query
+        name: contracts
+        schema:
+          type: array
+          items:
+            type: integer
+        explode: true
+        style: form
+      - in: query
+        name: contracts__in
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: contracts__or
+        schema:
+          type: integer
+      - in: query
         name: fleet_id
         schema:
           type: integer
@@ -988,6 +1009,41 @@ paths:
         description: A search term.
         schema:
           type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - available
+          - maintenance
+          - rented
+        description: |-
+          * `available` - Disponible
+          * `rented` - A dispo
+          * `maintenance` - En maintenance
+      - in: query
+        name: status__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: status__or
+        schema:
+          type: string
+          enum:
+          - available
+          - maintenance
+          - rented
+        description: |-
+          Status or
+
+          * `available` - Disponible
+          * `rented` - A dispo
+          * `maintenance` - En maintenance
       tags:
       - api
       security:
@@ -1177,6 +1233,7 @@ components:
           maxLength: 254
         license_number:
           type: string
+          nullable: true
           maxLength: 100
         city:
           type: string
@@ -1191,7 +1248,6 @@ components:
       - first_name
       - id
       - last_name
-      - license_number
       - phone
       - postal_code
     BlankEnum:
@@ -1450,6 +1506,7 @@ components:
           maxLength: 254
         license_number:
           type: string
+          nullable: true
           maxLength: 100
         city:
           type: string
@@ -1591,6 +1648,10 @@ components:
         modele:
           type: string
           maxLength: 50
+        color:
+          type: string
+          nullable: true
+          maxLength: 50
         year:
           type: integer
           maximum: 9223372036854775807
@@ -1676,7 +1737,7 @@ components:
       type: string
       description: |-
         * `voiture` - Voiture
-        * `scouter` - Scouter
+        * `scouter` - Scooter
     User:
       type: object
       properties:
@@ -1727,6 +1788,10 @@ components:
           maxLength: 50
         modele:
           type: string
+          maxLength: 50
+        color:
+          type: string
+          nullable: true
           maxLength: 50
         year:
           type: integer

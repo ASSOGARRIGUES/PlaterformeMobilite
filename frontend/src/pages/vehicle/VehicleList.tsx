@@ -43,6 +43,7 @@ const VehicleList = () => {
                 accessor: 'fleet_id', //access nested data with dot notation
                 title: 'ID',
                 sortable: true,
+                width:80,
             },
             {
                 accessor: 'type-icon',
@@ -64,11 +65,11 @@ const VehicleList = () => {
                 title: 'IMMAT',
                 sortable: true,
             },
-             {
+            {
                 accessor: 'status',
                 title: 'Statut',
                 sortable: true,
-                 render:(vehicle) => (<VehicleStatusBadge vehicle={vehicle}/>)
+                render:(vehicle) => (<VehicleStatusBadge vehicle={vehicle}/>)
             },
             {
                 accessor: "actions",

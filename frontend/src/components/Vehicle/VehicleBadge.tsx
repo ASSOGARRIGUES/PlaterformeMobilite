@@ -20,7 +20,7 @@ const vehicleBadge = ({vehicle, noLink}: {vehicle: Vehicle | undefined, noLink?:
     }
 
     const content =(
-        <span> {vehicle?.fleet_id} - {vehicle?.brand} {vehicle?.modele} </span>
+        <span> {vehicle?.fleet_id} - {vehicle?.brand} {vehicle?.modele} {vehicle?.color ?? ""} </span>
     )
 
     if(noLink){

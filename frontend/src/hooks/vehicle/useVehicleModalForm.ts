@@ -14,6 +14,7 @@ const useVehicleModalForm = ({action, redirect=false}: {action: FormAction | und
         photo: undefined,
         type: TypeEnum.voiture,
         brand: "",
+        color:"",
         modele: "",
         imat: "",
         fleet_id: 0,

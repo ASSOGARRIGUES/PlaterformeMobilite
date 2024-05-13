@@ -11,15 +11,15 @@ import {vehicleTypeLabelMap} from "../../constants";
 
 
 const VehicleModal: React.FC<
-  UseModalFormReturnType<BaseRecord, HttpError, VehicleWritableFields, VehicleTransformedFields>
+    UseModalFormReturnType<BaseRecord, HttpError, VehicleWritableFields, VehicleTransformedFields>
 > = ({
-    getInputProps,
-    errors,
-    modal: { visible, close, title },
-    saveButtonProps,
-    refineCore
+         getInputProps,
+         errors,
+         modal: { visible, close, title },
+         saveButtonProps,
+         refineCore
 
-}) => {
+     }) => {
 
 
 
@@ -31,7 +31,7 @@ const VehicleModal: React.FC<
 
     return (
         <Modal opened={visible} onClose={close} title={title} size="lg">
-             <LoadingOverlay visible={refineCore.formLoading} overlayBlur={2} />
+            <LoadingOverlay visible={refineCore.formLoading} overlayBlur={2} />
 
             {/*<FileInput label="Photo" {...getInputProps("photo")} error={errors.photo} />*/}
             <AvatarUpload {...getInputProps("photo")}/>
@@ -39,14 +39,18 @@ const VehicleModal: React.FC<
             <NumberInput label="Numéro de flotte" {...getInputProps("fleet_id")} error={errors.fleet_id} />
             {/*<TextInput label="Immatriculation" {...getInputProps("imat")} error={errors.imat} />*/}
 
-            <Input.Wrapper id={imat_in_id} label="Immatriculation"  error={errors.imat}>
-                <Input component={InputMask} mask="aa-999-aa" id={imat_in_id} {...getInputProps("imat")} />
-            </Input.Wrapper>
+            <Group grow>
+                <Input.Wrapper id={imat_in_id} label="Immatriculation"  error={errors.imat}>
+                    <Input component={InputMask} mask="aa-999-aa" id={imat_in_id} {...getInputProps("imat")} />
+                </Input.Wrapper>
+                <TextInput label="Année" {...getInputProps("year")} error={errors.year}/>
+            </Group>
+
 
             <Group grow>
                 <TextInput label="Marque" {...getInputProps("brand")} error={errors.brand} />
                 <TextInput label="Modèle" {...getInputProps("modele")} error={errors.modele} />
-                <TextInput label="Année" {...getInputProps("year")} error={errors.year}/>
+                <TextInput label="Couleur" {...getInputProps("color")} error={errors.color} />
             </Group>
 
             <Group grow>

@@ -143,7 +143,7 @@ const useContractModalForm = ({action, redirect=false}: {action: FormAction | un
 
     const {selectProps: vehicleSelectProps, queryResult: {isFetching: isVehicleLoading}, } = useSelect({
         resource: "vehicle",
-        optionLabel: (vehicle) => `${vehicle.fleet_id} - ${vehicle.brand} ${vehicle.modele} - ${vehicle.imat}`,
+        optionLabel: (vehicle) => `${vehicle.fleet_id} - ${vehicle.brand} ${vehicle.modele} ${vehicle.color} - ${vehicle.imat}`,
         filters:vehicleFilters,
         onSearch: (value) => {return [
             {
