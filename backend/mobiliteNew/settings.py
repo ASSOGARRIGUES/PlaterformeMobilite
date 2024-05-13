@@ -62,6 +62,9 @@ INSTALLED_APPS = [
     'api',
     'drf_spectacular',
     'dbbackup',
+    'solo',
+    'dbbackup_admin',
+    'django_crontab',
 ]
 
 MIDDLEWARE = [
@@ -222,3 +225,7 @@ DBBACKUP_STORAGE_OPTIONS = {'location': os.path.join(BASE_DIR, 'db_backups')}
 
 
 ADMINS = [("Simon", "simon.galand43@gmail.com")]
+
+CRONJOBS = [
+    ('*/1 * * * *', 'core.crons.dbBackup')
+]
