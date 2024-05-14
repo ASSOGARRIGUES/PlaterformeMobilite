@@ -227,5 +227,5 @@ DBBACKUP_STORAGE_OPTIONS = {'location': os.path.join(BASE_DIR, 'db_backups')}
 ADMINS = [("Simon", "simon.galand43@gmail.com")]
 
 CRONJOBS = [
-    ('*/1 * * * *', 'core.crons.dbBackup')
+    ('0 22 */ * *', 'core.crons.dbBackup')
 ]
