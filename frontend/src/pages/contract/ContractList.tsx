@@ -74,7 +74,7 @@ const ContractList = () => {
             },
             {
                 accessor: "status",
-                title:"Status",
+                title:"Statut",
                 textAlignment:"center",
                 sortable: true,
                 render: (contract) => (<ContractStatusBadge contract={contract}/>),
