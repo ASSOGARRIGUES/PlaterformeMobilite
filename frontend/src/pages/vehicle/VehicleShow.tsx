@@ -20,6 +20,7 @@ import ContractStatusBadge from "../../components/contract/ContractStatusBadge";
 import ContractEditButton from "../../components/contract/ContractEditButton";
 import {humanizeDate} from "../../constants";
 import ContractSearchTooltip from "../../components/contract/ContractSearchTooltip";
+import VehicleActions from "../../components/Vehicle/VehicleActions";
 
 const VehicleShow = (props: any) => {
     const { queryResult: showResponse } = useShow<Vehicle>()
@@ -89,7 +90,11 @@ const VehicleShow = (props: any) => {
 
                 <Show title={<Title><VehicleBadge vehicle={vehicle} noLink/> </Title>} contentProps={{style:{padding:0}}}/>
 
-                <VehicleCard vehicle={vehicle} withEdit />
+                <Group grow style={{alignItems:"stretch"}}>
+                    <VehicleCard vehicle={vehicle} withEdit style={{flexGrow:2, maxWidth:"100%"}}/>
+                    <VehicleActions vehicle={vehicle} style={{flexGrow:1, maxWidth:"100%"}}/>
+                </Group>
+
 
                 <Paper shadow="sm" p="md" style={{flex: "auto", minHeight:0, display: "flex", flexDirection: "column", alignItems:"center", gap:"10px", paddingRight:20, paddingLeft:20, paddingTop:10}}>
                     <Title order={2}>Contrats</Title>

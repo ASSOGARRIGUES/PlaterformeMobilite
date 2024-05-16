@@ -2,10 +2,14 @@ from django.contrib.auth import get_user_model
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
-from .models import Vehicle, Beneficiary, Contract
+from .models import Vehicle, Beneficiary, Contract, Parking
 
+class DynamicDepthSerializer(serializers.ModelSerializer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.Meta.depth = self.context.get('depth', 0)
 
-class VehicleSerializer(serializers.ModelSerializer):
+class VehicleSerializer(DynamicDepthSerializer):
     photo = Base64ImageField(required=False)
 
     class Meta:
@@ -78,3 +82,8 @@ class WhoAmISerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = ['id', 'username', 'email', 'first_name', 'last_name']
+
+class ParkingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Parking
+        fields = '__all__'
