@@ -2,6 +2,20 @@ from django.contrib.auth import get_user_model
 from django.db import models
 
 from utils import render_to_pdf
+class Parking(models.Model):
+    name = models.CharField(max_length=100)
+
+    @classmethod
+    def get_default_parking_pk(cls):
+        #get first parking or create a default one if none exists
+        parking = cls.objects.first()
+        if not parking:
+            parking = cls.objects.create(name='Défaut')
+        return parking.pk
+
+    def __str__(self):
+        return self.name
+
 
 class Vehicle(models.Model):
     FUEL_CHOICES = (
@@ -42,6 +56,10 @@ class Vehicle(models.Model):
     kilometer = models.IntegerField()
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
+
+    parking = models.ForeignKey(Parking, on_delete=models.SET_DEFAULT, related_name='vehicles', default=Parking.get_default_parking_pk)
+
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.brand.capitalize()+' '+self.modele.capitalize()
@@ -101,7 +119,6 @@ class Contract(models.Model):
     ended_at = models.DateTimeField(default=None, null=True) # Date when the contract is ended
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='contracts_created_by', null=True, blank=True)
-
 
     referent = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='contracts_referent')
 

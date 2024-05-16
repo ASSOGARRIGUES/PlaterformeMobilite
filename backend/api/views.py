@@ -11,9 +11,9 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.response import Response
 
 from .filters import VehicleFilter
-from .models import Vehicle, Beneficiary, Contract
+from .models import Vehicle, Beneficiary, Contract, Parking
 from .serializers import VehicleSerializer, BeneficiarySerializer, ContractSerializer, UserSerializer, \
-    EndContractSerializer
+    EndContractSerializer, ParkingSerializer
 
 
 class VehicleViewSet(viewsets.ModelViewSet):
@@ -24,6 +24,12 @@ class VehicleViewSet(viewsets.ModelViewSet):
     filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]
     search_fields = ['brand', 'fleet_id', 'fuel_type', 'imat', 'kilometer', 'modele', 'status', 'transmission', 'type', 'year', 'color']
     filterset_class = VehicleFilter
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['depth'] = 1 if self.action == 'list' or self.action == 'retrieve' else 0
+        return context
+
 
 class BeneficiaryViewSet(viewsets.ModelViewSet):
     queryset = Beneficiary.objects.all()
@@ -109,5 +115,11 @@ class WhoAmIViewSet(viewsets.ViewSet):
     def list(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+
+
+class ParkingViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.DjangoModelPermissions,)
+    serializer_class = ParkingSerializer
+    queryset = Parking.objects.all()
 
 

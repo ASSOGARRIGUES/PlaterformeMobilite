@@ -723,6 +723,164 @@ paths:
               schema:
                 $ref: '#/components/schemas/Contract'
           description: ''
+  /api/parking/:
+    get:
+      operationId: api_parking_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedParkingList'
+          description: ''
+    post:
+      operationId: api_parking_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Parking'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Parking'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Parking'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Parking'
+          description: ''
+  /api/parking/{id}/:
+    get:
+      operationId: api_parking_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this parking.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Parking'
+          description: ''
+    put:
+      operationId: api_parking_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this parking.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Parking'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Parking'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Parking'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Parking'
+          description: ''
+    patch:
+      operationId: api_parking_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this parking.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedParking'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedParking'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedParking'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Parking'
+          description: ''
+    delete:
+      operationId: api_parking_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this parking.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/referent/:
     get:
       operationId: api_referent_list
@@ -1400,6 +1558,18 @@ components:
         * `essence` - Essence
         * `diesel` - Diesel
         * `electrique` - Electrique
+    Nested:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+      required:
+      - id
+      - name
     NullEnum:
       enum:
       - null
@@ -1449,6 +1619,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Contract'
+    PaginatedParkingList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parking'
     PaginatedUserList:
       type: object
       required:
@@ -1495,6 +1688,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Vehicle'
+    Parking:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+      required:
+      - id
+      - name
     PatchedBeneficiary:
       type: object
       properties:
@@ -1622,6 +1827,15 @@ components:
         vehicle_kilometer:
           type: integer
           readOnly: true
+    PatchedParking:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
     PatchedUser:
       type: object
       properties:
@@ -1693,6 +1907,14 @@ components:
           format: int64
         status:
           $ref: '#/components/schemas/VehicleStatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        parking:
+          allOf:
+          - $ref: '#/components/schemas/Nested'
+          readOnly: true
     ReasonEnum:
       enum:
       - cdd
@@ -1834,13 +2056,23 @@ components:
           format: int64
         status:
           $ref: '#/components/schemas/VehicleStatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        parking:
+          allOf:
+          - $ref: '#/components/schemas/Nested'
+          readOnly: true
       required:
       - brand
+      - created_at
       - fleet_id
       - id
       - imat
       - kilometer
       - modele
+      - parking
       - year
     VehicleStatusEnum:
       enum:

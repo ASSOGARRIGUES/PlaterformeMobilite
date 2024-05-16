@@ -9,6 +9,7 @@ router.register('beneficiary', views.BeneficiaryViewSet)
 router.register('contract', views.ContractViewSet)
 router.register('referent', views.UserViewSet)
 router.register('whoami', views.WhoAmIViewSet, basename='whoami')
+router.register('parking', views.ParkingViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

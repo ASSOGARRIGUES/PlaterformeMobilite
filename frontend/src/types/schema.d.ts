@@ -152,6 +152,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/parking/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_parking_list"];
+        put?: never;
+        post: operations["api_parking_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/parking/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_parking_retrieve"];
+        put: operations["api_parking_update"];
+        post?: never;
+        delete: operations["api_parking_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["api_parking_partial_update"];
+        trace?: never;
+    };
     "/api/referent/": {
         parameters: {
             query?: never;
@@ -341,6 +373,10 @@ export interface components {
          * @enum {string}
          */
         FuelTypeEnum: FuelTypeEnum;
+        Nested: {
+            readonly id: number;
+            name: string;
+        };
         /** @enum {unknown} */
         NullEnum: null;
         PaginatedBeneficiaryList: {
@@ -373,6 +409,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["Contract"][];
         };
+        PaginatedParkingList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["Parking"][];
+        };
         PaginatedUserList: {
             /** @example 123 */
             count: number;
@@ -402,6 +453,10 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Vehicle"][];
+        };
+        Parking: {
+            readonly id: number;
+            name: string;
         };
         PatchedBeneficiary: {
             readonly id?: number;
@@ -455,6 +510,10 @@ export interface components {
             readonly max_kilometer?: number;
             readonly vehicle_kilometer?: number;
         };
+        PatchedParking: {
+            readonly id?: number;
+            name?: string;
+        };
         PatchedUser: {
             readonly id?: number;
             /**
@@ -490,6 +549,9 @@ export interface components {
             /** Format: int64 */
             kilometer?: number;
             status?: components["schemas"]["VehicleStatusEnum"];
+            /** Format: date-time */
+            readonly created_at?: string;
+            readonly parking?: components["schemas"]["Nested"];
         };
         /**
          * @description * `cdd` - CDD
@@ -559,6 +621,9 @@ export interface components {
             /** Format: int64 */
             kilometer: number;
             status?: components["schemas"]["VehicleStatusEnum"];
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly parking: components["schemas"]["Nested"];
         };
         /**
          * @description * `available` - Disponible
@@ -1055,6 +1120,154 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Contract"];
+                };
+            };
+        };
+    };
+    api_parking_list: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedParkingList"];
+                };
+            };
+        };
+    };
+    api_parking_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Parking"];
+                "application/x-www-form-urlencoded": components["schemas"]["Parking"];
+                "multipart/form-data": components["schemas"]["Parking"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Parking"];
+                };
+            };
+        };
+    };
+    api_parking_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this parking. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Parking"];
+                };
+            };
+        };
+    };
+    api_parking_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this parking. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Parking"];
+                "application/x-www-form-urlencoded": components["schemas"]["Parking"];
+                "multipart/form-data": components["schemas"]["Parking"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Parking"];
+                };
+            };
+        };
+    };
+    api_parking_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this parking. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_parking_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this parking. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedParking"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedParking"];
+                "multipart/form-data": components["schemas"]["PatchedParking"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Parking"];
                 };
             };
         };
