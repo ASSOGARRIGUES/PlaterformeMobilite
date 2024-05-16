@@ -1,6 +1,6 @@
 FROM python:3 as base
 WORKDIR /backend
-RUN apt-get update && apt-get install -y postgresql-client crontab
+RUN apt-get update && apt-get install -y postgresql-client cron
 
 FROM base as deps
 COPY requirements.txt .
