@@ -38,6 +38,7 @@ class VehicleFilter(OrFilterSet):
     class Meta:
         model = Vehicle
         fields = {
+            'id': ["in", "exact"],
             'fleet_id': ["in", "exact"],
             'status': ["in", "exact"],
             'contracts': ["in", "exact"],
