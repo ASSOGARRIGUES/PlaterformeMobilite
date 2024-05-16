@@ -282,6 +282,8 @@ export interface components {
             /** Format: email */
             email: string;
             license_number?: string | null;
+            /** Format: date */
+            license_delivery_date?: string | null;
             city: string;
             postal_code: string;
         };
@@ -411,6 +413,8 @@ export interface components {
             /** Format: email */
             email?: string;
             license_number?: string | null;
+            /** Format: date */
+            license_delivery_date?: string | null;
             city?: string;
             postal_code?: string;
         };
@@ -1573,7 +1577,7 @@ export enum PathsApiVehicleGetParametersQueryStatus__or {
     rented = "rented"
 }
 export enum BlankEnum {
-      ""
+     ""
 }
 export enum ContractStatusEnum {
     waiting = "waiting",

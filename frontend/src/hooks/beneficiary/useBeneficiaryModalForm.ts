@@ -19,6 +19,7 @@ const useBeneficiaryModalForm = ({action, redirect=false}: {action: FormAction |
         postal_code: "",
         address_complement: "",
         license_number: "",
+        license_delivery_date: "",
     };
 
     const emailRegExp = new RegExp("^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+.[a-zA-Z]{2,6}$");
@@ -68,6 +69,16 @@ const useBeneficiaryModalForm = ({action, redirect=false}: {action: FormAction |
                 return "Le code postal n'est pas valide";
             }
         },
+        license_delivery_date: (value, values) => {
+            if(values.license_number && !value) {
+                return "La date de délivrance du permis est requise";
+            }
+        },
+        license_number: (value, values) => {
+            if(values.license_delivery_date && !value) {
+                return "Le numéro de permis est requis";
+            }
+        }
         // license_number: (value) => {
         //     if (!value) {
         //         return "Le numéro de permis est requis";
@@ -87,6 +98,7 @@ const useBeneficiaryModalForm = ({action, redirect=false}: {action: FormAction |
              ...values,
             phone: values.phone.replace(/\s/g, ""),
             license_number: values.license_number?.toUpperCase() ?? "",
+            license_delivery_date: !values.license_delivery_date || values.license_delivery_date == "" ?  undefined : values.license_delivery_date,
             first_name: humanizeFirstName(values.first_name),
             last_name: humanizeLastName(values.last_name),
         }),

@@ -55,6 +55,7 @@ class Beneficiary(models.Model):
     address_complement = models.CharField(max_length=100, blank=True, null=True)
     email = models.EmailField()
     license_number = models.CharField(max_length=100, blank=True, null=True)
+    license_delivery_date = models.DateField(blank=True, null=True)
     city = models.CharField(max_length=100)
     postal_code = models.CharField(max_length=100)
 

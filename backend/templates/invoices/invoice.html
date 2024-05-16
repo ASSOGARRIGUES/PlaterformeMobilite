@@ -9,16 +9,16 @@
     <style type="text/css">/* Main Body */
     @page {
         size: a4 portrait;
-        {#margin-top: 1cm;#}
-        {#margin-bottom: 3cm;#}
-        {#margin-left: 2cm;#}
-        {#margin-right: 2cm;#}
+    {#margin-top: 1cm;#}
+    {#margin-bottom: 3cm;#}
+    {#margin-left: 2cm;#}
+    {#margin-right: 2cm;#}
 
         @frame content_frame {          /* Content Frame */
             left: 40pt; width: 515pt; top: 28pt; height: 766pt;
         }
 
-         @frame footer_frame {           /* Another static Frame */
+        @frame footer_frame {           /* Another static Frame */
             -pdf-frame-content: footer_content;
             left: 40pt; width: 515pt; top: 794pt; height: 20pt;
         }
@@ -213,7 +213,7 @@
         margin-bottom: 20px;
     }
 
-        .deposit-details td,
+    .deposit-details td,
     .deposit-details th {
         border-bottom: 1px #ccc solid;
         border-top: 1px #ccc solid;
@@ -344,7 +344,27 @@
     <tr>
         <td class="billing-address" style="width: 50%">
             <h3>Bénéficiaire du contrat (Utilisateur du véhicule):</h3>
-            {{ contract.beneficiary.first_name  }} {{ contract.beneficiary.last_name  }}<br>{{ contract.beneficiary.address }}<br>{{ contract.beneficiary.postal_code }} {{ contract.beneficiary.city }}<br>{{ contract.beneficiary.email }}
+            <table>
+                <tbody>
+                <tr>
+                    <td style="font-size: 14px">{{ contract.beneficiary.first_name  }} {{ contract.beneficiary.last_name  }}</td>
+                </tr>
+                <tr>
+                    <td>{{ contract.beneficiary.address  }}</td>
+                </tr>
+                {% if contract.beneficiary.address_complement %}
+                    <tr>
+                        <td>{{ contract.beneficiary.address_complement  }}</td>
+                    </tr>
+                {% endif %}
+                <tr>
+                    <td>{{ contract.beneficiary.postal_code  }} {{ contract.beneficiary.city  }}</td>
+                </tr>
+                <tr>
+                    <td>{{ contract.beneficiary.email  }}</td>
+                </tr>
+                </tbody>
+            </table>
             <div class="billing-phone">{{ contract.beneficiary.phone }}</div>
         </td>
 
@@ -355,21 +375,9 @@
                     <th>Numéro de contrat:</th>
                     <td>{{ contract.id }}</td>
                 </tr>
-                <tr class="delivery-date">
-                    <th>Permis de Conduire n°:</th>
-                    <td>{{ contract.beneficiary.license_number }}</td>
-                </tr>
-                <tr class="delivery-date">
-                    <th>Délivré par:</th>
-                    <td>{{ contract.created_by.first_name }} {{ contract.created_by.last_name }}</td>
-                </tr>
-                <tr class="delivery-date">
-                    <th>Le:</th>
+                <tr class="order-number">
+                    <th>Crée le:</th>
                     <td>{{ contract.created_at }}</td>
-                </tr>
-                <tr class="delivery-date">
-                    <th>_____________________________________</th>
-                    <td></td>
                 </tr>
                 <tr class="delivery-date">
                     <th>Référent Garrigues:</th>
@@ -379,6 +387,22 @@
                     <th>Tél:</th>
                     <td>{{ contract.referent.phone }}</td>
                 </tr>
+
+                <tr class="delivery-date">
+                    <th>_____________________________________</th>
+                    <td></td>
+                </tr>
+                <tr class="delivery-date">
+                    <th>Permis de Conduire n°:</th>
+                    <td>{% firstof contract.beneficiary.license_number "Pas de permis" %}</td>
+                </tr>
+                {% if contract.beneficiary.license_number %}
+                    <tr class="delivery-date">
+                        <th>Délivré le:</th>
+                        <td>{% firstof contract.beneficiary.license_delivery_date ""%}</td>
+                    </tr>
+                {% endif %}
+
                 <tr></tr>
                 <tr class="delivery-date">
                     <th><i>KM autorisés:</i></th>
@@ -509,7 +533,7 @@
                 <span>&#x25A2; Virement</span>
             </div>
         </td>
-         <td>
+        <td>
             Banque:
         </td>
     </tr>

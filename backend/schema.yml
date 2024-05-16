@@ -1248,6 +1248,10 @@ components:
           type: string
           nullable: true
           maxLength: 100
+        license_delivery_date:
+          type: string
+          format: date
+          nullable: true
         city:
           type: string
           maxLength: 100
@@ -1521,6 +1525,10 @@ components:
           type: string
           nullable: true
           maxLength: 100
+        license_delivery_date:
+          type: string
+          format: date
+          nullable: true
         city:
           type: string
           maxLength: 100
