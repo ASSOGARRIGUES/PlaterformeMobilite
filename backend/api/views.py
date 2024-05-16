@@ -15,8 +15,41 @@ from .models import Vehicle, Beneficiary, Contract, Parking
 from .serializers import VehicleSerializer, BeneficiarySerializer, ContractSerializer, UserSerializer, \
     EndContractSerializer, ParkingSerializer
 
+class ArchivableModelViewSet(viewsets.ModelViewSet):
 
-class VehicleViewSet(viewsets.ModelViewSet):
+    def get_queryset(self):
+        #if archived is not equal to 1 in the query params, return only non archived instances
+        if self.request.query_params.get('archived') != '1' and self.action == 'list':
+            return self.queryset.filter(archived=False)
+        return self.queryset
+
+    @action(detail=True, methods=['patch'])
+    def archive(self, request, pk=None):
+        instance = self.get_object()
+        instance.archived = True
+        #Retrieve all instance relying on the current instance
+        for related_instance in instance._meta.related_objects:
+            related_instance = getattr(instance, related_instance.get_accessor_name())
+            for related in related_instance.all():
+                related.archived = True
+                related.save()
+        instance.save()
+        return Response({'details': 'archived'}, status=200)
+
+    @action(detail=True, methods=['patch'])
+    def unarchive(self, request, pk=None):
+        instance = self.get_object()
+        instance.archived = False
+        #Retrieve all instance relying on the current instance
+        for related_instance in instance._meta.related_objects:
+            related_instance = getattr(instance, related_instance.get_accessor_name())
+            for related in related_instance.all():
+                related.archived = False
+                related.save()
+        instance.save()
+        return Response({'details': 'unarchived'}, status=200)
+
+class VehicleViewSet(ArchivableModelViewSet):
     queryset = Vehicle.objects.all()
     serializer_class = VehicleSerializer
     permission_classes = (permissions.DjangoModelPermissions,)
@@ -31,7 +64,7 @@ class VehicleViewSet(viewsets.ModelViewSet):
         return context
 
 
-class BeneficiaryViewSet(viewsets.ModelViewSet):
+class BeneficiaryViewSet(ArchivableModelViewSet):
     queryset = Beneficiary.objects.all()
     serializer_class = BeneficiarySerializer
     permission_classes = (permissions.DjangoModelPermissions,)
@@ -40,7 +73,7 @@ class BeneficiaryViewSet(viewsets.ModelViewSet):
     search_fields = ['first_name', 'last_name', 'email', 'phone', 'address', 'city', 'postal_code']
 
 
-class ContractViewSet(viewsets.ModelViewSet):
+class ContractViewSet(ArchivableModelViewSet):
     queryset = Contract.objects.all()
     serializer_class = ContractSerializer
     permission_classes = (permissions.DjangoModelPermissions,)

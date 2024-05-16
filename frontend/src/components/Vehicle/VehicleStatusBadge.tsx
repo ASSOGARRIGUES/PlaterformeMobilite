@@ -4,6 +4,8 @@ import {Vehicle} from "../../types/vehicle";
 
 const VehicleStatusBadge = ({vehicle}: {vehicle: Vehicle}) => {
 
+    if(vehicle.archived) return (<Badge color="gray">Archivé</Badge>);
+
     const status = vehicle.status as keyof typeof VehicleStatusEnum;
 
     const statusColorMap: Record<string, string> = {

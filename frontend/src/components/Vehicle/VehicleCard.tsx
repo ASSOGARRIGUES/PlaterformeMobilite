@@ -31,7 +31,7 @@ const VehicleCard = ({vehicle, withEdit=false, title=(<>Informations</>), style}
     const EditButton = ({vehicle}: {vehicle: Vehicle}) => {
         return (
             <Center>
-                <ActionIcon onClick={(e)=>{e.stopPropagation();showEditModal(vehicle.id)}}  color="blue">
+                <ActionIcon onClick={(e)=>{e.stopPropagation();showEditModal(vehicle.id)}}  color="blue" disabled={vehicle.archived}>
                     <IconEdit size={25} />
                 </ActionIcon>
             </Center>

@@ -61,6 +61,8 @@ class Vehicle(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    archived = models.BooleanField(default=False)
+
     def __str__(self):
         return self.brand.capitalize()+' '+self.modele.capitalize()
 
@@ -76,6 +78,8 @@ class Beneficiary(models.Model):
     license_delivery_date = models.DateField(blank=True, null=True)
     city = models.CharField(max_length=100)
     postal_code = models.CharField(max_length=100)
+
+    archived = models.BooleanField(default=False)
 
     def __str__(self):
         return self.first_name.capitalize()+' '+self.last_name.capitalize()
@@ -120,7 +124,10 @@ class Contract(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='contracts_created_by', null=True, blank=True)
 
+
     referent = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='contracts_referent')
+
+    archived = models.BooleanField(default=False)
 
     def __str__(self):
         return self.vehicle.brand.capitalize()+ ' '+self.vehicle.modele+ ' '+self.beneficiary.last_name.capitalize()

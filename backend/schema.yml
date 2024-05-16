@@ -319,6 +319,72 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/beneficiary/{id}/archive/:
+    patch:
+      operationId: api_beneficiary_archive_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this beneficiary.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBeneficiary'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBeneficiary'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBeneficiary'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Beneficiary'
+          description: ''
+  /api/beneficiary/{id}/unarchive/:
+    patch:
+      operationId: api_beneficiary_unarchive_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this beneficiary.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBeneficiary'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBeneficiary'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBeneficiary'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Beneficiary'
+          description: ''
   /api/contract/:
     get:
       operationId: api_contract_list
@@ -591,6 +657,39 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/contract/{id}/archive/:
+    patch:
+      operationId: api_contract_archive_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this contract.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedContract'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedContract'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedContract'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+          description: ''
   /api/contract/{id}/end/:
     get:
       operationId: api_contract_end_retrieve
@@ -713,6 +812,39 @@ paths:
             schema:
               $ref: '#/components/schemas/Contract'
         required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+          description: ''
+  /api/contract/{id}/unarchive/:
+    patch:
+      operationId: api_contract_unarchive_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this contract.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedContract'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedContract'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedContract'
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -1357,6 +1489,72 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/vehicle/{id}/archive/:
+    patch:
+      operationId: api_vehicle_archive_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this vehicle.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedVehicle'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedVehicle'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedVehicle'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+          description: ''
+  /api/vehicle/{id}/unarchive/:
+    patch:
+      operationId: api_vehicle_unarchive_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this vehicle.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedVehicle'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedVehicle'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedVehicle'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+          description: ''
   /api/whoami/:
     get:
       operationId: api_whoami_list
@@ -1416,6 +1614,8 @@ components:
         postal_code:
           type: string
           maxLength: 100
+        archived:
+          type: boolean
       required:
       - address
       - city
@@ -1489,6 +1689,8 @@ components:
           type: string
           format: date-time
           nullable: true
+        archived:
+          type: boolean
         vehicle:
           type: integer
         beneficiary:
@@ -1740,6 +1942,8 @@ components:
         postal_code:
           type: string
           maxLength: 100
+        archived:
+          type: boolean
     PatchedContract:
       type: object
       properties:
@@ -1801,6 +2005,8 @@ components:
           type: string
           format: date-time
           nullable: true
+        archived:
+          type: boolean
         vehicle:
           type: integer
         beneficiary:
@@ -1911,10 +2117,10 @@ components:
           type: string
           format: date-time
           readOnly: true
+        archived:
+          type: boolean
         parking:
-          allOf:
-          - $ref: '#/components/schemas/Nested'
-          readOnly: true
+          type: integer
     ReasonEnum:
       enum:
       - cdd
@@ -2060,6 +2266,8 @@ components:
           type: string
           format: date-time
           readOnly: true
+        archived:
+          type: boolean
         parking:
           allOf:
           - $ref: '#/components/schemas/Nested'
