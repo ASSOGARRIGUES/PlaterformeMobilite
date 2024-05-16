@@ -30,25 +30,15 @@ const ContractModal : React.FC<
     const endDateInputProps = getInputProps("end_date");
 
 
-    const [isTouched, setIsTouched] = React.useState(false);
     const [dateValue, setDateValue] = React.useState<DateRangePickerValue>([new Date(startDateInputProps.value), new Date(endDateInputProps.value)]);
 
-
-    //Reset touched flag when modal is closed
     useEffect(() => {
-        if(visible) return;
-        setIsTouched(false);
-        setDateValue([new Date(), new Date()]);
-    }, [visible]);
-
-    useEffect(() => {
-        if(!visible || isTouched) return;
+        if(!visible) return;
         setDateValue([new Date(startDateInputProps.value), new Date(endDateInputProps.value)])
-    }, [startDateInputProps.value, endDateInputProps.value, isTouched]);
+    }, [startDateInputProps.value, endDateInputProps.value, visible]);
 
 
     function handleDateChange(value: DateRangePickerValue) {
-        setIsTouched(true);
         setDateValue(value);
         startDateInputProps.onChange(dayjs(value[0]).format("YYYY-MM-DD"));
         endDateInputProps.onChange(dayjs(value[1]).format("YYYY-MM-DD"));
