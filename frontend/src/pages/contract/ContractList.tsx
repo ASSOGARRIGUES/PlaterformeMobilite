@@ -17,7 +17,7 @@ import useContractModalForm from "../../hooks/contract/useContractModalForm";
 import OnePDFButton from "../../components/contract/OnePDFButton";
 import ContractStatusBadge from "../../components/contract/ContractStatusBadge";
 import ContractEditButton from "../../components/contract/ContractEditButton";
-import {humanizeDate} from "../../constants";
+import {humanizeDate, humanizeFirstName} from "../../constants";
 import PayedContractButton from "../../components/contract/PayedContractButton";
 import ContractSearchTooltip from "../../components/contract/ContractSearchTooltip";
 
@@ -78,6 +78,14 @@ const ContractList = () => {
                 textAlignment:"center",
                 sortable: true,
                 render: (contract) => (<ContractStatusBadge contract={contract}/>),
+            },
+            {
+                accessor: 'referent',
+                title: 'Référent',
+                sortable: true,
+                render: (contract) => {
+                    return contract.referent?.hasOwnProperty("id") ? humanizeFirstName(contract.referent.first_name)+" "+contract.referent.last_name.substring(0,1).toUpperCase()+"."  : "---"
+                }
             },
             {
                 accessor: "action",

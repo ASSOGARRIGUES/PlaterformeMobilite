@@ -189,7 +189,7 @@ const useContractModalForm = ({action, redirect=false}: {action: FormAction | un
         ###############
      */
     const {selectProps: userSelectProps, queryResult: {isFetching: isUserLoading}} = useSelect({
-        resource: "user",
+        resource: "referent",
         optionLabel: (user) => `${user.first_name} ${user.last_name}`,
         onSearch: (value) => [
             {

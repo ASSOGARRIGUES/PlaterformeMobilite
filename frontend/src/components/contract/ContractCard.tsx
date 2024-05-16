@@ -4,7 +4,7 @@ import {CompleteContract} from "../../types/contract";
 import useContractModalForm from "../../hooks/contract/useContractModalForm";
 import ContractStatusBadge from "./ContractStatusBadge";
 import ContractModal from "./ContractModal";
-import {humanizeDate, humanizeNumber} from "../../constants";
+import {humanizeDate, humanizeFirstName, humanizeLastName, humanizeNumber} from "../../constants";
 import {CSSProperties} from "react";
 import ContractEditButton from "./ContractEditButton";
 
@@ -47,7 +47,7 @@ const ContractCard = ({contract, withEdit, style}: {contract: CompleteContract |
                 <Text><span style={{fontWeight: "bold"}}>Créé le: </span> {humanizeDate(contract.created_at)} </Text>
                 <Text><span style={{fontWeight: "bold"}}>Par: </span> {contract.created_by} </Text>
                 <Text><span style={{fontWeight: "bold"}}>Début: </span> {humanizeDate(contract.start_date)} </Text>
-                <Text><span style={{fontWeight: "bold"}}>Référent: </span> {contract.referent} </Text>
+                <Text><span style={{fontWeight: "bold"}}>Référent: </span> { contract.referent?.first_name && contract.referent?.last_name ? humanizeFirstName(contract.referent.first_name)+" "+contract.referent.last_name.substring(1,0).toUpperCase()+"." : "--"} </Text>
                 <Text><span style={{fontWeight: "bold"}}>Fin: </span> {humanizeDate(contract.end_date)}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Prix: </span> {contract.price}€</Text>
                 <Text><span style={{fontWeight: "bold"}}>Temps restant: </span> <span style={{color: remainingDaysColor}}>{ remainingDays(contract)}j</span></Text>

@@ -18,6 +18,7 @@ import {openConfirmModal} from "@mantine/modals";
 import usePayContract from "../../hooks/contract/usePayContract";
 import ContractComment from "../../components/contract/ContractComment";
 import {useGetToPath, useGo, useResource} from "@refinedev/core";
+import {User} from "../../types/auth";
 
 const ContractShow = () => {
 
@@ -50,6 +51,15 @@ const ContractShow = () => {
 
     //Update the contract with the vehicle
     if(completeContract && vehicle) completeContract.vehicle = vehicle.data;
+
+    //Retrieve the referent from the contract using useOne hook
+    const {data: referent} = useOne<User>({
+        resource: "referent",
+        id: contractResponse?.referent
+    })
+
+    //Update the contract with the referent
+    if(completeContract && referent) completeContract.referent = referent.data;
 
     const benefTitle = beneficiary?.data ? <BeneficiaryBadge beneficiary={beneficiary.data}/> : (<>"Bénéficiaire"</>)
 

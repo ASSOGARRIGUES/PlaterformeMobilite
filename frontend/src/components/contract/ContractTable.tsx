@@ -21,6 +21,7 @@ import { useDebouncedValue } from "@mantine/hooks";
 import { useMany, useGetToPath, useGo} from "@refinedev/core";
 import { Vehicle } from "../../types/vehicle";
 import {CompleteContract} from "../../types/contract";
+import {User} from "../../types/auth";
 
 /*
 Ce composant donne une datable triable avec un champ de recherche et la logique de tri intégré.
@@ -134,7 +135,11 @@ function ContractTable<T extends BaseRecord>({
     let data = tableQueryResult?.data?.data ?? [];
 
 
-    //Retrieve the vehicle data
+    /*
+        ##############
+        ## VEHICLES ##
+        ##############
+     */
     const vehicleIds = data.map((contract) => contract.vehicle);
 
     const { data: vehicleMany, isLoading } = useMany<Vehicle>({
@@ -154,7 +159,12 @@ function ContractTable<T extends BaseRecord>({
         });
     }
 
-    //Retrieve the beneficiary data
+
+    /*
+        ###################
+        ## BENEFICIARIES ##
+        ###################
+     */
     const beneficiaryIds = data.map((contract) => contract.beneficiary);
 
     const { data: beneficiaryMany } = useMany<Beneficiary>({
@@ -173,6 +183,30 @@ function ContractTable<T extends BaseRecord>({
             return { ...contract, beneficiary };
         });
     }
+
+    /*
+        ###################
+        ## REFERENTS ##
+        ###################
+     */
+    const referentIds = data.map((contract) => contract.referent);
+    const { data: referentMany } = useMany<User>({
+        resource: "referent",
+        ids: referentIds,
+        queryOptions: {
+            enabled: referentIds.length > 0,
+        },
+    });
+
+    if(referentMany){
+        data = data.map((contract) => {
+            const referent = referentMany.data?.find(
+                (referent) => referent.id === contract.referent
+            );
+            return { ...contract, referent };
+        });
+    }
+
 
     //Data object is now complete
 
