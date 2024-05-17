@@ -286,11 +286,18 @@ function ContractTable<T extends BaseRecord>({
                             {categoriesSelector}
 
                             {extraButtons}
-                            <Switch
-                                label="Archives"
-                                value={showArchived}
-                                onChange={(value) => toggleArchived()}
-                            />
+                            <Tooltip label={"Cette fonctionnalité est à venir. La visualisation des contrats archivés n'est pas disponible."}>
+                                <span>
+                                    <Switch
+                                        label="Archives"
+                                        value={showArchived}
+                                        disabled={true}
+                                        onChange={(value) => toggleArchived()}
+                                    />
+                                </span>
+
+                            </Tooltip>
+
 
                             {withAddIcon && (
                                 <Tooltip label={"Nouveau"} position={"bottom"} openDelay={200} >
