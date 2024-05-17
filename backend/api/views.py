@@ -36,8 +36,18 @@ class BeneficiaryViewSet(viewsets.ModelViewSet):
     serializer_class = BeneficiarySerializer
     permission_classes = (permissions.DjangoModelPermissions,)
 
-    filter_backends = [SearchFilter, OrderingFilter]
+    filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]
     search_fields = ['first_name', 'last_name', 'email', 'phone', 'address', 'city', 'postal_code']
+    filterset_fields = {
+        'id': ['in', 'exact'],
+        'first_name': ['in', 'exact'],
+        'last_name': ['in', 'exact'],
+        'email': ['in', 'exact'],
+        'phone': ['in', 'exact'],
+        'address': ['in', 'exact'],
+        'city': ['in', 'exact'],
+        'postal_code': ['in', 'exact'],
+    }
 
 
 class ContractViewSet(viewsets.ModelViewSet):
