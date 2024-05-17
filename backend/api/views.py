@@ -19,7 +19,18 @@ class ArchivableModelViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         #if archived is not equal to 1 in the query params, return only non archived instances
-        if self.request.query_params.get('archived') != '1' and self.action == 'list':
+        if self.action == 'list':
+            if self.request.query_params.get('archived') == '0':
+                return self.queryset.filter(archived=False)
+            elif self.request.query_params.get('archived') == '1':
+                return self.queryset.filter(archived=True)
+            elif self.request.query_params.get('archived__in'):
+                query = self.request.query_params.get('archived__in')
+                print("archived__in", query)
+                if '0' in query and '1' in query:
+                    print("both")
+                    return self.queryset
+
             return self.queryset.filter(archived=False)
         return self.queryset
 
@@ -69,8 +80,18 @@ class BeneficiaryViewSet(ArchivableModelViewSet):
     serializer_class = BeneficiarySerializer
     permission_classes = (permissions.DjangoModelPermissions,)
 
-    filter_backends = [SearchFilter, OrderingFilter]
+    filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]
     search_fields = ['first_name', 'last_name', 'email', 'phone', 'address', 'city', 'postal_code']
+    filterset_fields = {
+        'id': ['in', 'exact'],
+        'first_name': ['in', 'exact'],
+        'last_name': ['in', 'exact'],
+        'email': ['in', 'exact'],
+        'phone': ['in', 'exact'],
+        'address': ['in', 'exact'],
+        'city': ['in', 'exact'],
+        'postal_code': ['in', 'exact'],
+    }
 
 
 class ContractViewSet(ArchivableModelViewSet):

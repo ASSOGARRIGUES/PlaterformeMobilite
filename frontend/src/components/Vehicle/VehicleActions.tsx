@@ -13,7 +13,7 @@ const VehicleActions = ({ vehicle, style}: { vehicle: Vehicle  | undefined, styl
             <Stack>
                 <QuickStatusButton vehicle={vehicle} disabled={vehicle?.archived}/>
                 <ParkingChangeSelect vehicle={vehicle} disabled={vehicle?.archived}/>
-                <ArchiveButton id={vehicle?.id} ressource="vehicle" modalContent={"Etes vous certains de vouloir archiver ce véhicule ?"} disabled={vehicle?.archived}/>
+                <ArchiveButton id={vehicle?.id} ressource="vehicle" modalContent={"Etes vous certains de vouloir archiver ce véhicule ?"} color="red" disabled={vehicle?.archived}/>
             </Stack>
         </Paper>
     )

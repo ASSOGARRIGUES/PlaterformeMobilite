@@ -7,7 +7,7 @@ import {
     MantineNumberSize,
     GroupPosition,
     Tooltip,
-    MediaQuery, useMantineTheme
+    MediaQuery, useMantineTheme, Switch
 } from "@mantine/core";
 import {IconCirclePlus, IconInfoCircle, IconRefresh, IconSearch} from "@tabler/icons-react";
 import {DataTable, DataTableSortStatus} from "mantine-datatable";
@@ -16,7 +16,7 @@ import {DataTableColumn} from "mantine-datatable/dist/types/DataTableColumn";
 import {DataTableProps} from "mantine-datatable/dist/types";
 import {BaseRecord, CrudFilters, HttpError, useParsed, useTable} from "@refinedev/core";
 import {PAGE_SIZE} from "../constants";
-import {useDebouncedValue} from "@mantine/hooks";
+import {useDebouncedValue, useToggle} from "@mantine/hooks";
 
 /*
 Ce composant donne une datable triable avec un champ de recherche et la logique de tri intégré.
@@ -95,6 +95,8 @@ function SearchableDataTable<T extends BaseRecord>({
     const [search, setSearch] = useState(urlSearch || "");
     const [debouncedSearch] = useDebouncedValue(search, 200, { leading: true });
 
+    const [showArchived, toggleArchived] = useToggle([0,1]);
+
 
     const {
         tableQueryResult,
@@ -108,7 +110,7 @@ function SearchableDataTable<T extends BaseRecord>({
         pagination: {pageSize: pageSize},
         sorters: {initial: [{field: String(sortStatus.columnAccessor), order: sortStatus.direction}]},
         filters: {
-            initial: [{ field: "search", operator: "eq", value: search }],
+            initial: [{ field: "search", operator: "eq", value: search }, {field:"archived", operator:"eq", value: showArchived?1:0}],
             permanent: defaultFilters ? defaultFilters : []
         }
     });
@@ -129,8 +131,9 @@ function SearchableDataTable<T extends BaseRecord>({
     }
 
     useEffect(() => {
-        setFilters([{ field: "search", operator: "eq", value: debouncedSearch }]);
-    }, [debouncedSearch]);
+        console.log(showArchived)
+        setFilters([{ field: "search", operator: "eq", value: debouncedSearch }, {field:"archived", operator:"eq", value: showArchived?1:0}]);
+    }, [debouncedSearch, showArchived]);
 
 
     const reloadCallback = () => {
@@ -174,6 +177,11 @@ function SearchableDataTable<T extends BaseRecord>({
                             {categoriesSelector}
 
                             {extraButtons}
+                            <Switch
+                                label="Archives"
+                                value={showArchived}
+                                onChange={(value) => toggleArchived()}
+                            />
 
                             {withAddIcon && (
                                 <Tooltip label={"Nouveau"} position={"bottom"} openDelay={200} >

@@ -64,7 +64,7 @@ export const dataProvider = (
       const { headers, method } = meta ?? {};
       const requestMethod = (method as MethodTypes) ?? "get";
 
-      const filters: CrudFilters = [{ field: "id", operator: "in", value: ids }];
+      const filters: CrudFilters = [{ field: "id", operator: "in", value: ids }, {field: "archived", operator: "in", value: [0,1]}];
       const queryFilters = generateFilter(filters);
 
       const { data } = await httpClient[requestMethod](

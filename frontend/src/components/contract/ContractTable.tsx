@@ -7,7 +7,7 @@ import {
     MantineNumberSize,
     GroupPosition,
     Tooltip,
-    MediaQuery, useMantineTheme
+    MediaQuery, useMantineTheme, Switch
 } from "@mantine/core";
 import {IconCirclePlus, IconInfoCircle, IconRefresh, IconSearch} from "@tabler/icons-react";
 import {DataTable, DataTableSortStatus} from "mantine-datatable";
@@ -17,7 +17,7 @@ import { DataTableProps } from "mantine-datatable/dist/types";
 import {BaseRecord, CrudFilter, CrudFilters, HttpError, useParsed, useResource, useTable} from "@refinedev/core";
 import { Beneficiary } from "../../types/beneficiary";
 import { PAGE_SIZE } from "../../constants";
-import { useDebouncedValue } from "@mantine/hooks";
+import {useDebouncedValue, useToggle} from "@mantine/hooks";
 import { useMany, useGetToPath, useGo} from "@refinedev/core";
 import { Vehicle } from "../../types/vehicle";
 import {CompleteContract} from "../../types/contract";
@@ -105,7 +105,8 @@ function ContractTable<T extends BaseRecord>({
 
     const [search, setSearch] = useState(urlSearch || "");
     const [debouncedSearch] = useDebouncedValue(search, 200, { leading: true });
-    ;
+
+    const [showArchived, toggleArchived] = useToggle([0,1]);
 
     const {
         tableQueryResult,
@@ -127,7 +128,7 @@ function ContractTable<T extends BaseRecord>({
             ],
         },
         filters: {
-            initial: [{ field: "search", operator: "eq", value: search }],
+            initial: [{ field: "search", operator: "eq", value: search }, {field:"archived", operator:"eq", value: showArchived?1:0}],
             permanent: permanentFilters ? permanentFilters : [],
         },
     });
@@ -141,6 +142,7 @@ function ContractTable<T extends BaseRecord>({
         ##############
      */
     const vehicleIds = data.map((contract) => contract.vehicle);
+    console.log("vehicleIds",vehicleIds)
 
     const { data: vehicleMany, isLoading } = useMany<Vehicle>({
         resource: "vehicle",
@@ -225,8 +227,8 @@ function ContractTable<T extends BaseRecord>({
     }
 
     useEffect(() => {
-        setFilters([{ field: "search", operator: "eq", value: debouncedSearch }]);
-    }, [debouncedSearch]);
+        setFilters([{ field: "search", operator: "eq", value: debouncedSearch }, {field:"archived", operator:"eq", value: showArchived?1:0}]);
+    }, [debouncedSearch, showArchived]);
 
     const reloadCallback = () => {
         tableQueryResult.refetch();
@@ -284,6 +286,11 @@ function ContractTable<T extends BaseRecord>({
                             {categoriesSelector}
 
                             {extraButtons}
+                            <Switch
+                                label="Archives"
+                                value={showArchived}
+                                onChange={(value) => toggleArchived()}
+                            />
 
                             {withAddIcon && (
                                 <Tooltip label={"Nouveau"} position={"bottom"} openDelay={200} >
