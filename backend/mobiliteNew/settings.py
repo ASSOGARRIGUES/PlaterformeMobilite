@@ -16,6 +16,7 @@ from pathlib import Path
 from os import getenv
 from dotenv import load_dotenv
 
+
 load_dotenv(".env")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -229,3 +230,10 @@ ADMINS = [("Simon", "simon.galand43@gmail.com")]
 CRONJOBS = [
     ('0 22 */ * *', 'core.crons.dbBackup')
 ]
+
+
+SPECTACULAR_SETTINGS = {
+    'ENUM_NAME_OVERRIDES': {
+        'VehicleStatusEnum': 'api.models.Vehicle.STATUS_CHOICES'
+    }
+}

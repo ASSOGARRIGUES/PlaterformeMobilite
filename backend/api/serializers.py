@@ -9,6 +9,11 @@ class DynamicDepthSerializer(serializers.ModelSerializer):
         super().__init__(*args, **kwargs)
         self.Meta.depth = self.context.get('depth', 0)
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ['id', 'username', 'email', 'first_name', 'last_name']
+
 class VehicleSerializer(DynamicDepthSerializer):
     photo = Base64ImageField(required=False)
 
@@ -23,11 +28,12 @@ class BeneficiarySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ContractSerializer(serializers.ModelSerializer):
+class ContractSerializer(DynamicDepthSerializer):
     start_kilometer = serializers.IntegerField(read_only=True)
     end_kilometer = serializers.IntegerField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
-    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    created_by = UserSerializer(read_only=True)
+    referent = UserSerializer()
 
     class Meta:
         model = Contract
@@ -71,10 +77,6 @@ class EndContractSerializer(serializers.ModelSerializer):
 
         return value
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = get_user_model()
-        fields = ['id', 'username', 'email', 'first_name', 'last_name']
 
 
 # WhoAmISerializer is used to get the current user information in the frontend --> it should return {'id', 'username', 'email', 'first_name', 'last_name'}

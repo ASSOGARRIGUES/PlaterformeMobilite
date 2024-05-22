@@ -45,7 +45,7 @@ const ContractCard = ({contract, withEdit, style}: {contract: CompleteContract |
                 <Text><span style={{fontWeight: "bold"}}>Numéro contrat: </span> {contract.id }</Text>
                 <Text><span style={{fontWeight: "bold"}}>Status: </span> {<ContractStatusBadge contract={contract}/> }</Text>
                 <Text><span style={{fontWeight: "bold"}}>Créé le: </span> {humanizeDate(contract.created_at)} </Text>
-                <Text><span style={{fontWeight: "bold"}}>Par: </span> {contract.created_by} </Text>
+                <Text><span style={{fontWeight: "bold"}}>Par: </span> { contract.created_by?.first_name && contract.created_by?.last_name ? humanizeFirstName(contract.created_by.first_name)+" "+contract.created_by.last_name.substring(1,0).toUpperCase()+"." : "--"} </Text>
                 <Text><span style={{fontWeight: "bold"}}>Début: </span> {humanizeDate(contract.start_date)} </Text>
                 <Text><span style={{fontWeight: "bold"}}>Référent: </span> { contract.referent?.first_name && contract.referent?.last_name ? humanizeFirstName(contract.referent.first_name)+" "+contract.referent.last_name.substring(1,0).toUpperCase()+"." : "--"} </Text>
                 <Text><span style={{fontWeight: "bold"}}>Fin: </span> {humanizeDate(contract.end_date)}</Text>

@@ -153,6 +153,84 @@ paths:
     get:
       operationId: api_beneficiary_list
       parameters:
+      - in: query
+        name: address
+        schema:
+          type: string
+      - in: query
+        name: address__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: city
+        schema:
+          type: string
+      - in: query
+        name: city__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: email
+        schema:
+          type: string
+      - in: query
+        name: email__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: first_name
+        schema:
+          type: string
+      - in: query
+        name: first_name__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: id
+        schema:
+          type: integer
+      - in: query
+        name: id__in
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: last_name
+        schema:
+          type: string
+      - in: query
+        name: last_name__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
       - name: limit
         required: false
         in: query
@@ -171,6 +249,32 @@ paths:
         description: Which field to use when ordering the results.
         schema:
           type: string
+      - in: query
+        name: phone
+        schema:
+          type: string
+      - in: query
+        name: phone__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: postal_code
+        schema:
+          type: string
+      - in: query
+        name: postal_code__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
       - name: search
         required: false
         in: query
@@ -1445,8 +1549,11 @@ components:
           format: date-time
           readOnly: true
         created_by:
-          type: integer
+          allOf:
+          - $ref: '#/components/schemas/User'
           readOnly: true
+        referent:
+          $ref: '#/components/schemas/User'
         start_date:
           type: string
           format: date
@@ -1490,11 +1597,13 @@ components:
           format: date-time
           nullable: true
         vehicle:
-          type: integer
+          allOf:
+          - $ref: '#/components/schemas/Nested'
+          readOnly: true
         beneficiary:
-          type: integer
-        referent:
-          type: integer
+          allOf:
+          - $ref: '#/components/schemas/Nested'
+          readOnly: true
       required:
       - beneficiary
       - created_at
@@ -1564,12 +1673,60 @@ components:
         id:
           type: integer
           readOnly: true
-        name:
+        photo:
           type: string
-          maxLength: 100
+          format: uri
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        transmission:
+          $ref: '#/components/schemas/TransmissionEnum'
+        fuel_type:
+          $ref: '#/components/schemas/FuelTypeEnum'
+        brand:
+          type: string
+          maxLength: 50
+        modele:
+          type: string
+          maxLength: 50
+        color:
+          type: string
+          nullable: true
+          maxLength: 50
+        year:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        imat:
+          type: string
+          maxLength: 9
+        fleet_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        kilometer:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        status:
+          $ref: '#/components/schemas/VehicleStatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        parking:
+          type: integer
       required:
+      - brand
+      - created_at
+      - fleet_id
       - id
-      - name
+      - imat
+      - kilometer
+      - modele
+      - year
     NullEnum:
       enum:
       - null
@@ -1757,8 +1914,11 @@ components:
           format: date-time
           readOnly: true
         created_by:
-          type: integer
+          allOf:
+          - $ref: '#/components/schemas/User'
           readOnly: true
+        referent:
+          $ref: '#/components/schemas/User'
         start_date:
           type: string
           format: date
@@ -1804,8 +1964,6 @@ components:
         vehicle:
           type: integer
         beneficiary:
-          type: integer
-        referent:
           type: integer
     PatchedEndContract:
       type: object
@@ -1912,9 +2070,7 @@ components:
           format: date-time
           readOnly: true
         parking:
-          allOf:
-          - $ref: '#/components/schemas/Nested'
-          readOnly: true
+          type: integer
     ReasonEnum:
       enum:
       - cdd

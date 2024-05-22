@@ -67,6 +67,11 @@ class ContractViewSet(viewsets.ModelViewSet):
         'end_date': ['gte', 'lte', 'gt', 'lt']
     }
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['depth'] = 1 if self.action == 'list' or self.action == 'retrieve' else 0
+        return context
+
 
     @action(detail=True, methods=['get'])
     def get_contract_pdf(self, request, pk=None):
