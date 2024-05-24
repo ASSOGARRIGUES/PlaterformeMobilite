@@ -57,6 +57,7 @@ type SearchableDataTableProps<T> = {
     pageSize?: number;
     searchInfoTooltip?: React.ReactNode
     othersProps?: DataTableProps<T>
+    resource?: string
 }
 
 function SearchableDataTable<T extends BaseRecord>({
@@ -78,6 +79,7 @@ function SearchableDataTable<T extends BaseRecord>({
                                                        pageSize = PAGE_SIZE,
                                                        defaultSortedDirection = "asc",
                                                        searchInfoTooltip,
+                                                       resource,
                                                        ...othersProps
                                                    }: SearchableDataTableProps<T>)
 {
@@ -105,6 +107,7 @@ function SearchableDataTable<T extends BaseRecord>({
         setFilters,
     } = useTable<T, HttpError>({
         syncWithLocation: true,
+        resource: resource,
         pagination: {pageSize: pageSize},
         sorters: {initial: [{field: String(sortStatus.columnAccessor), order: sortStatus.direction}]},
         filters: {

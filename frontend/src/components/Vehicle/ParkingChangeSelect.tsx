@@ -4,7 +4,7 @@ import {CSSProperties} from "react";
 import {useUpdate} from "@refinedev/core";
 import {Loader} from "@mantine/core";
 
-const ParkingChangeSelect = ({ vehicle, style }:{vehicle: Vehicle | undefined, style?: CSSProperties}) => {
+const ParkingChangeSelect = ({ vehicle, style, withLabel=true}:{vehicle: Vehicle | undefined, style?: CSSProperties, withLabel?:boolean}) => {
 
     const { mutate, isLoading } = useUpdate();
 
@@ -26,7 +26,7 @@ const ParkingChangeSelect = ({ vehicle, style }:{vehicle: Vehicle | undefined, s
     }
 
     return (
-        <ParkingSelect withLabel onChange={handleChange} value={vehicle?.parking} style={style} rightSection={isLoading? (<Loader size="xs"/>) : undefined}/>
+        <ParkingSelect withLabel={withLabel} onChange={handleChange} value={vehicle?.parking} style={style} rightSection={isLoading? (<Loader size="xs"/>) : undefined}/>
     )
 }
 
