@@ -14,12 +14,25 @@ class UserSerializer(serializers.ModelSerializer):
         model = get_user_model()
         fields = ['id', 'username', 'email', 'first_name', 'last_name']
 
+
+class ParkingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Parking
+        fields = '__all__'
+
+
 class VehicleSerializer(DynamicDepthSerializer):
     photo = Base64ImageField(required=False)
+    parking = ParkingSerializer(read_only=True)
 
     class Meta:
         model = Vehicle
         fields = '__all__'
+
+
+class MutationVehicleSerializer(VehicleSerializer):
+    parking = serializers.PrimaryKeyRelatedField(queryset=Parking.objects.all(), required=False)
+
 
 
 class BeneficiarySerializer(serializers.ModelSerializer):
@@ -28,12 +41,14 @@ class BeneficiarySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ContractSerializer(DynamicDepthSerializer):
+class ContractSerializer(serializers.ModelSerializer):
     start_kilometer = serializers.IntegerField(read_only=True)
     end_kilometer = serializers.IntegerField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     created_by = UserSerializer(read_only=True)
     referent = UserSerializer()
+    vehicle = VehicleSerializer()
+    beneficiary = BeneficiarySerializer()
 
     class Meta:
         model = Contract
@@ -51,6 +66,12 @@ class ContractSerializer(DynamicDepthSerializer):
         if value.status != 'available':
             raise serializers.ValidationError("Le véhicule n'est pas disponible")
         return value
+
+
+class MutationContractSerializer(ContractSerializer):
+    vehicle = serializers.PrimaryKeyRelatedField(queryset=Vehicle.objects.all())
+    beneficiary = serializers.PrimaryKeyRelatedField(queryset=Beneficiary.objects.all())
+    referent = serializers.PrimaryKeyRelatedField(queryset=get_user_model().objects.all())
 
 
 class EndContractSerializer(serializers.ModelSerializer):
@@ -84,8 +105,3 @@ class WhoAmISerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = ['id', 'username', 'email', 'first_name', 'last_name']
-
-class ParkingSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Parking
-        fields = '__all__'

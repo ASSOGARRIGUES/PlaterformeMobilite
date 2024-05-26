@@ -7,9 +7,9 @@ type Contract = components['schemas']['Contract'];
 
 type CreateContractValues = Omit<Contract, "id">;
 
-type CompleteContract = Contract | Omit<Contract, "vehicle" | "beneficiary" | "referent"> & {vehicle: Vehicle, beneficiary: Beneficiary, referent: User};
+type CompleteContract = Contract
 
-type ContractWritableFields = Omit<Contract, "id" | "created_by" | "created_at" | "end_kilometer" | "start_kilometer" | "status">
+type ContractWritableFields = Omit<components['schemas']['MutationContract'], "id" | "created_by" | "created_at" | "end_kilometer" | "start_kilometer" | "status">
 
 type EndContract = components["schemas"]["EndContract"]
 type EndContractWritableFields = Omit<EndContract, "id" | "max_kilometer" | "start_kilometer">

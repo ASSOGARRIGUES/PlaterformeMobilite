@@ -51,11 +51,13 @@ export function humanizeNumber(number: number) {
     return number.toLocaleString('fr-FR');
 }
 
-export function humanizeFirstName(name: string){
+export function humanizeFirstName(name: string | undefined){
+    if (!name) return '';
     return capitalizeFirstLetter(name.toLowerCase());
 }
 
-export function humanizeLastName(name: string){
+export function humanizeLastName(name: string | undefined){
+    if (!name) return '';
     return name.toUpperCase();
 }
 

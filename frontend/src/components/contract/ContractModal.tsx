@@ -48,14 +48,17 @@ const ContractModal : React.FC<
     const {isLoading: isVehicleLoading, ...vehicleSelectProps} = getSelectProps("vehicle");
     const {isLoading: isReferentLoading, ...referentSelectProps} = getSelectProps("referent");
 
+    const {value: beneficiaryObj, ...beneficiaryInputProps} = getInputProps("beneficiary");
+    const {value: vehicleObj, ...vehicleInputProps} = getInputProps("vehicle");
+    const {value: referentObj, ...referentInputProps} = getInputProps("referent");
 
     return (
         <Modal opened={visible} onClose={close} title={title}>
             <LoadingOverlay visible={refineCore.formLoading} overlayBlur={2} />
 
-            <Select label="Bénéficiaire" {...getInputProps("beneficiary")} error={errors.beneficiary}  {...beneficiarySelectProps}  rightSection={isBeneficiaryLoading ? <Loader  size="xs" variant="bars"/>: undefined}/>
+            <Select label="Bénéficiaire" value={beneficiaryObj?.id} {...beneficiaryInputProps} error={errors.beneficiary}  {...beneficiarySelectProps}  rightSection={isBeneficiaryLoading ? <Loader  size="xs" variant="bars"/>: undefined}/>
 
-            <Select label="Véhicule" {...getInputProps("vehicle")} error={errors.vehicle}  {...vehicleSelectProps} rightSection={isVehicleLoading ? <Loader  size="xs" variant="bars"/>: undefined}/>
+            <Select label="Véhicule" value={vehicleObj?.id} {...vehicleInputProps} error={errors.vehicle}  {...vehicleSelectProps} rightSection={isVehicleLoading ? <Loader  size="xs" variant="bars"/>: undefined}/>
 
             <DateRangePicker locale="fr" label="Période du contrat" inputFormat="DD MMMM YYYY" labelFormat="DD-MM-YYYY" value={dateValue} onChange={handleDateChange} error={errors.start_date} placeholder="Début" />
 
@@ -66,7 +69,7 @@ const ContractModal : React.FC<
 
             <Select label="Motif" {...getInputProps("reason")} error={errors.reason} data={reasonOptions}/>
 
-            <Select label="Référent" {...getInputProps("referent")} error={errors.referent}  {...referentSelectProps} rightSection={isReferentLoading ? <Loader  size="xs" variant="bars"/>: undefined}/>
+            <Select label="Référent" value={referentObj?.id} {...referentInputProps} error={errors.referent}  {...referentSelectProps} rightSection={isReferentLoading ? <Loader  size="xs" variant="bars"/>: undefined}/>
 
             <Box mt={8} sx={{ display: "flex", justifyContent: "flex-end" }}>
                 <SaveButton {...saveButtonProps} />

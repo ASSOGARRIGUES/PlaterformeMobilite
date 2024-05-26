@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'core',
     'api',
     'drf_spectacular',
+    'drf_yasg',
     'dbbackup',
     'solo',
     'dbbackup_admin',
@@ -234,6 +235,7 @@ CRONJOBS = [
 
 SPECTACULAR_SETTINGS = {
     'ENUM_NAME_OVERRIDES': {
-        'VehicleStatusEnum': 'api.models.Vehicle.STATUS_CHOICES'
+        'VehicleStatusEnum': 'api.models.Vehicle.STATUS_CHOICES',
+        'ContractStatusEnum': 'api.models.Contract.STATUS_CHOICES',
     }
 }
