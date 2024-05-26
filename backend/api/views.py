@@ -13,7 +13,10 @@ from rest_framework.response import Response
 from .filters import VehicleFilter
 from .models import Vehicle, Beneficiary, Contract, Parking
 from .serializers import VehicleSerializer, BeneficiarySerializer, ContractSerializer, UserSerializer, \
-    EndContractSerializer, ParkingSerializer
+    EndContractSerializer, ParkingSerializer, MutationContractSerializer, MutationVehicleSerializer
+
+MUTATION_ACTION = ['create', 'update', 'partial_update']
+RETRIEVE_ACTION = ['retrieve', 'list']
 
 class ArchivableModelViewSet(viewsets.ModelViewSet):
 
@@ -47,6 +50,7 @@ class ArchivableModelViewSet(viewsets.ModelViewSet):
         instance.save()
         return Response({'details': 'archived'}, status=200)
 
+
     @action(detail=True, methods=['patch'])
     def unarchive(self, request, pk=None):
         instance = self.get_object()
@@ -69,10 +73,11 @@ class VehicleViewSet(ArchivableModelViewSet):
     search_fields = ['brand', 'fleet_id', 'fuel_type', 'imat', 'kilometer', 'modele', 'status', 'transmission', 'type', 'year', 'color']
     filterset_class = VehicleFilter
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context['depth'] = 1 if self.action == 'list' or self.action == 'retrieve' else 0
-        return context
+    def get_serializer_class(self):
+        if self.action in MUTATION_ACTION:
+            return MutationVehicleSerializer
+
+        return super().get_serializer_class()
 
 
 class BeneficiaryViewSet(ArchivableModelViewSet):
@@ -110,6 +115,12 @@ class ContractViewSet(ArchivableModelViewSet):
         'start_date': ['gte', 'lte', 'gt', 'lt'],
         'end_date': ['gte', 'lte', 'gt', 'lt']
     }
+
+    def get_serializer_class(self):
+        if self.action in MUTATION_ACTION:
+            return MutationContractSerializer
+
+        return super().get_serializer_class()
 
 
     @action(detail=True, methods=['get'])

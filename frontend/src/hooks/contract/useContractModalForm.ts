@@ -111,8 +111,10 @@ const useContractModalForm = ({action, redirect=false}: {action: FormAction | un
         validateInputOnBlur: true,
         transformValues: (values) => ({
           ...values,
-            vehicle: action!=="edit" ? values.vehicle : undefined,
-            beneficiary: action!=="edit" ? values.beneficiary : undefined,
+            // @ts-ignore
+            referent: action==="edit" && values.referent?.hasOwnProperty("id") ? values.referent.id: values.referent,
+            vehicle: action!=="edit" ? values.vehicle: undefined,
+            beneficiary: action!=="edit" ? values.beneficiary: undefined,
         })
     }) as ContractModalReturnType;
 

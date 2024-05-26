@@ -75,7 +75,7 @@ const ContractList = () => {
             },
             {
                 accessor: "status",
-                title:"Status",
+                title:"Statut",
                 textAlignment:"center",
                 sortable: true,
                 render: (contract) => (<ContractStatusBadge contract={contract}/>),
@@ -85,7 +85,7 @@ const ContractList = () => {
                 title: 'Référent',
                 sortable: true,
                 render: (contract) => {
-                    return contract.referent?.hasOwnProperty("id") ? humanizeFirstName(contract.referent.first_name)+" "+contract.referent.last_name.substring(0,1).toUpperCase()+"."  : "---"
+                    return contract.referent?.hasOwnProperty("id") ? humanizeFirstName(contract.referent.first_name)+" "+contract.referent.last_name?.substring(0,1).toUpperCase()+"."  : "---"
                 }
             },
             {

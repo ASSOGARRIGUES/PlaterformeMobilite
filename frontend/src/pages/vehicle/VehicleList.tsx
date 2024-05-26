@@ -16,6 +16,7 @@ import EditButton from "../../components/EditButton";
 import VehicleStatusBadge from "../../components/Vehicle/VehicleStatusBadge";
 import VehicleSearchTooltip from "../../components/Vehicle/VehicleSearchTooltip";
 import VehicleAvatar from "../../components/Vehicle/VehicleAvatar";
+import {humanizeNumber} from "../../constants";
 
 
 const VehicleList = () => {
