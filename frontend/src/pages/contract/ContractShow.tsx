@@ -30,42 +30,15 @@ const ContractShow = () => {
     const { queryResult: showResponse } = useShow<Contract>()
 
     const contractResponse  = showResponse.data?.data as Contract | undefined;
-    let completeContract = contractResponse? {...contractResponse} as CompleteContract : undefined;
 
+    const beneficiary = contractResponse?.beneficiary
+    const vehicle = contractResponse?.vehicle
 
-    //Retrieve the beneficiary from the contract using useOne hook
-    const {data: beneficiary} = useOne<Beneficiary>({
-        resource: "beneficiary",
-        id: contractResponse?.beneficiary
-    })
-
-    //Update the contract with the beneficiary
-    if(completeContract && beneficiary) completeContract.beneficiary = beneficiary.data;
-
-
-    //Retrieve the vehicle from the contract using useOne hook
-    const {data: vehicle} = useOne<Vehicle>({
-        resource: "vehicle",
-        id: contractResponse?.vehicle
-    })
-
-    //Update the contract with the vehicle
-    if(completeContract && vehicle) completeContract.vehicle = vehicle.data;
-
-    //Retrieve the referent from the contract using useOne hook
-    const {data: referent} = useOne<User>({
-        resource: "referent",
-        id: contractResponse?.referent
-    })
-
-    //Update the contract with the referent
-    if(completeContract && referent) completeContract.referent = referent.data;
-
-    const benefTitle = beneficiary?.data ? <BeneficiaryBadge beneficiary={beneficiary.data}/> : (<>"Bénéficiaire"</>)
+    const benefTitle = beneficiary ? <BeneficiaryBadge beneficiary={beneficiary}/> : (<>"Bénéficiaire"</>)
 
     const openPayModal = async () => {
-        if(!completeContract) return;
-        const contract_id = completeContract.id;
+        if(!contractResponse) return;
+        const contract_id = contractResponse.id;
 
         openConfirmModal({
             title: "Marquer le contrat comme payé",
@@ -98,7 +71,7 @@ const ContractShow = () => {
         resource: select("vehicle").resource,
         action: "show",
         meta: {
-            id: vehicle?.data?.id
+            id: vehicle?.id
         }
     })
 
@@ -114,21 +87,21 @@ const ContractShow = () => {
 
             <Stack style={{height:"100%"}} >
 
-                <Show title={<Title><ContractBadge contract={completeContract}/> </Title>} contentProps={{style:{padding:0}}}/>
+                <Show title={<Title><ContractBadge contract={contractResponse}/> </Title>} contentProps={{style:{padding:0}}}/>
 
                 <Group grow style={{alignItems:"stretch"}}>
-                    <BeneficiaryCard style={{flex:"1 1 8%", minWidth:"290px", maxWidth:"100%"}} beneficiary={beneficiary?.data} title={benefTitle}/>
+                    <BeneficiaryCard style={{flex:"1 1 8%", minWidth:"290px", maxWidth:"100%"}} beneficiary={beneficiary} title={benefTitle}/>
 
-                    <VehicleCard style={{flex:"1 1 30%", minWidth:"432px", maxWidth:"100%"}} vehicle={vehicle?.data} title={vehicleTitle} withEdit={false}/>
+                    <VehicleCard style={{flex:"1 1 30%", minWidth:"432px", maxWidth:"100%"}} vehicle={vehicle} title={vehicleTitle} withEdit={false}/>
 
-                    <ContractCard style={{flex:"1 1 30%", minWidth:"420px", maxWidth:"100%"}} contract={completeContract} withEdit/>
+                    <ContractCard style={{flex:"1 1 30%", minWidth:"420px", maxWidth:"100%"}} contract={contractResponse} withEdit/>
                 </Group>
 
                 <Group grow style={{flex:"auto", alignItems:"stretch"}} >
                     <Paper style={{flexGrow:2, maxWidth:"100%"}}>
                         <Stack style={{height: "100%", margin:"0 0.6em"}}>
                             <Center><Title order={3}>Commentaires</Title></Center>
-                            <ContractComment style={{flex:"auto"}} contract={completeContract}/>
+                            <ContractComment style={{flex:"auto"}} contract={contractResponse}/>
                         </Stack>
                     </Paper>
 
@@ -150,17 +123,17 @@ const ContractShow = () => {
                             <Stack style={{padding:"0 1.5em"}}>
                                 <Center><Title order={3}>Actions</Title></Center>
                                 <Group grow>
-                                    <Tooltip label="Ce contrat ne peut être clôturé car il n'est pas actuellement en cours." disabled={completeContract?.status==ContractStatusEnum.pending}>
+                                    <Tooltip label="Ce contrat ne peut être clôturé car il n'est pas actuellement en cours." disabled={contractResponse?.status==ContractStatusEnum.pending}>
                                         <span style={{flex:"auto"}}>
-                                            <Button style={{width:"100%"}} color="red" variant="outline" onClick={()=>showEndModal(completeContract?.id)} disabled={completeContract?.status!=ContractStatusEnum.pending}>
+                                            <Button style={{width:"100%"}} color="red" variant="outline" onClick={()=>showEndModal(contractResponse?.id)} disabled={contractResponse?.status!=ContractStatusEnum.pending}>
                                                 Clôturer le contrat
                                             </Button>
                                         </span>
                                     </Tooltip>
 
-                                    <Tooltip label="Le statut actuel du contrat ne permet pas l'enregistrement du paiement" disabled={completeContract?.status==ContractStatusEnum.over}>
+                                    <Tooltip label="Le statut actuel du contrat ne permet pas l'enregistrement du paiement" disabled={contractResponse?.status==ContractStatusEnum.over}>
                                         <span style={{flex:"auto"}}>
-                                            <Button style={{width:"100%"}}  color="blue" variant="outline" onClick={openPayModal} disabled={completeContract?.status!=ContractStatusEnum.over}>
+                                            <Button style={{width:"100%"}}  color="blue" variant="outline" onClick={openPayModal} disabled={contractResponse?.status!=ContractStatusEnum.over}>
                                                 Marqué comme payé
                                             </Button>
                                         </span>
