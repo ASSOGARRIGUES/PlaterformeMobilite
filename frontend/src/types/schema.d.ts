@@ -424,7 +424,10 @@ export interface components {
             readonly end_kilometer: number;
             /** Format: date-time */
             readonly created_at: string;
-            readonly created_by: number;
+            readonly created_by: components["schemas"]["User"];
+            referent: components["schemas"]["User"];
+            vehicle: components["schemas"]["Vehicle"];
+            beneficiary: components["schemas"]["Beneficiary"];
             /** Format: date */
             start_date: string;
             /** Format: date */
@@ -443,9 +446,6 @@ export interface components {
             /** Format: date-time */
             ended_at?: string | null;
             archived?: boolean;
-            vehicle: number;
-            beneficiary: number;
-            referent: number;
         };
         /**
          * @description * `waiting` - En attente d'EDL
@@ -471,9 +471,57 @@ export interface components {
          * @enum {string}
          */
         FuelTypeEnum: FuelTypeEnum;
-        Nested: {
+        MutationContract: {
             readonly id: number;
-            name: string;
+            readonly start_kilometer: number;
+            readonly end_kilometer: number;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly created_by: components["schemas"]["User"];
+            referent: number;
+            vehicle: number;
+            beneficiary: number;
+            /** Format: date */
+            start_date: string;
+            /** Format: date */
+            end_date: string;
+            status?: components["schemas"]["ContractStatusEnum"];
+            comment?: string | null;
+            reason?: (components["schemas"]["ReasonEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** Format: int64 */
+            max_kilometer?: number | null;
+            /** Format: int64 */
+            price: number;
+            /** Format: int64 */
+            deposit: number;
+            /** Format: int64 */
+            discount?: number;
+            /** Format: date-time */
+            ended_at?: string | null;
+            archived?: boolean;
+        };
+        MutationVehicle: {
+            readonly id: number;
+            /** Format: uri */
+            photo?: string;
+            parking?: number;
+            type?: components["schemas"]["TypeEnum"];
+            transmission?: components["schemas"]["TransmissionEnum"];
+            fuel_type?: components["schemas"]["FuelTypeEnum"];
+            brand: string;
+            modele: string;
+            color?: string | null;
+            /** Format: int64 */
+            year: number;
+            imat: string;
+            /** Format: int64 */
+            fleet_id: number;
+            /** Format: int64 */
+            kilometer: number;
+            status?: components["schemas"]["VehicleStatusEnum"];
+            /** Format: date-time */
+            readonly created_at: string;
+            archived?: boolean;
         };
         /** @enum {unknown} */
         NullEnum: null;
@@ -578,7 +626,10 @@ export interface components {
             readonly end_kilometer?: number;
             /** Format: date-time */
             readonly created_at?: string;
-            readonly created_by?: number;
+            readonly created_by?: components["schemas"]["User"];
+            referent?: components["schemas"]["User"];
+            vehicle?: components["schemas"]["Vehicle"];
+            beneficiary?: components["schemas"]["Beneficiary"];
             /** Format: date */
             start_date?: string;
             /** Format: date */
@@ -597,9 +648,6 @@ export interface components {
             /** Format: date-time */
             ended_at?: string | null;
             archived?: boolean;
-            vehicle?: number;
-            beneficiary?: number;
-            referent?: number;
         };
         PatchedEndContract: {
             price?: number;
@@ -609,6 +657,58 @@ export interface components {
             readonly start_kilometer?: number;
             readonly max_kilometer?: number;
             readonly vehicle_kilometer?: number;
+        };
+        PatchedMutationContract: {
+            readonly id?: number;
+            readonly start_kilometer?: number;
+            readonly end_kilometer?: number;
+            /** Format: date-time */
+            readonly created_at?: string;
+            readonly created_by?: components["schemas"]["User"];
+            referent?: number;
+            vehicle?: number;
+            beneficiary?: number;
+            /** Format: date */
+            start_date?: string;
+            /** Format: date */
+            end_date?: string;
+            status?: components["schemas"]["ContractStatusEnum"];
+            comment?: string | null;
+            reason?: (components["schemas"]["ReasonEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** Format: int64 */
+            max_kilometer?: number | null;
+            /** Format: int64 */
+            price?: number;
+            /** Format: int64 */
+            deposit?: number;
+            /** Format: int64 */
+            discount?: number;
+            /** Format: date-time */
+            ended_at?: string | null;
+            archived?: boolean;
+        };
+        PatchedMutationVehicle: {
+            readonly id?: number;
+            /** Format: uri */
+            photo?: string;
+            parking?: number;
+            type?: components["schemas"]["TypeEnum"];
+            transmission?: components["schemas"]["TransmissionEnum"];
+            fuel_type?: components["schemas"]["FuelTypeEnum"];
+            brand?: string;
+            modele?: string;
+            color?: string | null;
+            /** Format: int64 */
+            year?: number;
+            imat?: string;
+            /** Format: int64 */
+            fleet_id?: number;
+            /** Format: int64 */
+            kilometer?: number;
+            status?: components["schemas"]["VehicleStatusEnum"];
+            /** Format: date-time */
+            readonly created_at?: string;
+            archived?: boolean;
         };
         PatchedParking: {
             readonly id?: number;
@@ -635,6 +735,7 @@ export interface components {
             readonly id?: number;
             /** Format: uri */
             photo?: string;
+            readonly parking?: components["schemas"]["Parking"];
             type?: components["schemas"]["TypeEnum"];
             transmission?: components["schemas"]["TransmissionEnum"];
             fuel_type?: components["schemas"]["FuelTypeEnum"];
@@ -652,7 +753,6 @@ export interface components {
             /** Format: date-time */
             readonly created_at?: string;
             archived?: boolean;
-            parking?: number;
         };
         /**
          * @description * `cdd` - CDD
@@ -708,6 +808,7 @@ export interface components {
             readonly id: number;
             /** Format: uri */
             photo?: string;
+            readonly parking: components["schemas"]["Parking"];
             type?: components["schemas"]["TypeEnum"];
             transmission?: components["schemas"]["TransmissionEnum"];
             fuel_type?: components["schemas"]["FuelTypeEnum"];
@@ -725,7 +826,6 @@ export interface components {
             /** Format: date-time */
             readonly created_at: string;
             archived?: boolean;
-            readonly parking: components["schemas"]["Nested"];
         };
         /**
          * @description * `available` - Disponible
@@ -779,12 +879,36 @@ export interface operations {
     api_beneficiary_list: {
         parameters: {
             query?: {
+                address?: string;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                address__in?: string[];
+                city?: string;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                city__in?: string[];
+                email?: string;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                email__in?: string[];
+                first_name?: string;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                first_name__in?: string[];
+                id?: number;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                id__in?: number[];
+                last_name?: string;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                last_name__in?: string[];
                 /** @description Number of results to return per page. */
                 limit?: number;
                 /** @description The initial index from which to return the results. */
                 offset?: number;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
+                phone?: string;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                phone__in?: string[];
+                postal_code?: string;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                postal_code__in?: string[];
                 /** @description A search term. */
                 search?: string;
             };
@@ -1045,9 +1169,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Contract"];
-                "application/x-www-form-urlencoded": components["schemas"]["Contract"];
-                "multipart/form-data": components["schemas"]["Contract"];
+                "application/json": components["schemas"]["MutationContract"];
+                "application/x-www-form-urlencoded": components["schemas"]["MutationContract"];
+                "multipart/form-data": components["schemas"]["MutationContract"];
             };
         };
         responses: {
@@ -1056,7 +1180,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Contract"];
+                    "application/json": components["schemas"]["MutationContract"];
                 };
             };
         };
@@ -1095,9 +1219,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Contract"];
-                "application/x-www-form-urlencoded": components["schemas"]["Contract"];
-                "multipart/form-data": components["schemas"]["Contract"];
+                "application/json": components["schemas"]["MutationContract"];
+                "application/x-www-form-urlencoded": components["schemas"]["MutationContract"];
+                "multipart/form-data": components["schemas"]["MutationContract"];
             };
         };
         responses: {
@@ -1106,7 +1230,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Contract"];
+                    "application/json": components["schemas"]["MutationContract"];
                 };
             };
         };
@@ -1144,9 +1268,9 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["PatchedContract"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedContract"];
-                "multipart/form-data": components["schemas"]["PatchedContract"];
+                "application/json": components["schemas"]["PatchedMutationContract"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedMutationContract"];
+                "multipart/form-data": components["schemas"]["PatchedMutationContract"];
             };
         };
         responses: {
@@ -1155,7 +1279,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Contract"];
+                    "application/json": components["schemas"]["MutationContract"];
                 };
             };
         };
@@ -1747,9 +1871,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Vehicle"];
-                "application/x-www-form-urlencoded": components["schemas"]["Vehicle"];
-                "multipart/form-data": components["schemas"]["Vehicle"];
+                "application/json": components["schemas"]["MutationVehicle"];
+                "application/x-www-form-urlencoded": components["schemas"]["MutationVehicle"];
+                "multipart/form-data": components["schemas"]["MutationVehicle"];
             };
         };
         responses: {
@@ -1758,7 +1882,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Vehicle"];
+                    "application/json": components["schemas"]["MutationVehicle"];
                 };
             };
         };
@@ -1797,9 +1921,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Vehicle"];
-                "application/x-www-form-urlencoded": components["schemas"]["Vehicle"];
-                "multipart/form-data": components["schemas"]["Vehicle"];
+                "application/json": components["schemas"]["MutationVehicle"];
+                "application/x-www-form-urlencoded": components["schemas"]["MutationVehicle"];
+                "multipart/form-data": components["schemas"]["MutationVehicle"];
             };
         };
         responses: {
@@ -1808,7 +1932,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Vehicle"];
+                    "application/json": components["schemas"]["MutationVehicle"];
                 };
             };
         };
@@ -1846,9 +1970,9 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["PatchedVehicle"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedVehicle"];
-                "multipart/form-data": components["schemas"]["PatchedVehicle"];
+                "application/json": components["schemas"]["PatchedMutationVehicle"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedMutationVehicle"];
+                "multipart/form-data": components["schemas"]["PatchedMutationVehicle"];
             };
         };
         responses: {
@@ -1857,7 +1981,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Vehicle"];
+                    "application/json": components["schemas"]["MutationVehicle"];
                 };
             };
         };

@@ -95,7 +95,8 @@ function SearchableDataTable<T extends BaseRecord>({
     const [search, setSearch] = useState(urlSearch || "");
     const [debouncedSearch] = useDebouncedValue(search, 200, { leading: true });
 
-    const [showArchived, toggleArchived] = useToggle([0,1]);
+    const urlArchived = urlParams?.filters?.find((filter: any) => filter.field === "archived")?.value // Retrieve archived filter from url
+    const [showArchived, setShowArchived] = useState<false | true>(urlArchived!==undefined? urlArchived==="1" : false);
 
 
     const {
@@ -131,7 +132,6 @@ function SearchableDataTable<T extends BaseRecord>({
     }
 
     useEffect(() => {
-        console.log(showArchived)
         setFilters([{ field: "search", operator: "eq", value: debouncedSearch }, {field:"archived", operator:"eq", value: showArchived?1:0}]);
     }, [debouncedSearch, showArchived]);
 
@@ -179,8 +179,8 @@ function SearchableDataTable<T extends BaseRecord>({
                             {extraButtons}
                             <Switch
                                 label="Archives"
-                                value={showArchived}
-                                onChange={(value) => toggleArchived()}
+                                checked={showArchived}
+                                onChange={(event) => setShowArchived(!showArchived)}
                             />
 
                             {withAddIcon && (

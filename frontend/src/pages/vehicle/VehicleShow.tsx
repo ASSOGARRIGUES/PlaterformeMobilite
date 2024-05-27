@@ -110,6 +110,8 @@ const VehicleShow = (props: any) => {
                         defaultSortedColumn="start_date"
                         defaultSortedDirection="desc"
                         searchInfoTooltip={ContractSearchTooltip}
+                        defaultArchived={vehicle?.archived? true : undefined}
+                        withArchivedSwitch={!vehicle?.archived}
                     />
                 </Paper>
 

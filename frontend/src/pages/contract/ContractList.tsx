@@ -47,7 +47,6 @@ const ContractList = () => {
                 sortable: true,
                 render: (contract) => {
                     const vehicle = contract.vehicle as Vehicle
-                    console.log(contract)
                     return vehicle.hasOwnProperty("id") ? <VehicleBadge vehicle={vehicle}/> : "Loading..."
                 }
 

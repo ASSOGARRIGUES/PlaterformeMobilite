@@ -153,6 +153,84 @@ paths:
     get:
       operationId: api_beneficiary_list
       parameters:
+      - in: query
+        name: address
+        schema:
+          type: string
+      - in: query
+        name: address__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: city
+        schema:
+          type: string
+      - in: query
+        name: city__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: email
+        schema:
+          type: string
+      - in: query
+        name: email__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: first_name
+        schema:
+          type: string
+      - in: query
+        name: first_name__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: id
+        schema:
+          type: integer
+      - in: query
+        name: id__in
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: last_name
+        schema:
+          type: string
+      - in: query
+        name: last_name__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
       - name: limit
         required: false
         in: query
@@ -171,6 +249,32 @@ paths:
         description: Which field to use when ordering the results.
         schema:
           type: string
+      - in: query
+        name: phone
+        schema:
+          type: string
+      - in: query
+        name: phone__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: postal_code
+        schema:
+          type: string
+      - in: query
+        name: postal_code__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
       - name: search
         required: false
         in: query
@@ -535,13 +639,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Contract'
+              $ref: '#/components/schemas/MutationContract'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Contract'
+              $ref: '#/components/schemas/MutationContract'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Contract'
+              $ref: '#/components/schemas/MutationContract'
         required: true
       security:
       - jwtAuth: []
@@ -551,7 +655,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Contract'
+                $ref: '#/components/schemas/MutationContract'
           description: ''
   /api/contract/{id}/:
     get:
@@ -590,13 +694,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Contract'
+              $ref: '#/components/schemas/MutationContract'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Contract'
+              $ref: '#/components/schemas/MutationContract'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Contract'
+              $ref: '#/components/schemas/MutationContract'
         required: true
       security:
       - jwtAuth: []
@@ -606,7 +710,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Contract'
+                $ref: '#/components/schemas/MutationContract'
           description: ''
     patch:
       operationId: api_contract_partial_update
@@ -623,13 +727,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedContract'
+              $ref: '#/components/schemas/PatchedMutationContract'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedContract'
+              $ref: '#/components/schemas/PatchedMutationContract'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedContract'
+              $ref: '#/components/schemas/PatchedMutationContract'
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -638,7 +742,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Contract'
+                $ref: '#/components/schemas/MutationContract'
           description: ''
     delete:
       operationId: api_contract_destroy
@@ -1367,13 +1471,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Vehicle'
+              $ref: '#/components/schemas/MutationVehicle'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Vehicle'
+              $ref: '#/components/schemas/MutationVehicle'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Vehicle'
+              $ref: '#/components/schemas/MutationVehicle'
         required: true
       security:
       - jwtAuth: []
@@ -1383,7 +1487,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Vehicle'
+                $ref: '#/components/schemas/MutationVehicle'
           description: ''
   /api/vehicle/{id}/:
     get:
@@ -1422,13 +1526,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Vehicle'
+              $ref: '#/components/schemas/MutationVehicle'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Vehicle'
+              $ref: '#/components/schemas/MutationVehicle'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Vehicle'
+              $ref: '#/components/schemas/MutationVehicle'
         required: true
       security:
       - jwtAuth: []
@@ -1438,7 +1542,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Vehicle'
+                $ref: '#/components/schemas/MutationVehicle'
           description: ''
     patch:
       operationId: api_vehicle_partial_update
@@ -1455,13 +1559,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedVehicle'
+              $ref: '#/components/schemas/PatchedMutationVehicle'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedVehicle'
+              $ref: '#/components/schemas/PatchedMutationVehicle'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedVehicle'
+              $ref: '#/components/schemas/PatchedMutationVehicle'
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -1470,7 +1574,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Vehicle'
+                $ref: '#/components/schemas/MutationVehicle'
           description: ''
     delete:
       operationId: api_vehicle_destroy
@@ -1645,8 +1749,15 @@ components:
           format: date-time
           readOnly: true
         created_by:
-          type: integer
+          allOf:
+          - $ref: '#/components/schemas/User'
           readOnly: true
+        referent:
+          $ref: '#/components/schemas/User'
+        vehicle:
+          $ref: '#/components/schemas/Vehicle'
+        beneficiary:
+          $ref: '#/components/schemas/Beneficiary'
         start_date:
           type: string
           format: date
@@ -1691,12 +1802,6 @@ components:
           nullable: true
         archived:
           type: boolean
-        vehicle:
-          type: integer
-        beneficiary:
-          type: integer
-        referent:
-          type: integer
       required:
       - beneficiary
       - created_at
@@ -1760,18 +1865,151 @@ components:
         * `essence` - Essence
         * `diesel` - Diesel
         * `electrique` - Electrique
-    Nested:
+    MutationContract:
       type: object
       properties:
         id:
           type: integer
           readOnly: true
-        name:
+        start_kilometer:
+          type: integer
+          readOnly: true
+        end_kilometer:
+          type: integer
+          readOnly: true
+        created_at:
           type: string
-          maxLength: 100
+          format: date-time
+          readOnly: true
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        referent:
+          type: integer
+        vehicle:
+          type: integer
+        beneficiary:
+          type: integer
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/ContractStatusEnum'
+        comment:
+          type: string
+          nullable: true
+        reason:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ReasonEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        max_kilometer:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        price:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        deposit:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        discount:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+        archived:
+          type: boolean
       required:
+      - beneficiary
+      - created_at
+      - created_by
+      - deposit
+      - end_date
+      - end_kilometer
       - id
-      - name
+      - price
+      - referent
+      - start_date
+      - start_kilometer
+      - vehicle
+    MutationVehicle:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        photo:
+          type: string
+          format: uri
+        parking:
+          type: integer
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        transmission:
+          $ref: '#/components/schemas/TransmissionEnum'
+        fuel_type:
+          $ref: '#/components/schemas/FuelTypeEnum'
+        brand:
+          type: string
+          maxLength: 50
+        modele:
+          type: string
+          maxLength: 50
+        color:
+          type: string
+          nullable: true
+          maxLength: 50
+        year:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        imat:
+          type: string
+          maxLength: 9
+        fleet_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        kilometer:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        status:
+          $ref: '#/components/schemas/VehicleStatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        archived:
+          type: boolean
+      required:
+      - brand
+      - created_at
+      - fleet_id
+      - id
+      - imat
+      - kilometer
+      - modele
+      - year
     NullEnum:
       enum:
       - null
@@ -1961,8 +2199,15 @@ components:
           format: date-time
           readOnly: true
         created_by:
-          type: integer
+          allOf:
+          - $ref: '#/components/schemas/User'
           readOnly: true
+        referent:
+          $ref: '#/components/schemas/User'
+        vehicle:
+          $ref: '#/components/schemas/Vehicle'
+        beneficiary:
+          $ref: '#/components/schemas/Beneficiary'
         start_date:
           type: string
           format: date
@@ -2007,12 +2252,6 @@ components:
           nullable: true
         archived:
           type: boolean
-        vehicle:
-          type: integer
-        beneficiary:
-          type: integer
-        referent:
-          type: integer
     PatchedEndContract:
       type: object
       properties:
@@ -2033,6 +2272,129 @@ components:
         vehicle_kilometer:
           type: integer
           readOnly: true
+    PatchedMutationContract:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        start_kilometer:
+          type: integer
+          readOnly: true
+        end_kilometer:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        referent:
+          type: integer
+        vehicle:
+          type: integer
+        beneficiary:
+          type: integer
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/ContractStatusEnum'
+        comment:
+          type: string
+          nullable: true
+        reason:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ReasonEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        max_kilometer:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        price:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        deposit:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        discount:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+        archived:
+          type: boolean
+    PatchedMutationVehicle:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        photo:
+          type: string
+          format: uri
+        parking:
+          type: integer
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        transmission:
+          $ref: '#/components/schemas/TransmissionEnum'
+        fuel_type:
+          $ref: '#/components/schemas/FuelTypeEnum'
+        brand:
+          type: string
+          maxLength: 50
+        modele:
+          type: string
+          maxLength: 50
+        color:
+          type: string
+          nullable: true
+          maxLength: 50
+        year:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        imat:
+          type: string
+          maxLength: 9
+        fleet_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        kilometer:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        status:
+          $ref: '#/components/schemas/VehicleStatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        archived:
+          type: boolean
     PatchedParking:
       type: object
       properties:
@@ -2077,6 +2439,10 @@ components:
         photo:
           type: string
           format: uri
+        parking:
+          allOf:
+          - $ref: '#/components/schemas/Parking'
+          readOnly: true
         type:
           $ref: '#/components/schemas/TypeEnum'
         transmission:
@@ -2119,8 +2485,6 @@ components:
           readOnly: true
         archived:
           type: boolean
-        parking:
-          type: integer
     ReasonEnum:
       enum:
       - cdd
@@ -2226,6 +2590,10 @@ components:
         photo:
           type: string
           format: uri
+        parking:
+          allOf:
+          - $ref: '#/components/schemas/Parking'
+          readOnly: true
         type:
           $ref: '#/components/schemas/TypeEnum'
         transmission:
@@ -2268,10 +2636,6 @@ components:
           readOnly: true
         archived:
           type: boolean
-        parking:
-          allOf:
-          - $ref: '#/components/schemas/Nested'
-          readOnly: true
       required:
       - brand
       - created_at
