@@ -19,7 +19,6 @@ MUTATION_ACTION = ['create', 'update', 'partial_update']
 RETRIEVE_ACTION = ['retrieve', 'list']
 
 class ArchivableModelViewSet(viewsets.ModelViewSet):
-
     def get_queryset(self):
         #if archived is not equal to 1 in the query params, return only non archived instances
         if self.action == 'list':
@@ -37,11 +36,20 @@ class ArchivableModelViewSet(viewsets.ModelViewSet):
             return self.queryset.filter(archived=False)
         return self.queryset
 
-    @action(detail=True, methods=['patch'])
-    def archive(self, request, pk=None):
+    # validate_archived is a method that should be implemented in the child class
+    def validate_archived(self, instance):
+        if instance.archived:
+            return False, {"error": "already_archived", "message": "Instance already archived", "details": []}
+        return True, {}
+
+    def archive_patch(self, request, pk=None):
         instance = self.get_object()
+
+        if not self.validate_archived(instance)[0]:
+            return Response({'details': 'cannot archive this instance'}, status=400)
+
         instance.archived = True
-        #Retrieve all instance relying on the current instance
+        # Retrieve all instance relying on the current instance
         for related_instance in instance._meta.related_objects:
             related_instance = getattr(instance, related_instance.get_accessor_name())
             for related in related_instance.all():
@@ -49,6 +57,26 @@ class ArchivableModelViewSet(viewsets.ModelViewSet):
                 related.save()
         instance.save()
         return Response({'details': 'archived'}, status=200)
+
+    def archive_get(self, request):
+        validate = self.validate_archived(self.get_object())
+        validate[1]['can_archive'] = validate[0]
+        return Response(validate[1], status=200)
+
+
+    @action(detail=True, methods=['patch', 'get'])
+    def archive(self, request, pk=None):
+        if request.method == 'PATCH':
+            return self.archive_patch(request, pk)
+        return self.archive_get(request)
+
+
+    # action for archive get
+    @action(detail=False, methods=['get'])
+    def get_archived(self, request):
+        queryset = self.queryset.filter(archived=True)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
     @action(detail=True, methods=['patch'])
@@ -79,6 +107,26 @@ class VehicleViewSet(ArchivableModelViewSet):
 
         return super().get_serializer_class()
 
+    def validate_archived(self, instance):
+        super_validate = super().validate_archived(instance)
+        if not super_validate[0]:
+            return super_validate
+
+        if instance.status == "rented":
+            return False, {"error": "bad_status", "message": "Le véhicule est actuellement à dispo", "details": []}
+
+        # retrieve related contracts
+        error = []
+        for contract in instance.contracts.filter(archived=False):
+            if contract.status != 'payed':
+                contractSerializer = ContractSerializer()
+                error.append({"contract": contractSerializer.to_representation(contract)})
+
+        if error:
+            return False, {"error": "contracts_bad_status", "message": "Il existe des contrats non payés", "details": error}
+
+        return True, {}
+
 
 class BeneficiaryViewSet(ArchivableModelViewSet):
     queryset = Beneficiary.objects.all()
@@ -97,6 +145,24 @@ class BeneficiaryViewSet(ArchivableModelViewSet):
         'city': ['in', 'exact'],
         'postal_code': ['in', 'exact'],
     }
+
+    def validate_archived(self, instance):
+        super_validate = super().validate_archived(instance)
+        if not super_validate[0]:
+            return super_validate
+
+        # retrieve related contracts
+        error = []
+        for contract in instance.contracts.filter(archived=False):
+            if contract.status != 'payed':
+                contractSerializer = ContractSerializer()
+                error.append({"contract": contractSerializer.to_representation(contract)})
+
+        if error:
+            return False, {"error": "contracts_bad_status", "message": "Il existe des contrats non payés",
+                           "details": error}
+
+        return True, {}
 
 
 class ContractViewSet(ArchivableModelViewSet):
@@ -121,6 +187,15 @@ class ContractViewSet(ArchivableModelViewSet):
             return MutationContractSerializer
 
         return super().get_serializer_class()
+
+    def validate_archived(self, instance):
+        super_validate = super().validate_archived(instance)
+        if not super_validate[0]:
+            return super_validate
+
+        if instance.status != "payed":
+            return False, {"error": "bad_status", "message": "Le contrat n'est pas payé", "details": []}
+        return True, {}
 
 
     @action(detail=True, methods=['get'])

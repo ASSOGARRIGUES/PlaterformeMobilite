@@ -105,7 +105,7 @@ class Contract(models.Model):
     )
 
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='contracts')
-    beneficiary = models.ForeignKey(Beneficiary, on_delete=models.CASCADE)
+    beneficiary = models.ForeignKey(Beneficiary, on_delete=models.CASCADE, related_name='contracts')
     start_date = models.DateField()
     end_date = models.DateField()
     #Status should be a choice field with values: 'en attente de paiement', 'en cours', 'terminé'

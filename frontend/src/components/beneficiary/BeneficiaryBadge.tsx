@@ -1,6 +1,6 @@
 import {Beneficiary} from "../../types/beneficiary";
 import {Anchor} from "@mantine/core";
-import {IResourceItem, useGetToPath, useGo, useResource} from "@refinedev/core";
+import {useGetToPath, useGo, useResource} from "@refinedev/core";
 
 const BeneficiaryBadge = ({ beneficiary, noLink }: { beneficiary: Beneficiary | undefined, noLink?:boolean }) => {
 
