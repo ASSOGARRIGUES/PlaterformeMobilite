@@ -62,7 +62,6 @@ INSTALLED_APPS = [
     'core',
     'api',
     'drf_spectacular',
-    'drf_yasg',
     'dbbackup',
     'solo',
     'dbbackup_admin',
