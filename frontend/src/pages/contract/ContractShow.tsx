@@ -20,6 +20,7 @@ import ContractComment from "../../components/contract/ContractComment";
 import {useGetToPath, useGo, useResource} from "@refinedev/core";
 import {User} from "../../types/auth";
 import ArchiveButton from "../../components/ArchiveButton";
+import ContractArchiveButton from "../../components/contract/ContractArchiveButton";
 
 const ContractShow = () => {
 
@@ -140,7 +141,7 @@ const ContractShow = () => {
                                         </span>
                                     </Tooltip>
 
-                                    <ArchiveButton id={contractResponse?.id} ressource={'contract'} modalContent={(<>Etes vous certains de vouloir archiver ce contrat</>)}/>
+                                    <ContractArchiveButton contract={contractResponse}/>
                                 </Group>
                             </Stack>
 

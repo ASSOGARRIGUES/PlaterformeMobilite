@@ -4,23 +4,14 @@ import {IconEdit} from "@tabler/icons-react";
 import useBeneficiaryModalForm from "../../hooks/beneficiary/useBeneficiaryModalForm";
 import BeneficiaryModal from "./BeneficiaryModal";
 import {CSSProperties, ReactElement} from "react";
+import EditButton from "../EditButton";
 
 const BeneficiaryCard = ({beneficiary, withEdit = false, title=(<>Informations</>), style}: {beneficiary: Beneficiary | undefined, withEdit?: boolean, title?: ReactElement, style?:CSSProperties}) =>{
 
     const editModalForm = useBeneficiaryModalForm({action: "edit"});
     const {modal: { show: showEditModal },  } = editModalForm;
 
-    const EditButton = ({beneficiary}: {beneficiary: Beneficiary}) => {
-        return (
-            <Center>
-                <ActionIcon onClick={(e)=>{e.stopPropagation();showEditModal(beneficiary.id)}}  color="blue">
-                    <IconEdit size={25} />
-                </ActionIcon>
-            </Center>
-        )
-    }
-
-    const edit = withEdit && beneficiary ? <EditButton beneficiary={beneficiary}/> : ""
+    const edit = withEdit && beneficiary ? <EditButton record={beneficiary} showEditModal={showEditModal} disabled={beneficiary.archived}/> : ""
 
     const skeleton = (
         <>
@@ -54,7 +45,7 @@ const BeneficiaryCard = ({beneficiary, withEdit = false, title=(<>Informations</
 
             <Paper shadow="sm" p="md" style={style}>
                 <Flex direction="column" align="center" gap="xs">
-                    <Title order={2}>{title} {edit}</Title>
+                    <span style={{display: "inline-flex"}}><Title style={{marginRight: "0.2em"}} order={2} >{title}</Title>{edit}</span>
                     {beneficiary ? content : skeleton}
                 </Flex>
             </Paper>

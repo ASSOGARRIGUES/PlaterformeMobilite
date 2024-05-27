@@ -5,6 +5,7 @@ import {CSSProperties} from "react";
 import ParkingChangeSelect from "./ParkingChangeSelect";
 import QuickStatusButton from "./QuickStatusButton";
 import ArchiveButton from "../ArchiveButton";
+import VehicleArchiveButton from "./VehicleArchiveButton";
 
 const VehicleActions = ({ vehicle, style}: { vehicle: Vehicle  | undefined, style?:CSSProperties}) => {
 
@@ -13,7 +14,7 @@ const VehicleActions = ({ vehicle, style}: { vehicle: Vehicle  | undefined, styl
             <Stack>
                 <QuickStatusButton vehicle={vehicle} disabled={vehicle?.archived}/>
                 <ParkingChangeSelect vehicle={vehicle} disabled={vehicle?.archived}/>
-                <ArchiveButton id={vehicle?.id} ressource="vehicle" modalContent={"Etes vous certains de vouloir archiver ce véhicule ?"} color="red" disabled={vehicle?.archived}/>
+                <VehicleArchiveButton vehicle={vehicle}/>
             </Stack>
         </Paper>
     )
