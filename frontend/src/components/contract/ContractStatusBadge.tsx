@@ -4,6 +4,8 @@ import {ContractStatusEnum} from "../../types/schema.d";
 
 const ContractStatusBadge = ({contract}: {contract: CompleteContract}) => {
 
+    if(contract.archived) return (<Badge color="gray">Archivé</Badge>);
+
     const status = contract.status as keyof typeof ContractStatusEnum;
 
     const statusColorMap: Record<string, string> = {

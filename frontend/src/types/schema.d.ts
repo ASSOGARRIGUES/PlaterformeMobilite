@@ -56,6 +56,38 @@ export interface paths {
         patch: operations["api_beneficiary_partial_update"];
         trace?: never;
     };
+    "/api/beneficiary/{id}/archive/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["api_beneficiary_archive_partial_update"];
+        trace?: never;
+    };
+    "/api/beneficiary/{id}/unarchive/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["api_beneficiary_unarchive_partial_update"];
+        trace?: never;
+    };
     "/api/contract/": {
         parameters: {
             query?: never;
@@ -86,6 +118,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["api_contract_partial_update"];
+        trace?: never;
+    };
+    "/api/contract/{id}/archive/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["api_contract_archive_partial_update"];
         trace?: never;
     };
     "/api/contract/{id}/end/": {
@@ -150,6 +198,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/contract/{id}/unarchive/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["api_contract_unarchive_partial_update"];
         trace?: never;
     };
     "/api/parking/": {
@@ -284,6 +348,38 @@ export interface paths {
         patch: operations["api_vehicle_partial_update"];
         trace?: never;
     };
+    "/api/vehicle/{id}/archive/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["api_vehicle_archive_partial_update"];
+        trace?: never;
+    };
+    "/api/vehicle/{id}/unarchive/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["api_vehicle_unarchive_partial_update"];
+        trace?: never;
+    };
     "/api/whoami/": {
         parameters: {
             query?: never;
@@ -318,6 +414,7 @@ export interface components {
             license_delivery_date?: string | null;
             city: string;
             postal_code: string;
+            archived?: boolean;
         };
         /** @enum {unknown} */
         BlankEnum: BlankEnum;
@@ -338,7 +435,6 @@ export interface components {
             status?: components["schemas"]["ContractStatusEnum"];
             comment?: string | null;
             reason?: (components["schemas"]["ReasonEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
-            archived?: boolean;
             /** Format: int64 */
             max_kilometer?: number | null;
             /** Format: int64 */
@@ -349,6 +445,7 @@ export interface components {
             discount?: number;
             /** Format: date-time */
             ended_at?: string | null;
+            archived?: boolean;
         };
         /**
          * @description * `waiting` - En attente d'EDL
@@ -391,7 +488,6 @@ export interface components {
             status?: components["schemas"]["ContractStatusEnum"];
             comment?: string | null;
             reason?: (components["schemas"]["ReasonEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
-            archived?: boolean;
             /** Format: int64 */
             max_kilometer?: number | null;
             /** Format: int64 */
@@ -402,12 +498,13 @@ export interface components {
             discount?: number;
             /** Format: date-time */
             ended_at?: string | null;
+            archived?: boolean;
         };
         MutationVehicle: {
             readonly id: number;
             /** Format: uri */
             photo?: string;
-            parking: number;
+            parking?: number;
             type?: components["schemas"]["TypeEnum"];
             transmission?: components["schemas"]["TransmissionEnum"];
             fuel_type?: components["schemas"]["FuelTypeEnum"];
@@ -424,6 +521,7 @@ export interface components {
             status?: components["schemas"]["VehicleStatusEnum"];
             /** Format: date-time */
             readonly created_at: string;
+            archived?: boolean;
         };
         /** @enum {unknown} */
         NullEnum: null;
@@ -520,6 +618,36 @@ export interface components {
             license_delivery_date?: string | null;
             city?: string;
             postal_code?: string;
+            archived?: boolean;
+        };
+        PatchedContract: {
+            readonly id?: number;
+            readonly start_kilometer?: number;
+            readonly end_kilometer?: number;
+            /** Format: date-time */
+            readonly created_at?: string;
+            readonly created_by?: components["schemas"]["User"];
+            referent?: components["schemas"]["User"];
+            vehicle?: components["schemas"]["Vehicle"];
+            beneficiary?: components["schemas"]["Beneficiary"];
+            /** Format: date */
+            start_date?: string;
+            /** Format: date */
+            end_date?: string;
+            status?: components["schemas"]["ContractStatusEnum"];
+            comment?: string | null;
+            reason?: (components["schemas"]["ReasonEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** Format: int64 */
+            max_kilometer?: number | null;
+            /** Format: int64 */
+            price?: number;
+            /** Format: int64 */
+            deposit?: number;
+            /** Format: int64 */
+            discount?: number;
+            /** Format: date-time */
+            ended_at?: string | null;
+            archived?: boolean;
         };
         PatchedEndContract: {
             price?: number;
@@ -547,7 +675,6 @@ export interface components {
             status?: components["schemas"]["ContractStatusEnum"];
             comment?: string | null;
             reason?: (components["schemas"]["ReasonEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
-            archived?: boolean;
             /** Format: int64 */
             max_kilometer?: number | null;
             /** Format: int64 */
@@ -558,6 +685,7 @@ export interface components {
             discount?: number;
             /** Format: date-time */
             ended_at?: string | null;
+            archived?: boolean;
         };
         PatchedMutationVehicle: {
             readonly id?: number;
@@ -580,6 +708,7 @@ export interface components {
             status?: components["schemas"]["VehicleStatusEnum"];
             /** Format: date-time */
             readonly created_at?: string;
+            archived?: boolean;
         };
         PatchedParking: {
             readonly id?: number;
@@ -601,6 +730,29 @@ export interface components {
             first_name?: string;
             /** Nom */
             last_name?: string;
+        };
+        PatchedVehicle: {
+            readonly id?: number;
+            /** Format: uri */
+            photo?: string;
+            readonly parking?: components["schemas"]["Parking"];
+            type?: components["schemas"]["TypeEnum"];
+            transmission?: components["schemas"]["TransmissionEnum"];
+            fuel_type?: components["schemas"]["FuelTypeEnum"];
+            brand?: string;
+            modele?: string;
+            color?: string | null;
+            /** Format: int64 */
+            year?: number;
+            imat?: string;
+            /** Format: int64 */
+            fleet_id?: number;
+            /** Format: int64 */
+            kilometer?: number;
+            status?: components["schemas"]["VehicleStatusEnum"];
+            /** Format: date-time */
+            readonly created_at?: string;
+            archived?: boolean;
         };
         /**
          * @description * `cdd` - CDD
@@ -673,6 +825,7 @@ export interface components {
             status?: components["schemas"]["VehicleStatusEnum"];
             /** Format: date-time */
             readonly created_at: string;
+            archived?: boolean;
         };
         /**
          * @description * `available` - Disponible
@@ -899,6 +1052,62 @@ export interface operations {
             };
         };
     };
+    api_beneficiary_archive_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this beneficiary. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedBeneficiary"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedBeneficiary"];
+                "multipart/form-data": components["schemas"]["PatchedBeneficiary"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Beneficiary"];
+                };
+            };
+        };
+    };
+    api_beneficiary_unarchive_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this beneficiary. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedBeneficiary"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedBeneficiary"];
+                "multipart/form-data": components["schemas"]["PatchedBeneficiary"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Beneficiary"];
+                };
+            };
+        };
+    };
     api_contract_list: {
         parameters: {
             query?: {
@@ -1075,6 +1284,34 @@ export interface operations {
             };
         };
     };
+    api_contract_archive_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this contract. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedContract"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedContract"];
+                "multipart/form-data": components["schemas"]["PatchedContract"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Contract"];
+                };
+            };
+        };
+    };
     api_contract_end_retrieve: {
         parameters: {
             query?: never;
@@ -1184,6 +1421,34 @@ export interface operations {
                 "application/json": components["schemas"]["Contract"];
                 "application/x-www-form-urlencoded": components["schemas"]["Contract"];
                 "multipart/form-data": components["schemas"]["Contract"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Contract"];
+                };
+            };
+        };
+    };
+    api_contract_unarchive_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this contract. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedContract"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedContract"];
+                "multipart/form-data": components["schemas"]["PatchedContract"];
             };
         };
         responses: {
@@ -1717,6 +1982,62 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MutationVehicle"];
+                };
+            };
+        };
+    };
+    api_vehicle_archive_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this vehicle. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedVehicle"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedVehicle"];
+                "multipart/form-data": components["schemas"]["PatchedVehicle"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Vehicle"];
+                };
+            };
+        };
+    };
+    api_vehicle_unarchive_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this vehicle. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedVehicle"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedVehicle"];
+                "multipart/form-data": components["schemas"]["PatchedVehicle"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Vehicle"];
                 };
             };
         };

@@ -7,17 +7,26 @@ import {
     MantineNumberSize,
     GroupPosition,
     Tooltip,
-    MediaQuery, useMantineTheme
+    MediaQuery, useMantineTheme, Switch
 } from "@mantine/core";
 import {IconCirclePlus, IconInfoCircle, IconRefresh, IconSearch} from "@tabler/icons-react";
 import {DataTable, DataTableSortStatus} from "mantine-datatable";
 import React, {CSSProperties, useEffect, useState} from "react";
 import { DataTableColumn } from "mantine-datatable/dist/types/DataTableColumn";
 import { DataTableProps } from "mantine-datatable/dist/types";
-import {BaseRecord, CrudFilter, CrudFilters, HttpError, useParsed, useResource, useTable} from "@refinedev/core";
+import {
+    BaseRecord,
+    CrudFilter,
+    CrudFilters,
+    HttpError,
+    useParsed,
+    useResource,
+    useResourceParams,
+    useTable
+} from "@refinedev/core";
 import { Beneficiary } from "../../types/beneficiary";
 import { PAGE_SIZE } from "../../constants";
-import { useDebouncedValue } from "@mantine/hooks";
+import {useDebouncedValue, useToggle} from "@mantine/hooks";
 import { useMany, useGetToPath, useGo} from "@refinedev/core";
 import { Vehicle } from "../../types/vehicle";
 import {CompleteContract} from "../../types/contract";
@@ -62,6 +71,8 @@ type SearchableDataTableProps<T> = {
     withoutSearch?: boolean;
     pageSize?: number;
     searchInfoTooltip?: React.ReactNode;
+    defaultArchived?: boolean;
+    withArchivedSwitch?: boolean;
     othersProps?: DataTableProps<T>;
 };
 
@@ -84,6 +95,8 @@ function ContractTable<T extends BaseRecord>({
                                                  withoutSearch,
                                                  pageSize = PAGE_SIZE,
                                                  defaultSortedDirection = "asc",
+                                                 defaultArchived,
+                                                 withArchivedSwitch = true,
                                                  searchInfoTooltip,
                                                  ...othersProps
                                              }: SearchableDataTableProps<T>) {
@@ -101,11 +114,18 @@ function ContractTable<T extends BaseRecord>({
     const {resource: contractResourceItem} = useResource("contract");
 
     const {params: urlParams} = useParsed()
-    const urlSearch = urlParams?.filters?.find((filter: any) => filter.field === "search")?.value
+    const urlSearch = urlParams?.filters?.find((filter: any) => filter.field === "search")?.value // Retrieve search filter from url
 
     const [search, setSearch] = useState(urlSearch || "");
     const [debouncedSearch] = useDebouncedValue(search, 200, { leading: true });
-    ;
+
+    const urlArchived = urlParams?.filters?.find((filter: any) => filter.field === "archived")?.value // Retrieve archived filter from url
+    const [showArchived, setShowArchived] = useState<false | true>(urlArchived!==undefined ? urlArchived==="1" : false);
+
+    useEffect(() => {
+        if(defaultArchived===undefined) return
+        setShowArchived(defaultArchived)
+    }, [defaultArchived]);
 
     const {
         tableQueryResult,
@@ -127,7 +147,7 @@ function ContractTable<T extends BaseRecord>({
             ],
         },
         filters: {
-            initial: [{ field: "search", operator: "eq", value: search }],
+            initial: [{ field: "search", operator: "eq", value: search }, {field:"archived", operator:"eq", value: showArchived?1:0}],
             permanent: permanentFilters ? permanentFilters : [],
         },
     });
@@ -154,8 +174,8 @@ function ContractTable<T extends BaseRecord>({
     }
 
     useEffect(() => {
-        setFilters([{ field: "search", operator: "eq", value: debouncedSearch }]);
-    }, [debouncedSearch]);
+        setFilters([{ field: "search", operator: "eq", value: debouncedSearch }, {field:"archived", operator:"eq", value: showArchived?1:0}]);
+    }, [debouncedSearch, showArchived]);
 
     const reloadCallback = () => {
         tableQueryResult.refetch();
@@ -207,71 +227,79 @@ function ContractTable<T extends BaseRecord>({
                     )}
 
                     {/* Ajout des boutons d'ajout et de refresh si demandé par l'utilisateur*/}
-                    {(withAddIcon || withReloadIcon || extraButtons) && (
+                    {(withAddIcon || withReloadIcon || extraButtons || withArchivedSwitch) && (
                         <Group style={{ alignItems: "center", ...styles?.buttons }}>
                             {/* Ajout du selector si demandé par l'utilisateur*/}
                             {categoriesSelector}
 
                             {extraButtons}
 
+                            {withArchivedSwitch && (
+                                <Switch
+                                    label="Archives"
+                                    checked={showArchived}
+                                    onChange={(event) => setShowArchived(!showArchived)}
+                                />
+                            )}
+
                             {withAddIcon && (
                                 <Tooltip label={"Nouveau"} position={"bottom"} openDelay={200} >
-                                    <ActionIcon
-                                        style={{ flex: "initial" }}
-                                        size={33}
-                                        color="green"
-                                        onClick={() => addCallback ? addCallback() : ""}
-                                    >
-                                        <IconCirclePlus size={33} />
-                                    </ActionIcon>
-                                </Tooltip>
-                            )}
-
-                            {withReloadIcon && (
-                                <Tooltip label={"Rafraichir"} position={"bottom"} openDelay={200} >
-                                    <ActionIcon
-                                        style={{ flex: "initial" }}
-                                        size={33}
-                                        color="blue"
-                                        onClick={() => reloadCallback()}
-                                    >
-                                        <IconRefresh size={33} />
-                                    </ActionIcon>
-                                </Tooltip>
-                            )}
-                        </Group>
+                            <ActionIcon
+                                style={{ flex: "initial" }}
+                                size={33}
+                                color="green"
+                                onClick={() => addCallback ? addCallback() : ""}
+                            >
+                                <IconCirclePlus size={33} />
+                            </ActionIcon>
+                        </Tooltip>
                     )}
-                </Group>
+
+                    {withReloadIcon && (
+                        <Tooltip label={"Rafraichir"} position={"bottom"} openDelay={200} >
+                    <ActionIcon
+                        style={{ flex: "initial" }}
+                        size={33}
+                        color="blue"
+                        onClick={() => reloadCallback()}
+                    >
+                        <IconRefresh size={33} />
+                    </ActionIcon>
+                </Tooltip>
             )}
+                </Group>
+                )}
+        </Group>
+    )}
 
-            {secondBarNodes}
+{secondBarNodes}
 
-            <Box
-                style={{
-                    flex: "1 1 auto",
-                    overflow: "hidden",
-                }}
-            >
-                <DataTable<T>
-                    minHeight={150}
-                    striped
-                    highlightOnHover
-                    records={data}
-                    columns={columns}
-                    fetching={tableQueryResult.isFetching}
-                    sortStatus={sortStatus as DataTableSortStatus}
-                    onSortStatusChange={setSortStatus}
-                    totalRecords={tableQueryResult.data?.total ?? 0}
-                    page={((data.length==0 )? undefined : currentPage ) as number}
-                    onPageChange={setCurrentPage}
-                    recordsPerPage={apiPageSize}
-                    style={styles?.datatable}
-                    onRowClick={rowClickHandler}
-                    {...othersProps}
-                />
-            </Box>
-        </Stack>
-    );
+    <Box
+        style={{
+            flex: "1 1 auto",
+            overflow: "hidden",
+        }}
+    >
+        <DataTable<T>
+            minHeight={150}
+            striped
+            highlightOnHover
+            records={data}
+            columns={columns}
+            fetching={tableQueryResult.isFetching}
+            sortStatus={sortStatus as DataTableSortStatus}
+            onSortStatusChange={setSortStatus}
+            totalRecords={tableQueryResult.data?.total ?? 0}
+            page={((data.length==0 )? undefined : currentPage ) as number}
+            onPageChange={setCurrentPage}
+            recordsPerPage={apiPageSize}
+            style={styles?.datatable}
+            onRowClick={rowClickHandler}
+            {...othersProps}
+        />
+    </Box>
+</Stack>
+);
 }
 
 export default ContractTable;

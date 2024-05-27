@@ -423,6 +423,72 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/beneficiary/{id}/archive/:
+    patch:
+      operationId: api_beneficiary_archive_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this beneficiary.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBeneficiary'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBeneficiary'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBeneficiary'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Beneficiary'
+          description: ''
+  /api/beneficiary/{id}/unarchive/:
+    patch:
+      operationId: api_beneficiary_unarchive_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this beneficiary.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBeneficiary'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBeneficiary'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBeneficiary'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Beneficiary'
+          description: ''
   /api/contract/:
     get:
       operationId: api_contract_list
@@ -695,6 +761,39 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/contract/{id}/archive/:
+    patch:
+      operationId: api_contract_archive_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this contract.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedContract'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedContract'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedContract'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+          description: ''
   /api/contract/{id}/end/:
     get:
       operationId: api_contract_end_retrieve
@@ -817,6 +916,39 @@ paths:
             schema:
               $ref: '#/components/schemas/Contract'
         required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+          description: ''
+  /api/contract/{id}/unarchive/:
+    patch:
+      operationId: api_contract_unarchive_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this contract.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedContract'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedContract'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedContract'
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -1461,6 +1593,72 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/vehicle/{id}/archive/:
+    patch:
+      operationId: api_vehicle_archive_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this vehicle.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedVehicle'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedVehicle'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedVehicle'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+          description: ''
+  /api/vehicle/{id}/unarchive/:
+    patch:
+      operationId: api_vehicle_unarchive_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this vehicle.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedVehicle'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedVehicle'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedVehicle'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+          description: ''
   /api/whoami/:
     get:
       operationId: api_whoami_list
@@ -1520,6 +1718,8 @@ components:
         postal_code:
           type: string
           maxLength: 100
+        archived:
+          type: boolean
       required:
       - address
       - city
@@ -1575,8 +1775,6 @@ components:
           - $ref: '#/components/schemas/ReasonEnum'
           - $ref: '#/components/schemas/BlankEnum'
           - $ref: '#/components/schemas/NullEnum'
-        archived:
-          type: boolean
         max_kilometer:
           type: integer
           maximum: 9223372036854775807
@@ -1602,6 +1800,8 @@ components:
           type: string
           format: date-time
           nullable: true
+        archived:
+          type: boolean
       required:
       - beneficiary
       - created_at
@@ -1708,8 +1908,6 @@ components:
           - $ref: '#/components/schemas/ReasonEnum'
           - $ref: '#/components/schemas/BlankEnum'
           - $ref: '#/components/schemas/NullEnum'
-        archived:
-          type: boolean
         max_kilometer:
           type: integer
           maximum: 9223372036854775807
@@ -1735,6 +1933,8 @@ components:
           type: string
           format: date-time
           nullable: true
+        archived:
+          type: boolean
       required:
       - beneficiary
       - created_at
@@ -1799,6 +1999,8 @@ components:
           type: string
           format: date-time
           readOnly: true
+        archived:
+          type: boolean
       required:
       - brand
       - created_at
@@ -1807,7 +2009,6 @@ components:
       - imat
       - kilometer
       - modele
-      - parking
       - year
     NullEnum:
       enum:
@@ -1979,6 +2180,78 @@ components:
         postal_code:
           type: string
           maxLength: 100
+        archived:
+          type: boolean
+    PatchedContract:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        start_kilometer:
+          type: integer
+          readOnly: true
+        end_kilometer:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        referent:
+          $ref: '#/components/schemas/User'
+        vehicle:
+          $ref: '#/components/schemas/Vehicle'
+        beneficiary:
+          $ref: '#/components/schemas/Beneficiary'
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/ContractStatusEnum'
+        comment:
+          type: string
+          nullable: true
+        reason:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ReasonEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        max_kilometer:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        price:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        deposit:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        discount:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+        archived:
+          type: boolean
     PatchedEndContract:
       type: object
       properties:
@@ -2042,8 +2315,6 @@ components:
           - $ref: '#/components/schemas/ReasonEnum'
           - $ref: '#/components/schemas/BlankEnum'
           - $ref: '#/components/schemas/NullEnum'
-        archived:
-          type: boolean
         max_kilometer:
           type: integer
           maximum: 9223372036854775807
@@ -2069,6 +2340,8 @@ components:
           type: string
           format: date-time
           nullable: true
+        archived:
+          type: boolean
     PatchedMutationVehicle:
       type: object
       properties:
@@ -2120,6 +2393,8 @@ components:
           type: string
           format: date-time
           readOnly: true
+        archived:
+          type: boolean
     PatchedParking:
       type: object
       properties:
@@ -2155,6 +2430,61 @@ components:
           type: string
           title: Nom
           maxLength: 150
+    PatchedVehicle:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        photo:
+          type: string
+          format: uri
+        parking:
+          allOf:
+          - $ref: '#/components/schemas/Parking'
+          readOnly: true
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        transmission:
+          $ref: '#/components/schemas/TransmissionEnum'
+        fuel_type:
+          $ref: '#/components/schemas/FuelTypeEnum'
+        brand:
+          type: string
+          maxLength: 50
+        modele:
+          type: string
+          maxLength: 50
+        color:
+          type: string
+          nullable: true
+          maxLength: 50
+        year:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        imat:
+          type: string
+          maxLength: 9
+        fleet_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        kilometer:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        status:
+          $ref: '#/components/schemas/VehicleStatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        archived:
+          type: boolean
     ReasonEnum:
       enum:
       - cdd
@@ -2304,6 +2634,8 @@ components:
           type: string
           format: date-time
           readOnly: true
+        archived:
+          type: boolean
       required:
       - brand
       - created_at

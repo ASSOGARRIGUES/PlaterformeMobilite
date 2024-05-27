@@ -20,25 +20,15 @@ import {CSSProperties} from "react";
 import {humanizeNumber, vehicleTypeLabelMap} from "../../constants";
 import VehicleStatusBadge from "./VehicleStatusBadge";
 import VehicleAvatar from "./VehicleAvatar";
+import EditButton from "../EditButton";
 
 const VehicleCard = ({vehicle, withEdit=false, title=(<>Informations</>), style}: {vehicle: Vehicle | undefined, withEdit?: boolean, title?:React.ReactElement, style?:CSSProperties}) => {
 
     const editModalForm = useVehicleModalForm({action: "edit"});
     const {modal: { show: showEditModal},  getInputProps} = editModalForm;
 
-    const theme = useMantineTheme();
 
-    const EditButton = ({vehicle}: {vehicle: Vehicle}) => {
-        return (
-            <Center>
-                <ActionIcon onClick={(e)=>{e.stopPropagation();showEditModal(vehicle.id)}}  color="blue">
-                    <IconEdit size={25} />
-                </ActionIcon>
-            </Center>
-        )
-    }
-
-    const edit = withEdit && vehicle ? <EditButton vehicle={vehicle}/> : ""
+    const edit = withEdit && vehicle ? <EditButton showEditModal={showEditModal} record={vehicle} disabled={vehicle.archived}/> : ""
 
     const skeleton = (
         <>
@@ -75,7 +65,7 @@ const VehicleCard = ({vehicle, withEdit=false, title=(<>Informations</>), style}
 
             <Paper shadow="sm" p="md" style={style}>
                 <Flex direction="column" align="center" gap="xs">
-                    <Title order={2}>{title} {edit}</Title>
+                    <span style={{display: "inline-flex"}}><Title style={{marginRight: "0.2em"}} order={2} >{title}</Title>{edit}</span>
                     {vehicle ? content : skeleton}
                 </Flex>
             </Paper>

@@ -1,10 +1,11 @@
 import ParkingSelect from "./ParkingSelect";
 import {Parking, Vehicle} from "../../types/vehicle";
-import {CSSProperties} from "react";
+import {ComponentProps, CSSProperties} from "react";
 import {useUpdate} from "@refinedev/core";
 import {Loader} from "@mantine/core";
+import {SelectProps} from "@mantine/core/lib/Select/Select";
 
-const ParkingChangeSelect = ({ vehicle, style }:{vehicle: Vehicle | undefined, style?: CSSProperties}) => {
+const ParkingChangeSelect = ({ vehicle, ...otherProps }:{vehicle: Vehicle | undefined} & Omit<ComponentProps<typeof ParkingSelect>, "onChange">) => {
 
     const { mutate, isLoading } = useUpdate();
 
@@ -26,7 +27,7 @@ const ParkingChangeSelect = ({ vehicle, style }:{vehicle: Vehicle | undefined, s
     }
 
     return (
-        <ParkingSelect withLabel onChange={handleChange} value={vehicle?.parking} style={style} rightSection={isLoading? (<Loader size="xs"/>) : undefined}/>
+        <ParkingSelect {...otherProps} withLabel onChange={handleChange} value={vehicle?.parking} rightSection={isLoading? (<Loader size="xs"/>) : undefined}/>
     )
 }
 

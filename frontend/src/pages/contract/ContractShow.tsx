@@ -19,6 +19,8 @@ import usePayContract from "../../hooks/contract/usePayContract";
 import ContractComment from "../../components/contract/ContractComment";
 import {useGetToPath, useGo, useResource} from "@refinedev/core";
 import {User} from "../../types/auth";
+import ArchiveButton from "../../components/ArchiveButton";
+import ContractArchiveButton from "../../components/contract/ContractArchiveButton";
 
 const ContractShow = () => {
 
@@ -138,6 +140,8 @@ const ContractShow = () => {
                                             </Button>
                                         </span>
                                     </Tooltip>
+
+                                    <ContractArchiveButton contract={contractResponse}/>
                                 </Group>
                             </Stack>
 
