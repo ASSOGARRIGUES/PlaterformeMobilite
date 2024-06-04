@@ -14,4 +14,9 @@ type ContractWritableFields = Omit<components['schemas']['MutationContract'], "i
 type EndContract = components["schemas"]["EndContract"]
 type EndContractWritableFields = Omit<EndContract, "id" | "max_kilometer" | "start_kilometer">
 
+type Payment = components["schemas"]["Payment"]
+type ContractPaymentSummary = components["schemas"]["ContractPaymentSummary"]
+type WritablePayment = Omit<components["schemas"]["PatchedPayment"], "id" | "created_at" | "created_by">
+
+
 

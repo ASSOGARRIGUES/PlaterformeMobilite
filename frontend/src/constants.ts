@@ -1,4 +1,10 @@
-import {ContractStatusEnum, FuelTypeEnum, ReasonEnum, TypeEnum, VehicleStatusEnum} from "./types/schema.d";
+import {
+    ContractStatusEnum,
+    FuelTypeEnum,
+    PaymentModeEnum,
+    ReasonEnum,
+    TypeEnum,
+} from "./types/schema.d";
 import {axiosInstance} from "./providers/rest-data-provider/utils";
 
 
@@ -34,6 +40,12 @@ export const fuelTypeLabelMap: Record<string,string> = {
     [FuelTypeEnum.electrique]: "Electrique",
     [FuelTypeEnum.essence]: "Essence",
     [FuelTypeEnum.diesel]: "Diesel",
+}
+
+export const paymentModeLabelMap: Record<string,string> = {
+    [PaymentModeEnum.cash]: "Espèces",
+    [PaymentModeEnum.card]: "Carte bancaire",
+    [PaymentModeEnum.check]: "Chèque",
 }
 
 export const StatusConsideredOngoing = [ContractStatusEnum.pending,ContractStatusEnum.over,ContractStatusEnum.waiting];

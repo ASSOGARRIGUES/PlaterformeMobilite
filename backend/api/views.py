@@ -236,6 +236,8 @@ class ContractViewSet(ArchivableModelViewSet):
 class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Payment.objects.none()
         return Payment.objects.filter(contract__id=self.kwargs['contract_pk'])
 
     def get_serializer_context(self):
@@ -248,7 +250,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
         contract.updateIfPaid()
         return response
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], serializer_class=ContractPaymentSummarySerializer)
     def summary(self, request, *args, **kwargs):
         contract = get_object_or_404(Contract, pk=self.kwargs['contract_pk'])
         serializer = ContractPaymentSummarySerializer(contract)

@@ -169,15 +169,15 @@ class Contract(models.Model):
             self.status = 'payed'
             self.save()
 
-class PaymentMode(models.TextChoices):
-    CASH = 'cash'
-    CHECK = 'check'
-    CARD = 'card'
-
 class Payment(models.Model):
+    class Mode(models.TextChoices):
+        CASH = 'cash'
+        CHECK = 'check'
+        CARD = 'card'
+
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE, related_name='payments')
     amount = models.IntegerField()
-    mode = models.CharField(max_length=20, choices=PaymentMode.choices)
+    mode = models.CharField(max_length=20, choices=Mode.choices)
     check_number = models.CharField(max_length=100, blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -186,9 +186,9 @@ class Payment(models.Model):
     @property
     def mode_display(self):
         display_dict = {
-            PaymentMode.CARD: 'Carte bancaire',
-            PaymentMode.CASH: 'Espèces',
-            PaymentMode.CHECK: 'Chèque',
+            Payment.Mode.CARD: 'Carte bancaire',
+            Payment.Mode.CASH: 'Espèces',
+            Payment.Mode.CHECK: 'Chèque',
         }
         return display_dict[self.mode]
 

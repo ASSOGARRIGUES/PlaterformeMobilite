@@ -63,7 +63,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["api_beneficiary_archive_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -88,6 +88,22 @@ export interface paths {
         patch: operations["api_beneficiary_unarchive_partial_update"];
         trace?: never;
     };
+    "/api/beneficiary/get_archived/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_beneficiary_get_archived_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/contract/": {
         parameters: {
             query?: never;
@@ -98,6 +114,70 @@ export interface paths {
         get: operations["api_contract_list"];
         put?: never;
         post: operations["api_contract_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/contract/{contract_pk}/payment/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_contract_payment_list"];
+        put?: never;
+        post: operations["api_contract_payment_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/contract/{contract_pk}/payment/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_contract_payment_retrieve"];
+        put: operations["api_contract_payment_update"];
+        post?: never;
+        delete: operations["api_contract_payment_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["api_contract_payment_partial_update"];
+        trace?: never;
+    };
+    "/api/contract/{contract_pk}/payment/{id}/get_participation_pdf/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_contract_payment_get_participation_pdf_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/contract/{contract_pk}/payment/summary/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_contract_payment_summary_retrieve"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -127,7 +207,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["api_contract_archive_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -184,22 +264,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/contract/{id}/payed/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["api_contract_payed_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/contract/{id}/unarchive/": {
         parameters: {
             query?: never;
@@ -214,6 +278,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["api_contract_unarchive_partial_update"];
+        trace?: never;
+    };
+    "/api/contract/get_archived/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_contract_get_archived_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/parking/": {
@@ -355,7 +435,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["api_vehicle_archive_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -378,6 +458,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["api_vehicle_unarchive_partial_update"];
+        trace?: never;
+    };
+    "/api/vehicle/get_archived/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_vehicle_get_archived_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/whoami/": {
@@ -446,6 +542,14 @@ export interface components {
             /** Format: date-time */
             ended_at?: string | null;
             archived?: boolean;
+        };
+        ContractPaymentSummary: {
+            readonly payments_sum: number;
+            readonly total_due: number;
+            readonly price: number;
+            readonly discount: number;
+            readonly nb_payments: number;
+            readonly is_payed: boolean;
         };
         /**
          * @description * `waiting` - En attente d'EDL
@@ -569,6 +673,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Parking"][];
+        };
+        PaginatedPaymentList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["Payment"][];
         };
         PaginatedUserList: {
             /** @example 123 */
@@ -714,6 +833,16 @@ export interface components {
             readonly id?: number;
             name?: string;
         };
+        PatchedPayment: {
+            readonly id?: number;
+            /** Format: date-time */
+            readonly created_at?: string;
+            readonly created_by?: components["schemas"]["User"];
+            /** Format: int64 */
+            amount?: number;
+            mode?: components["schemas"]["PaymentModeEnum"];
+            check_number?: string | null;
+        };
         PatchedUser: {
             readonly id?: number;
             /**
@@ -754,6 +883,23 @@ export interface components {
             readonly created_at?: string;
             archived?: boolean;
         };
+        Payment: {
+            readonly id: number;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly created_by: components["schemas"]["User"];
+            /** Format: int64 */
+            amount: number;
+            mode: components["schemas"]["PaymentModeEnum"];
+            check_number?: string | null;
+        };
+        /**
+         * @description * `cash` - Cash
+         *     * `check` - Check
+         *     * `card` - Card
+         * @enum {string}
+         */
+        PaymentModeEnum: PaymentModeEnum;
         /**
          * @description * `cdd` - CDD
          *     * `cdi` - CDI
@@ -1052,6 +1198,28 @@ export interface operations {
             };
         };
     };
+    api_beneficiary_archive_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this beneficiary. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Beneficiary"];
+                };
+            };
+        };
+    };
     api_beneficiary_archive_partial_update: {
         parameters: {
             query?: never;
@@ -1097,6 +1265,25 @@ export interface operations {
                 "multipart/form-data": components["schemas"]["PatchedBeneficiary"];
             };
         };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Beneficiary"];
+                };
+            };
+        };
+    };
+    api_beneficiary_get_archived_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {
@@ -1181,6 +1368,206 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MutationContract"];
+                };
+            };
+        };
+    };
+    api_contract_payment_list: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                contract_pk: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedPaymentList"];
+                };
+            };
+        };
+    };
+    api_contract_payment_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contract_pk: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Payment"];
+                "application/x-www-form-urlencoded": components["schemas"]["Payment"];
+                "multipart/form-data": components["schemas"]["Payment"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Payment"];
+                };
+            };
+        };
+    };
+    api_contract_payment_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contract_pk: number;
+                /** @description A unique integer value identifying this payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Payment"];
+                };
+            };
+        };
+    };
+    api_contract_payment_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contract_pk: number;
+                /** @description A unique integer value identifying this payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Payment"];
+                "application/x-www-form-urlencoded": components["schemas"]["Payment"];
+                "multipart/form-data": components["schemas"]["Payment"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Payment"];
+                };
+            };
+        };
+    };
+    api_contract_payment_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contract_pk: number;
+                /** @description A unique integer value identifying this payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_contract_payment_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contract_pk: number;
+                /** @description A unique integer value identifying this payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedPayment"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedPayment"];
+                "multipart/form-data": components["schemas"]["PatchedPayment"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Payment"];
+                };
+            };
+        };
+    };
+    api_contract_payment_get_participation_pdf_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contract_pk: number;
+                /** @description A unique integer value identifying this payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Payment"];
+                };
+            };
+        };
+    };
+    api_contract_payment_summary_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contract_pk: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractPaymentSummary"];
                 };
             };
         };
@@ -1280,6 +1667,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MutationContract"];
+                };
+            };
+        };
+    };
+    api_contract_archive_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this contract. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Contract"];
                 };
             };
         };
@@ -1406,34 +1815,6 @@ export interface operations {
             };
         };
     };
-    api_contract_payed_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this contract. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Contract"];
-                "application/x-www-form-urlencoded": components["schemas"]["Contract"];
-                "multipart/form-data": components["schemas"]["Contract"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Contract"];
-                };
-            };
-        };
-    };
     api_contract_unarchive_partial_update: {
         parameters: {
             query?: never;
@@ -1451,6 +1832,25 @@ export interface operations {
                 "multipart/form-data": components["schemas"]["PatchedContract"];
             };
         };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Contract"];
+                };
+            };
+        };
+    };
+    api_contract_get_archived_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {
@@ -1986,6 +2386,28 @@ export interface operations {
             };
         };
     };
+    api_vehicle_archive_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this vehicle. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Vehicle"];
+                };
+            };
+        };
+    };
     api_vehicle_archive_partial_update: {
         parameters: {
             query?: never;
@@ -2031,6 +2453,25 @@ export interface operations {
                 "multipart/form-data": components["schemas"]["PatchedVehicle"];
             };
         };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Vehicle"];
+                };
+            };
+        };
+    };
+    api_vehicle_get_archived_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {
@@ -2184,7 +2625,7 @@ export enum PathsApiVehicleGetParametersQueryStatus__or {
     rented = "rented"
 }
 export enum BlankEnum {
-     ""
+      ""
 }
 export enum ContractStatusEnum {
     waiting = "waiting",
@@ -2196,6 +2637,11 @@ export enum FuelTypeEnum {
     essence = "essence",
     diesel = "diesel",
     electrique = "electrique"
+}
+export enum PaymentModeEnum {
+    cash = "cash",
+    check = "check",
+    card = "card"
 }
 export enum ReasonEnum {
     cdd = "cdd",
