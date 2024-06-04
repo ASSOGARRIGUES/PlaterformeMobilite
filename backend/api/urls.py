@@ -1,4 +1,6 @@
 from django.urls import path, include
+from rest_framework_nested.routers import NestedSimpleRouter
+
 from . import views
 
 from rest_framework import routers
@@ -11,6 +13,10 @@ router.register('referent', views.UserViewSet)
 router.register('whoami', views.WhoAmIViewSet, basename='whoami')
 router.register('parking', views.ParkingViewSet)
 
+contract_router = NestedSimpleRouter(router, r'contract', lookup='contract')
+contract_router.register(r'payment', views.PaymentViewSet, basename='contract-payment')
+
 urlpatterns = [
     path('', include(router.urls)),
+    path(r'', include(contract_router.urls)),
 ]

@@ -4,20 +4,20 @@
 <!-- saved from url=(0146)https://mobilite.asso-garrigues.fr/wp-admin/admin-ajax.php?action=generate_wpo_wcpdf&document_type=packing-slip&order_ids=9426&_wpnonce=05c31172a1 -->
 <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
-    <title>Participation</title>
+    <title>Participation n°{{ payment.pk }} au contrat #{{ contract.pk }}</title>
     <style type="text/css">/* Main Body */
-@page {
+    @page {
         size: a4 portrait;
-        {#margin-top: 1cm;#}
-        {#margin-bottom: 3cm;#}
-        {#margin-left: 2cm;#}
-        {#margin-right: 2cm;#}
+    {#margin-top: 1cm;#}
+    {#margin-bottom: 3cm;#}
+    {#margin-left: 2cm;#}
+    {#margin-right: 2cm;#}
 
         @frame content_frame {          /* Content Frame */
             left: 40pt; width: 515pt; top: 28pt; height: 766pt;
         }
 
-         @frame footer_frame {           /* Another static Frame */
+        @frame footer_frame {           /* Another static Frame */
             -pdf-frame-content: footer_content;
             left: 40pt; width: 515pt; top: 794pt; height: 20pt;
         }
@@ -212,7 +212,16 @@
         margin-bottom: 20px;
     }
 
-        .deposit-details td,
+    .discount-total {
+        width: 63%
+    }
+
+    .price-total {
+        width: 37%
+    }
+
+
+    .deposit-details td,
     .deposit-details th {
         border-bottom: 1px #ccc solid;
         border-top: 1px #ccc solid;
@@ -335,7 +344,7 @@
     </tr>
     </tbody></table>
 
-<h1 class="document-type-label">Récapitulatif des participations</h1>
+<h1 class="document-type-label">Participation</h1>
 
 
 <table class="contract-head">
@@ -353,6 +362,10 @@
                 <tr class="order-number">
                     <th>Numéro de contrat:</th>
                     <td>{{ contract.id }}</td>
+                </tr>
+                <tr class="order-number">
+                    <th>Numéro de participation:</th>
+                    <td>{{ payment.id }}</td>
                 </tr>
                 <tr class="delivery-date">
                     <th>Date de contrat:</th>
@@ -382,6 +395,39 @@
     </tbody>
 </table>
 
+
+<table class="order-details">
+    <thead>
+    <tr>
+        <th class="product">Mode de paiement</th>
+        <th>Date</th>
+        <th class="price">Montant</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td class="product">
+            {#            <span class="item-name">{{ contract.vehicle.fleet_id }}</span>#}
+            <span style="font-size: 16px;"> <strong>{{ payment.mode_display }}</strong></span> <br>
+
+            {% if payment.mode == "check" %}
+                Numéro de chèque: <strong>{{ payment.check_number }}</strong><br>
+            {% endif %}
+
+        </td>
+        <td>
+            {{ payment.created_at }}
+        </td>
+        <td class="price">
+            {{ payment.amount }}€
+        </td>
+    </tr>
+    </tbody>
+
+</table>
+
+<br/><br/><br/><br/><br/>
+<h1 class="document-type-label">Récapitulatif des participations</h1>
 <table class="order-details">
     <thead>
     <tr>

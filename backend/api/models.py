@@ -150,10 +150,57 @@ class Contract(models.Model):
         return pdf
 
     def render_bill_pdf(self):
+        km_overpass = self.end_kilometer > self.max_kilometer+self.start_kilometer if self.end_kilometer else False
         context = {
             "contract": self,
             "final_price": self.price - self.discount,
-            "km_overpass":  self.end_kilometer > self.max_kilometer+self.start_kilometer
+            "km_overpass":  km_overpass,
+            "remaining_due": self.price - self.discount - self.getPaymentsSum(),
+            "payment_sum": self.getPaymentsSum(),
         }
         pdf = render_to_pdf('invoices/bill.html', context)
+        return pdf
+
+    def getPaymentsSum(self):
+        return self.payments.aggregate(models.Sum('amount'))['amount__sum'] or 0
+
+    def updateIfPaid(self):
+        if (self.getPaymentsSum() >= self.price - self.discount) and self.status == 'over':
+            self.status = 'payed'
+            self.save()
+
+class PaymentMode(models.TextChoices):
+    CASH = 'cash'
+    CHECK = 'check'
+    CARD = 'card'
+
+class Payment(models.Model):
+    contract = models.ForeignKey(Contract, on_delete=models.CASCADE, related_name='payments')
+    amount = models.IntegerField()
+    mode = models.CharField(max_length=20, choices=PaymentMode.choices)
+    check_number = models.CharField(max_length=100, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='payments_created_by', null=True, blank=True)
+
+    @property
+    def mode_display(self):
+        display_dict = {
+            PaymentMode.CARD: 'Carte bancaire',
+            PaymentMode.CASH: 'Espèces',
+            PaymentMode.CHECK: 'Chèque',
+        }
+        return display_dict[self.mode]
+
+    def render_participation_pdf(self):
+        km_overpass = self.contract.end_kilometer > self.contract.max_kilometer + self.contract.start_kilometer if self.contract.end_kilometer else False
+        context = {
+            "payment": self,
+            "contract": self.contract,
+            "final_price": self.contract.price - self.contract.discount,
+            "km_overpass": km_overpass,
+            "remaining_due": self.contract.price - self.contract.discount - self.contract.getPaymentsSum(),
+            "payment_sum": self.contract.getPaymentsSum(),
+        }
+        pdf = render_to_pdf('invoices/participation.html', context)
         return pdf
