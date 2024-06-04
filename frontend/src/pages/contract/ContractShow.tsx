@@ -166,7 +166,7 @@ const ContractShow = () => {
                                     </Tooltip>
 
                                     {contractResponse? (
-                                        <ContractNewPaymentButton contract={contractResponse}/>
+                                        <ContractNewPaymentButton contract={contractResponse} variant="button"/>
                                     ): skeleton(1)}
 
                                     <ContractArchiveButton contract={contractResponse}/>

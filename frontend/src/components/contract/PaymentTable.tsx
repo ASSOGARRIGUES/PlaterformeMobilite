@@ -92,6 +92,7 @@ const PaymentTable = ({contract}: {contract: Contract}) => {
                 columns={columns}
                 resource={`contract/${contract.id}/payment`}
                 pageSize={4}
+
             />
         </>
     )

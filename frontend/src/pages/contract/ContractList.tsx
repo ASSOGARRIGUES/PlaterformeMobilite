@@ -20,6 +20,8 @@ import ContractEditButton from "../../components/contract/ContractEditButton";
 import {humanizeDate, humanizeFirstName} from "../../constants";
 import PayedContractButton from "../../components/contract/PayedContractButton";
 import ContractSearchTooltip from "../../components/contract/ContractSearchTooltip";
+import usePaymentModalForm from "../../hooks/contract/usePaymentModalForm";
+import ContractNewPaymentButton from "../../components/contract/ContractNewPaymentButton";
 
 const ContractList = () => {
 
@@ -31,7 +33,6 @@ const ContractList = () => {
 
     const endModalForm = useEndContractForm();
     const {modal: { show: showEndModal}} = endModalForm;
-
 
     const columns = useMemo<DataTableColumn<CompleteContract>[]>(
         () => [
@@ -94,7 +95,7 @@ const ContractList = () => {
                     return (
                         <Group>
                             {contract.status !== ContractStatusEnum.over && <ContractEditButton contract={contract} showEditModal={showEditModal} />}
-                            {contract.status === ContractStatusEnum.over && <PayedContractButton contract={contract}/> }
+                            {contract.status === ContractStatusEnum.over && <ContractNewPaymentButton contract={contract}/> }
                             <OnePDFButton contract={contract}/>
                             <ContractExtraActionMenu contract={contract} showEndModal={showEndModal}/>
                         </Group>
