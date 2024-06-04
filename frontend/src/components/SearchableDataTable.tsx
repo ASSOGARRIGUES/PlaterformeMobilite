@@ -38,7 +38,7 @@ secondBarNodes: Liste de Nodes qui seront ajouter sous la barre principale (cham
  */
 
 type SearchableDataTableProps<T> = {
-    searchPlaceHolder: string,
+    searchPlaceHolder?: string,
     columns: DataTableColumn<T>[],
     defaultSortedColumn?: keyof T,
     defaultSortedDirection?: "asc" | "desc";
@@ -56,6 +56,9 @@ type SearchableDataTableProps<T> = {
     withoutSearch?: boolean;
     pageSize?: number;
     searchInfoTooltip?: React.ReactNode
+    resource?: string;
+    defaultArchived?: boolean;
+    withArchivedSwitch?: boolean;
     othersProps?: DataTableProps<T>
 }
 
@@ -78,6 +81,9 @@ function SearchableDataTable<T extends BaseRecord>({
                                                        pageSize = PAGE_SIZE,
                                                        defaultSortedDirection = "asc",
                                                        searchInfoTooltip,
+                                                       resource,
+                                                       defaultArchived,
+                                                       withArchivedSwitch = true,
                                                        ...othersProps
                                                    }: SearchableDataTableProps<T>)
 {
@@ -96,7 +102,12 @@ function SearchableDataTable<T extends BaseRecord>({
     const [debouncedSearch] = useDebouncedValue(search, 200, { leading: true });
 
     const urlArchived = urlParams?.filters?.find((filter: any) => filter.field === "archived")?.value // Retrieve archived filter from url
-    const [showArchived, setShowArchived] = useState<false | true>(urlArchived!==undefined? urlArchived==="1" : false);
+       const [showArchived, setShowArchived] = useState<false | true>(urlArchived!==undefined ? urlArchived==="1" : false);
+
+    useEffect(() => {
+        if(defaultArchived===undefined) return
+        setShowArchived(defaultArchived)
+    }, [defaultArchived]);
 
 
     const {
@@ -109,6 +120,7 @@ function SearchableDataTable<T extends BaseRecord>({
     } = useTable<T, HttpError>({
         syncWithLocation: true,
         pagination: {pageSize: pageSize},
+        resource: resource,
         sorters: {initial: [{field: String(sortStatus.columnAccessor), order: sortStatus.direction}]},
         filters: {
             initial: [{ field: "search", operator: "eq", value: search }, {field:"archived", operator:"eq", value: showArchived?1:0}],
@@ -147,7 +159,7 @@ function SearchableDataTable<T extends BaseRecord>({
                 <Group
                     spacing="xs"
                     position={searchBarPosition}
-                    style={styles?.searchBar}
+                    style={{justifyContent: withoutSearch? "end":undefined, ...styles?.searchBar}}
                 >
                     {/* Ajout du champ de recherche si withoutSearch n'est pas défini*/}
                     {!withoutSearch && (
@@ -171,17 +183,19 @@ function SearchableDataTable<T extends BaseRecord>({
                     )}
 
                     {/* Ajout des boutons d'ajout et de refresh si demandé par l'utilisateur*/}
-                    {(withAddIcon || withReloadIcon || extraButtons) && (
+                    {(withAddIcon || withReloadIcon || extraButtons || withArchivedSwitch) && (
                         <Group style={{alignItems: "center", ...styles?.buttons}}>
                             {/* Ajout du selector si demandé par l'utilisateur*/}
                             {categoriesSelector}
 
                             {extraButtons}
-                            <Switch
-                                label="Archives"
-                                checked={showArchived}
-                                onChange={(event) => setShowArchived(!showArchived)}
-                            />
+                            {withArchivedSwitch && (
+                                <Switch
+                                    label="Archives"
+                                    checked={showArchived}
+                                    onChange={(event) => setShowArchived(!showArchived)}
+                                />
+                            )}
 
                             {withAddIcon && (
                                 <Tooltip label={"Nouveau"} position={"bottom"} openDelay={200} >

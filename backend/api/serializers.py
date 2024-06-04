@@ -2,7 +2,8 @@ from django.contrib.auth import get_user_model
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
-from .models import Vehicle, Beneficiary, Contract, Parking
+from .models import Vehicle, Beneficiary, Contract, Parking, Payment
+
 
 class DynamicDepthSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
@@ -34,11 +35,91 @@ class MutationVehicleSerializer(VehicleSerializer):
     parking = serializers.PrimaryKeyRelatedField(queryset=Parking.objects.all(), required=False)
 
 
-
 class BeneficiarySerializer(serializers.ModelSerializer):
     class Meta:
         model = Beneficiary
         fields = '__all__'
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(read_only=True)
+    created_by = UserSerializer(read_only=True)
+    editable = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = Payment
+        exclude = ['contract']
+
+    def is_valid(self, *, raise_exception=False):
+        # check the contract is not none
+        contract = self.context['contract']
+        if contract is None:
+            raise serializers.ValidationError("Le paiement doit être associé à un contrat")
+
+        if contract.archived:
+            raise serializers.ValidationError("Le contrat est archivé, aucun paiement ne peut être effectué")
+
+        # call the parent validate method
+        return super().is_valid(raise_exception=raise_exception)
+
+    def validate_amount(self, value):
+        contract = self.context['contract']
+        if value <= 0:
+            raise serializers.ValidationError("Le montant doit être supérieur à 0")
+
+        return value
+
+    def update(self, instance, validated_data):
+        # If a more recent payment has been made for the contract, the payment should be rejected
+        if instance.contract.payments.filter(created_at__gt=instance.created_at).exists():
+            raise serializers.ValidationError("Un paiement plus récent a déjà été effectué pour ce contrat")
+
+        # Calculate the new total amount of payments for the contract (by removing the old amount and adding the new one) and check if it doesn't exceed the total price of the contract
+        if instance.contract.getPaymentsSum() - instance.amount + validated_data['amount'] > instance.contract.price - instance.contract.discount:
+            raise serializers.ValidationError("Le montant total des paiements ne peut pas dépasser le prix total du contrat")
+
+        return super().update(instance, validated_data)
+
+    def create(self, validated_data):
+        contract = self.context['contract']
+
+        if contract.status == "payed":
+            raise serializers.ValidationError("Aucun nouveau paiement ne peut-être effectué pour un contrat déjà payé")
+
+        # Check if the total amount of payments doesn't exceed the total price of the contract
+        if contract.getPaymentsSum() + validated_data['amount'] > contract.price - contract.discount:
+            raise serializers.ValidationError("Le montant total des paiements ne peut pas dépasser le prix total du contrat")
+
+        validated_data['created_by'] = self.context['request'].user
+        validated_data['contract'] = contract
+        return super().create(validated_data)
+
+
+
+class ContractPaymentSummarySerializer(serializers.ModelSerializer):
+    payments_sum = serializers.SerializerMethodField(read_only=True)
+    total_due = serializers.SerializerMethodField(read_only=True)
+    price = serializers.IntegerField(read_only=True)
+    discount = serializers.IntegerField(read_only=True)
+    nb_payments = serializers.SerializerMethodField(read_only=True)
+    is_payed = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Contract
+        fields = ['payments_sum', 'total_due', 'price', 'discount', "nb_payments", "is_payed"]
+
+    def get_payments_sum(self, obj) -> int:
+        return obj.getPaymentsSum()
+
+    def get_total_due(self, obj) -> int:
+        print("price ", obj.price, "discount ", obj.discount, "payments ", obj.getPaymentsSum())
+        return obj.price - obj.discount
+
+    def get_nb_payments(self, obj) -> int:
+        return obj.payments.count()
+
+    def get_is_payed(self, obj) -> bool:
+        return obj.status == 'payed'
 
 
 class ContractSerializer(serializers.ModelSerializer):

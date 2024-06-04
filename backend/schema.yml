@@ -424,6 +424,27 @@ paths:
         '204':
           description: No response body
   /api/beneficiary/{id}/archive/:
+    get:
+      operationId: api_beneficiary_archive_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this beneficiary.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Beneficiary'
+          description: ''
     patch:
       operationId: api_beneficiary_archive_partial_update
       parameters:
@@ -479,6 +500,21 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedBeneficiary'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Beneficiary'
+          description: ''
+  /api/beneficiary/get_archived/:
+    get:
+      operationId: api_beneficiary_get_archived_retrieve
+      tags:
+      - api
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -657,6 +693,251 @@ paths:
               schema:
                 $ref: '#/components/schemas/MutationContract'
           description: ''
+  /api/contract/{contract_pk}/payment/:
+    get:
+      operationId: api_contract_payment_list
+      parameters:
+      - in: path
+        name: contract_pk
+        schema:
+          type: integer
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPaymentList'
+          description: ''
+    post:
+      operationId: api_contract_payment_create
+      parameters:
+      - in: path
+        name: contract_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Payment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Payment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Payment'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+  /api/contract/{contract_pk}/payment/{id}/:
+    get:
+      operationId: api_contract_payment_retrieve
+      parameters:
+      - in: path
+        name: contract_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this payment.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+    put:
+      operationId: api_contract_payment_update
+      parameters:
+      - in: path
+        name: contract_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this payment.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Payment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Payment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Payment'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+    patch:
+      operationId: api_contract_payment_partial_update
+      parameters:
+      - in: path
+        name: contract_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this payment.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPayment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPayment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPayment'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+    delete:
+      operationId: api_contract_payment_destroy
+      parameters:
+      - in: path
+        name: contract_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this payment.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/contract/{contract_pk}/payment/{id}/get_participation_pdf/:
+    get:
+      operationId: api_contract_payment_get_participation_pdf_retrieve
+      parameters:
+      - in: path
+        name: contract_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this payment.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+  /api/contract/{contract_pk}/payment/summary/:
+    get:
+      operationId: api_contract_payment_summary_retrieve
+      parameters:
+      - in: path
+        name: contract_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractPaymentSummary'
+          description: ''
   /api/contract/{id}/:
     get:
       operationId: api_contract_retrieve
@@ -762,6 +1043,27 @@ paths:
         '204':
           description: No response body
   /api/contract/{id}/archive/:
+    get:
+      operationId: api_contract_archive_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this contract.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+          description: ''
     patch:
       operationId: api_contract_archive_partial_update
       parameters:
@@ -892,40 +1194,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Contract'
           description: ''
-  /api/contract/{id}/payed/:
-    post:
-      operationId: api_contract_payed_create
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this contract.
-        required: true
-      tags:
-      - api
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Contract'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Contract'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Contract'
-        required: true
-      security:
-      - jwtAuth: []
-      - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Contract'
-          description: ''
   /api/contract/{id}/unarchive/:
     patch:
       operationId: api_contract_unarchive_partial_update
@@ -949,6 +1217,21 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedContract'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+          description: ''
+  /api/contract/get_archived/:
+    get:
+      operationId: api_contract_get_archived_retrieve
+      tags:
+      - api
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -1594,6 +1877,27 @@ paths:
         '204':
           description: No response body
   /api/vehicle/{id}/archive/:
+    get:
+      operationId: api_vehicle_archive_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this vehicle.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+          description: ''
     patch:
       operationId: api_vehicle_archive_partial_update
       parameters:
@@ -1649,6 +1953,21 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedVehicle'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+          description: ''
+  /api/vehicle/get_archived/:
+    get:
+      operationId: api_vehicle_get_archived_retrieve
+      tags:
+      - api
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -1815,6 +2134,34 @@ components:
       - start_date
       - start_kilometer
       - vehicle
+    ContractPaymentSummary:
+      type: object
+      properties:
+        payments_sum:
+          type: integer
+          readOnly: true
+        total_due:
+          type: integer
+          readOnly: true
+        price:
+          type: integer
+          readOnly: true
+        discount:
+          type: integer
+          readOnly: true
+        nb_payments:
+          type: integer
+          readOnly: true
+        is_payed:
+          type: boolean
+          readOnly: true
+      required:
+      - discount
+      - is_payed
+      - nb_payments
+      - payments_sum
+      - price
+      - total_due
     ContractStatusEnum:
       enum:
       - waiting
@@ -2082,6 +2429,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Parking'
+    PaginatedPaymentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payment'
     PaginatedUserList:
       type: object
       required:
@@ -2404,6 +2774,34 @@ components:
         name:
           type: string
           maxLength: 100
+    PatchedPayment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        editable:
+          type: boolean
+          readOnly: true
+        amount:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        mode:
+          $ref: '#/components/schemas/PaymentModeEnum'
+        check_number:
+          type: string
+          nullable: true
+          maxLength: 100
     PatchedUser:
       type: object
       properties:
@@ -2485,6 +2883,51 @@ components:
           readOnly: true
         archived:
           type: boolean
+    Payment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        editable:
+          type: boolean
+          readOnly: true
+        amount:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        mode:
+          $ref: '#/components/schemas/PaymentModeEnum'
+        check_number:
+          type: string
+          nullable: true
+          maxLength: 100
+      required:
+      - amount
+      - created_at
+      - created_by
+      - editable
+      - id
+      - mode
+    PaymentModeEnum:
+      enum:
+      - cash
+      - check
+      - card
+      type: string
+      description: |-
+        * `cash` - Cash
+        * `check` - Check
+        * `card` - Card
     ReasonEnum:
       enum:
       - cdd

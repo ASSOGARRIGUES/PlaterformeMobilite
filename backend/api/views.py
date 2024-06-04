@@ -2,7 +2,7 @@ from datetime import datetime
 
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.views import View
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, permissions
@@ -11,9 +11,10 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.response import Response
 
 from .filters import VehicleFilter
-from .models import Vehicle, Beneficiary, Contract, Parking
+from .models import Vehicle, Beneficiary, Contract, Parking, Payment
 from .serializers import VehicleSerializer, BeneficiarySerializer, ContractSerializer, UserSerializer, \
-    EndContractSerializer, ParkingSerializer, MutationContractSerializer, MutationVehicleSerializer
+    EndContractSerializer, ParkingSerializer, MutationContractSerializer, MutationVehicleSerializer, PaymentSerializer, \
+    ContractPaymentSummarySerializer
 
 MUTATION_ACTION = ['create', 'update', 'partial_update']
 RETRIEVE_ACTION = ['retrieve', 'list']
@@ -227,15 +228,51 @@ class ContractViewSet(ArchivableModelViewSet):
                 contract.vehicle.status = 'available'
                 contract.save()
                 contract.vehicle.save()
+                contract.updateIfPaid()
                 return Response(serializer.data, status=200)
             return Response(serializer.errors, status=400)
 
-    @action(detail=True, methods=['post'])
-    def payed(self, request, pk=None):
-        contract = self.get_object()
-        contract.status = 'payed'
-        contract.save()
-        return Response({'status': 'payed'}, status=200)
+
+class PaymentViewSet(viewsets.ModelViewSet):
+    serializer_class = PaymentSerializer
+    permission_classes = (permissions.DjangoModelPermissions,)
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Payment.objects.none()
+        return Payment.objects.filter(contract__id=self.kwargs['contract_pk'])
+
+    def get_serializer_context(self):
+        return {"contract": get_object_or_404(Contract, pk=self.kwargs['contract_pk']), "request": self.request}
+
+    def dispatch(self, request, *args, **kwargs):
+        # call the initial method of the parent class and check if the contract is payed
+        response = super().dispatch(request, *args, **kwargs)
+        contract = get_object_or_404(Contract, pk=self.kwargs['contract_pk'])
+        contract.updateIfPaid()
+        return response
+
+    def destroy(self, request, *args, **kwargs):
+        payment = self.get_object()
+
+        if not payment.editable:
+            return Response({"error": "not_editable", "message": "Le paiement n'est pas supprimable"}, status=400)
+        contract = payment.contract
+        response = super().destroy(request, *args, **kwargs)
+        contract.updateIfPaid()
+        return response
+
+    @action(detail=False, methods=['get'], serializer_class=ContractPaymentSummarySerializer)
+    def summary(self, request, *args, **kwargs):
+        contract = get_object_or_404(Contract, pk=self.kwargs['contract_pk'])
+        serializer = ContractPaymentSummarySerializer(contract)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def get_participation_pdf(self, request, pk=None, contract_pk=None):
+        payment = self.get_object()
+        pdf = payment.render_participation_pdf()
+        return HttpResponse(pdf, content_type='application/pdf')
 
 
 class UserViewSet(viewsets.ModelViewSet):

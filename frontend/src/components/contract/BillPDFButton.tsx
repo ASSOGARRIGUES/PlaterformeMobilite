@@ -28,7 +28,7 @@ const BillPDFButton = ({contract, variant="icon"}: {contract: Contract | Complet
                 disabled={disabled}
                 onClick={(e)=>{e.stopPropagation(); openPDF()}}
             >
-                <IconCurrencyEuro color="black" style={{width:20, height:"auto", marginRight:5}} /> Télécharger la facture
+                <IconCurrencyEuro color="black" style={{width:20, height:"auto", marginRight:5}} /> Télécharger le bilan de participation
             </Button>
         )
     }else{

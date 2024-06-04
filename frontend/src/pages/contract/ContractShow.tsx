@@ -1,5 +1,18 @@
 import {Show} from "@refinedev/mantine";
-import {Anchor, Button, Center, Divider, Group, Paper, Skeleton, Stack, Text, Title, Tooltip} from "@mantine/core";
+import {
+    Anchor,
+    Button,
+    Center,
+    Divider,
+    Group,
+    Paper,
+    Skeleton,
+    Stack,
+    Tabs,
+    Text,
+    Title,
+    Tooltip
+} from "@mantine/core";
 import {useOne, useShow} from "@refinedev/core";
 import {CompleteContract, Contract} from "../../types/contract";
 import ContractCard from "../../components/contract/ContractCard";
@@ -21,6 +34,10 @@ import {useGetToPath, useGo, useResource} from "@refinedev/core";
 import {User} from "../../types/auth";
 import ArchiveButton from "../../components/ArchiveButton";
 import ContractArchiveButton from "../../components/contract/ContractArchiveButton";
+import {IconMessageCircle, IconReceiptEuro} from "@tabler/icons-react";
+import PaymentTable from "../../components/contract/PaymentTable";
+import PaymentSummary from "../../components/contract/PaymentSummary";
+import ContractNewPaymentButton from "../../components/contract/ContractNewPaymentButton";
 
 const ContractShow = () => {
 
@@ -37,20 +54,6 @@ const ContractShow = () => {
     const vehicle = contractResponse?.vehicle
 
     const benefTitle = beneficiary ? <BeneficiaryBadge beneficiary={beneficiary}/> : (<>"Bénéficiaire"</>)
-
-    const openPayModal = async () => {
-        if(!contractResponse) return;
-        const contract_id = contractResponse.id;
-
-        openConfirmModal({
-            title: "Marquer le contrat comme payé",
-            children: (
-                <Text>Êtes-vous certain de vouloir marquer ce contrat comme payé ?</Text>
-            ),
-            labels: {confirm: "Oui", cancel: "Non"},
-            onConfirm: () => {handlePayContract(contract_id)}
-        });
-    };
 
     function skeleton(nb:number){
         return Array.from({length: nb}, (_, i) => (
@@ -78,10 +81,42 @@ const ContractShow = () => {
     })
 
     const vehicleTitle = (
-       <Anchor onClick={(e) => {e.stopPropagation(); go({to:path})}}>
-           Véhicule
-       </Anchor>
+        <Anchor onClick={(e) => {e.stopPropagation(); go({to:path})}}>
+            Véhicule
+        </Anchor>
     )
+
+    const tabsBlock = contractResponse ? (
+        <Tabs
+            variant="outline"
+            style={{
+                display: "flex",
+                flexDirection:"column",
+                flex: "1 1 auto",
+            }}
+            defaultValue={contractResponse.status==ContractStatusEnum.pending ? "comment" : "payments"}
+            keepMounted={false}
+        >
+            <Tabs.List>
+                <Tabs.Tab icon={<IconMessageCircle size={18} />} value={"comment"}>Commentaire d'équipe</Tabs.Tab>
+                <Tabs.Tab icon={<IconReceiptEuro size={18}/>} value={"payments"}>Paiements</Tabs.Tab>
+            </Tabs.List>
+
+            <Tabs.Panel style={{flex: "1 1 auto"}} value={"comment"}>
+                <Stack style={{height: "100%", margin:"0 0.6em"}}>
+                    <Center><Title order={3}>Commentaires</Title></Center>
+                    <ContractComment style={{flex:"auto"}} contract={contractResponse}/>
+                </Stack>
+            </Tabs.Panel>
+
+            <Tabs.Panel value="payments" style={{flex: "1 1 auto"}}>
+                <Stack style={{height: "100%", margin:"0.2em 0.6em"}}>
+                    <PaymentTable contract={contractResponse}/>
+                    <PaymentSummary contract={contractResponse}/>
+                </Stack>
+            </Tabs.Panel>
+        </Tabs>
+    ) : skeleton(2);
 
     return (
         <>
@@ -100,11 +135,8 @@ const ContractShow = () => {
                 </Group>
 
                 <Group grow style={{flex:"auto", alignItems:"stretch"}} >
-                    <Paper style={{flexGrow:2, maxWidth:"100%"}}>
-                        <Stack style={{height: "100%", margin:"0 0.6em"}}>
-                            <Center><Title order={3}>Commentaires</Title></Center>
-                            <ContractComment style={{flex:"auto"}} contract={contractResponse}/>
-                        </Stack>
+                    <Paper style={{flexGrow:2, maxWidth:"100%", display:"flex", flexDirection:"column"}}>
+                        {tabsBlock}
                     </Paper>
 
                     <Paper style={{minWidth:0}}>
@@ -133,13 +165,9 @@ const ContractShow = () => {
                                         </span>
                                     </Tooltip>
 
-                                    <Tooltip label="Le statut actuel du contrat ne permet pas l'enregistrement du paiement" disabled={contractResponse?.status==ContractStatusEnum.over}>
-                                        <span style={{flex:"auto"}}>
-                                            <Button style={{width:"100%"}}  color="blue" variant="outline" onClick={openPayModal} disabled={contractResponse?.status!=ContractStatusEnum.over}>
-                                                Marqué comme payé
-                                            </Button>
-                                        </span>
-                                    </Tooltip>
+                                    {contractResponse? (
+                                        <ContractNewPaymentButton contract={contractResponse} variant="button"/>
+                                    ): skeleton(1)}
 
                                     <ContractArchiveButton contract={contractResponse}/>
                                 </Group>
