@@ -2788,6 +2788,9 @@ components:
           allOf:
           - $ref: '#/components/schemas/User'
           readOnly: true
+        editable:
+          type: boolean
+          readOnly: true
         amount:
           type: integer
           maximum: 9223372036854775807
@@ -2894,6 +2897,9 @@ components:
           allOf:
           - $ref: '#/components/schemas/User'
           readOnly: true
+        editable:
+          type: boolean
+          readOnly: true
         amount:
           type: integer
           maximum: 9223372036854775807
@@ -2909,6 +2915,7 @@ components:
       - amount
       - created_at
       - created_by
+      - editable
       - id
       - mode
     PaymentModeEnum:

@@ -37,6 +37,7 @@ import ContractArchiveButton from "../../components/contract/ContractArchiveButt
 import {IconMessageCircle, IconReceiptEuro} from "@tabler/icons-react";
 import PaymentTable from "../../components/contract/PaymentTable";
 import PaymentSummary from "../../components/contract/PaymentSummary";
+import ContractNewPaymentButton from "../../components/contract/ContractNewPaymentButton";
 
 const ContractShow = () => {
 
@@ -53,20 +54,6 @@ const ContractShow = () => {
     const vehicle = contractResponse?.vehicle
 
     const benefTitle = beneficiary ? <BeneficiaryBadge beneficiary={beneficiary}/> : (<>"Bénéficiaire"</>)
-
-    const openPayModal = async () => {
-        if(!contractResponse) return;
-        const contract_id = contractResponse.id;
-
-        openConfirmModal({
-            title: "Marquer le contrat comme payé",
-            children: (
-                <Text>Êtes-vous certain de vouloir marquer ce contrat comme payé ?</Text>
-            ),
-            labels: {confirm: "Oui", cancel: "Non"},
-            onConfirm: () => {handlePayContract(contract_id)}
-        });
-    };
 
     function skeleton(nb:number){
         return Array.from({length: nb}, (_, i) => (
@@ -123,7 +110,7 @@ const ContractShow = () => {
             </Tabs.Panel>
 
             <Tabs.Panel value="payments" style={{flex: "1 1 auto"}}>
-                <Stack style={{height: "100%", margin:"0 0.6em"}}>
+                <Stack style={{height: "100%", margin:"0.2em 0.6em"}}>
                     <PaymentTable contract={contractResponse}/>
                     <PaymentSummary contract={contractResponse}/>
                 </Stack>
@@ -178,13 +165,9 @@ const ContractShow = () => {
                                         </span>
                                     </Tooltip>
 
-                                    <Tooltip label="Le statut actuel du contrat ne permet pas l'enregistrement du paiement" disabled={contractResponse?.status==ContractStatusEnum.over}>
-                                        <span style={{flex:"auto"}}>
-                                            <Button style={{width:"100%"}}  color="blue" variant="outline" onClick={openPayModal} disabled={contractResponse?.status!=ContractStatusEnum.over}>
-                                                Marqué comme payé
-                                            </Button>
-                                        </span>
-                                    </Tooltip>
+                                    {contractResponse? (
+                                        <ContractNewPaymentButton contract={contractResponse}/>
+                                    ): skeleton(1)}
 
                                     <ContractArchiveButton contract={contractResponse}/>
                                 </Group>

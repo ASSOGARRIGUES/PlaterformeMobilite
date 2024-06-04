@@ -1,10 +1,11 @@
 import {FormAction, RedirectAction} from "@refinedev/core/dist";
-import {Contract, ContractWritableFields, WritablePayment} from "../../types/contract";
+import {Contract, ContractWritableFields, Payment, WritablePayment} from "../../types/contract";
 import {FormValidateInput} from "@mantine/form/lib/types";
 import {useModalForm, UseModalFormReturnType} from "@refinedev/mantine";
 import {BaseRecord, HttpError, useInvalidate} from "@refinedev/core";
 import usePaymentSummary from "./usePaymentSummary";
 import {useQueryClient} from "@tanstack/react-query";
+import {useEffect, useState} from "react";
 
 export type PaymentModalReturnType = UseModalFormReturnType<BaseRecord, HttpError, WritablePayment> & {contract: Contract};
 
@@ -12,7 +13,20 @@ const usePaymentModalForm = ({contract, action, redirect=false}: {contract: Cont
 
     const {data: paymentSummary, isLoading: isLoadingPaymentSummary} = usePaymentSummary({contract});
 
+    const [distantPayment, setDistantPayment] = useState<Payment | undefined>(undefined);
+
     const queryClient = useQueryClient();
+    const invalidate = useInvalidate();
+
+    const amountGreaterThanTotalDue = (amount: number) => {
+        if(!paymentSummary) return false;
+        if(action === "edit"){
+            if(!distantPayment) return false;
+            return amount > paymentSummary.total_due - (paymentSummary.payments_sum - distantPayment.amount);
+        }else{
+            return amount > paymentSummary.total_due - paymentSummary.payments_sum;
+        }
+    }
 
     const initialValues: WritablePayment = {
         mode: undefined,
@@ -31,8 +45,8 @@ const usePaymentModalForm = ({contract, action, redirect=false}: {contract: Cont
                 return "Le montant est requis";
             }else if(value < 0) {
                 return "Le montant ne peut pas être négatif";
-            }else if((paymentSummary?.total_due && paymentSummary?.payments_sum)
-                && (value > paymentSummary?.total_due - paymentSummary?.payments_sum)){
+            }
+            else if(amountGreaterThanTotalDue(value)){
                 return "Le montant ne peut pas être supérieur au montant restant"
             }
         },
@@ -55,7 +69,9 @@ const usePaymentModalForm = ({contract, action, redirect=false}: {contract: Cont
             action: action,
             redirect: redirect,
             onMutationSuccess: () => {
+                // Invalidate the payment summary and the contract detail
                 queryClient.invalidateQueries(["contract-payment-summary"]);
+                invalidate({resource: 'contract', id: contract.id, invalidates:['detail']});
             }
         },
         initialValues,
@@ -63,6 +79,13 @@ const usePaymentModalForm = ({contract, action, redirect=false}: {contract: Cont
         validateInputOnBlur: true,
 
     })
+
+    useEffect(() => {
+        if(action !== "edit") return;
+        if(modalForm.refineCore.queryResult?.data?.data){
+            setDistantPayment(modalForm.refineCore.queryResult?.data?.data as Payment);
+        }
+    }, [modalForm.refineCore.queryResult?.data?.data]);
 
 
 

@@ -44,6 +44,7 @@ class BeneficiarySerializer(serializers.ModelSerializer):
 class PaymentSerializer(serializers.ModelSerializer):
     created_at = serializers.DateTimeField(read_only=True)
     created_by = UserSerializer(read_only=True)
+    editable = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Payment
@@ -55,9 +56,8 @@ class PaymentSerializer(serializers.ModelSerializer):
         if contract is None:
             raise serializers.ValidationError("Le paiement doit être associé à un contrat")
 
-        # the contract should be ended before creating a payment
-        if contract.status == "payed":
-            raise serializers.ValidationError("Aucun paiement ne peut-être effectué pour un contrat déjà payé")
+        if contract.archived:
+            raise serializers.ValidationError("Le contrat est archivé, aucun paiement ne peut être effectué")
 
         # call the parent validate method
         return super().is_valid(raise_exception=raise_exception)
@@ -66,20 +66,35 @@ class PaymentSerializer(serializers.ModelSerializer):
         contract = self.context['contract']
         if value <= 0:
             raise serializers.ValidationError("Le montant doit être supérieur à 0")
-        if contract.getPaymentsSum() + value > contract.price - contract.discount:
-            raise serializers.ValidationError("Le montant total des paiements ne peut pas dépasser le prix total du contrat")
+
         return value
 
     def update(self, instance, validated_data):
         # If a more recent payment has been made for the contract, the payment should be rejected
         if instance.contract.payments.filter(created_at__gt=instance.created_at).exists():
             raise serializers.ValidationError("Un paiement plus récent a déjà été effectué pour ce contrat")
+
+        # Calculate the new total amount of payments for the contract (by removing the old amount and adding the new one) and check if it doesn't exceed the total price of the contract
+        if instance.contract.getPaymentsSum() - instance.amount + validated_data['amount'] > instance.contract.price - instance.contract.discount:
+            raise serializers.ValidationError("Le montant total des paiements ne peut pas dépasser le prix total du contrat")
+
         return super().update(instance, validated_data)
 
     def create(self, validated_data):
+        contract = self.context['contract']
+
+        if contract.status == "payed":
+            raise serializers.ValidationError("Aucun nouveau paiement ne peut-être effectué pour un contrat déjà payé")
+
+        # Check if the total amount of payments doesn't exceed the total price of the contract
+        if contract.getPaymentsSum() + validated_data['amount'] > contract.price - contract.discount:
+            raise serializers.ValidationError("Le montant total des paiements ne peut pas dépasser le prix total du contrat")
+
         validated_data['created_by'] = self.context['request'].user
-        validated_data['contract'] = self.context['contract']
+        validated_data['contract'] = contract
         return super().create(validated_data)
+
+
 
 class ContractPaymentSummarySerializer(serializers.ModelSerializer):
     payments_sum = serializers.SerializerMethodField(read_only=True)

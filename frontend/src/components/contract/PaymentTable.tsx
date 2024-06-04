@@ -3,11 +3,14 @@ import SearchableDataTable from "../SearchableDataTable";
 import {useMemo} from "react";
 import {DataTableColumn} from "mantine-datatable/dist/types/DataTableColumn";
 import {humanizeDate, humanizeNumber, paymentModeLabelMap} from "../../constants";
-import {Stack} from "@mantine/core";
+import {Group, Stack} from "@mantine/core";
 import {PaymentModeEnum} from "../../types/schema.d";
 import PaymentPDFButton from "./PaymentPDFButton";
 import usePaymentModalForm from "../../hooks/contract/usePaymentModalForm";
 import PaymentModal from "./PaymentModal";
+import EditButton from "../EditButton";
+import DeleteButton from "../DeleteButton";
+import {useQueryClient} from "@tanstack/react-query";
 
 const PaymentTable = ({contract}: {contract: Contract}) => {
 
@@ -16,6 +19,12 @@ const PaymentTable = ({contract}: {contract: Contract}) => {
 
     const editModalForm = usePaymentModalForm({contract, action: "edit"});
     const {modal: { show: showEditModal}} = editModalForm;
+
+    const queryClient = useQueryClient()
+
+    const invalidateSummary = () => {
+        queryClient.invalidateQueries(["contract-payment-summary"]);
+    }
 
     const paymentModeRenderer = (payment: Payment) => {
         return (
@@ -30,7 +39,12 @@ const PaymentTable = ({contract}: {contract: Contract}) => {
 
     const paymentActionRenderer = (payment: Payment) => {
         return (
-            <PaymentPDFButton contract={contract} payment={payment}/>
+            <Group spacing={3}>
+                <PaymentPDFButton contract={contract} payment={payment}/>
+                {payment.editable && <EditButton record={payment} showEditModal={showEditModal}/>}
+                {payment.editable && <DeleteButton resource={`contract/${contract.id}/payment`} id={payment.id} onDelete={invalidateSummary}/>}
+            </Group>
+
         )
     }
 
@@ -58,7 +72,8 @@ const PaymentTable = ({contract}: {contract: Contract}) => {
                 accessor: 'action',
                 title: 'Action',
                 sortable: false,
-                render: paymentActionRenderer
+                render: paymentActionRenderer,
+                width: 120,
             }
 
         ], [])
@@ -72,7 +87,7 @@ const PaymentTable = ({contract}: {contract: Contract}) => {
                 withReloadIcon
                 withoutSearch
                 withArchivedSwitch={false}
-                withAddIcon
+                withAddIcon = {contract.status !== "payed" && !contract.archived}
                 addCallback={() => {showCreateModal()}}
                 columns={columns}
                 resource={`contract/${contract.id}/payment`}

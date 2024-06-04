@@ -235,6 +235,8 @@ class ContractViewSet(ArchivableModelViewSet):
 
 class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer
+    permission_classes = (permissions.DjangoModelPermissions,)
+
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Payment.objects.none()
@@ -247,6 +249,16 @@ class PaymentViewSet(viewsets.ModelViewSet):
         # call the initial method of the parent class and check if the contract is payed
         response = super().dispatch(request, *args, **kwargs)
         contract = get_object_or_404(Contract, pk=self.kwargs['contract_pk'])
+        contract.updateIfPaid()
+        return response
+
+    def destroy(self, request, *args, **kwargs):
+        payment = self.get_object()
+
+        if not payment.editable:
+            return Response({"error": "not_editable", "message": "Le paiement n'est pas supprimable"}, status=400)
+        contract = payment.contract
+        response = super().destroy(request, *args, **kwargs)
         contract.updateIfPaid()
         return response
 

@@ -168,6 +168,9 @@ class Contract(models.Model):
         if (self.getPaymentsSum() >= self.price - self.discount) and self.status == 'over':
             self.status = 'payed'
             self.save()
+        elif self.status == 'payed' and self.getPaymentsSum() < self.price - self.discount:
+            self.status = 'over'
+            self.save()
 
 class Payment(models.Model):
     class Mode(models.TextChoices):
@@ -182,6 +185,12 @@ class Payment(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='payments_created_by', null=True, blank=True)
+    edited_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def editable(self) -> bool:
+        # Check if their is no more recent payment
+        return (not self.contract.payments.filter(created_at__gt=self.created_at).exists()) and (not self.contract.archived)
 
     @property
     def mode_display(self):

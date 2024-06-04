@@ -838,6 +838,7 @@ export interface components {
             /** Format: date-time */
             readonly created_at?: string;
             readonly created_by?: components["schemas"]["User"];
+            readonly editable?: boolean;
             /** Format: int64 */
             amount?: number;
             mode?: components["schemas"]["PaymentModeEnum"];
@@ -888,6 +889,7 @@ export interface components {
             /** Format: date-time */
             readonly created_at: string;
             readonly created_by: components["schemas"]["User"];
+            readonly editable: boolean;
             /** Format: int64 */
             amount: number;
             mode: components["schemas"]["PaymentModeEnum"];
@@ -2625,7 +2627,7 @@ export enum PathsApiVehicleGetParametersQueryStatus__or {
     rented = "rented"
 }
 export enum BlankEnum {
-      ""
+     ""
 }
 export enum ContractStatusEnum {
     waiting = "waiting",
