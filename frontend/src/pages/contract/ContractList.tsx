@@ -18,9 +18,7 @@ import OnePDFButton from "../../components/contract/OnePDFButton";
 import ContractStatusBadge from "../../components/contract/ContractStatusBadge";
 import ContractEditButton from "../../components/contract/ContractEditButton";
 import {humanizeDate, humanizeFirstName} from "../../constants";
-import PayedContractButton from "../../components/contract/PayedContractButton";
 import ContractSearchTooltip from "../../components/contract/ContractSearchTooltip";
-import usePaymentModalForm from "../../hooks/contract/usePaymentModalForm";
 import ContractNewPaymentButton from "../../components/contract/ContractNewPaymentButton";
 
 const ContractList = () => {
