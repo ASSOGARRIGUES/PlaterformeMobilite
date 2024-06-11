@@ -536,9 +536,11 @@ export interface components {
             /** Format: int64 */
             price: number;
             /** Format: int64 */
-            deposit: number;
-            /** Format: int64 */
             discount?: number;
+            /** Format: int64 */
+            deposit: number;
+            depositPaymentMode?: components["schemas"]["PaymentModeEnum"];
+            deposit_check_number?: string | null;
             /** Format: date-time */
             ended_at?: string | null;
             archived?: boolean;
@@ -597,9 +599,11 @@ export interface components {
             /** Format: int64 */
             price: number;
             /** Format: int64 */
-            deposit: number;
-            /** Format: int64 */
             discount?: number;
+            /** Format: int64 */
+            deposit: number;
+            depositPaymentMode?: components["schemas"]["PaymentModeEnum"];
+            deposit_check_number?: string | null;
             /** Format: date-time */
             ended_at?: string | null;
             archived?: boolean;
@@ -761,9 +765,11 @@ export interface components {
             /** Format: int64 */
             price?: number;
             /** Format: int64 */
-            deposit?: number;
-            /** Format: int64 */
             discount?: number;
+            /** Format: int64 */
+            deposit?: number;
+            depositPaymentMode?: components["schemas"]["PaymentModeEnum"];
+            deposit_check_number?: string | null;
             /** Format: date-time */
             ended_at?: string | null;
             archived?: boolean;
@@ -799,9 +805,11 @@ export interface components {
             /** Format: int64 */
             price?: number;
             /** Format: int64 */
-            deposit?: number;
-            /** Format: int64 */
             discount?: number;
+            /** Format: int64 */
+            deposit?: number;
+            depositPaymentMode?: components["schemas"]["PaymentModeEnum"];
+            deposit_check_number?: string | null;
             /** Format: date-time */
             ended_at?: string | null;
             archived?: boolean;
@@ -843,6 +851,8 @@ export interface components {
             amount?: number;
             mode?: components["schemas"]["PaymentModeEnum"];
             check_number?: string | null;
+            /** Format: date-time */
+            readonly edited_at?: string;
         };
         PatchedUser: {
             readonly id?: number;
@@ -894,6 +904,8 @@ export interface components {
             amount: number;
             mode: components["schemas"]["PaymentModeEnum"];
             check_number?: string | null;
+            /** Format: date-time */
+            readonly edited_at: string;
         };
         /**
          * @description * `cash` - Cash
@@ -2627,7 +2639,7 @@ export enum PathsApiVehicleGetParametersQueryStatus__or {
     rented = "rented"
 }
 export enum BlankEnum {
-     ""
+      ""
 }
 export enum ContractStatusEnum {
     waiting = "waiting",

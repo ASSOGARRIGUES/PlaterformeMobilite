@@ -1,5 +1,5 @@
 import {CompleteContract, ContractWritableFields} from "../../types/contract";
-import {BlankEnum, ContractStatusEnum, ReasonEnum} from "../../types/schema.d";
+import {BlankEnum, ContractStatusEnum, PaymentModeEnum, ReasonEnum} from "../../types/schema.d";
 import {FormErrors, FormValidateInput} from "@mantine/form/lib/types";
 import {Create, useSelect, useStepsForm} from "@refinedev/mantine";
 import {
@@ -18,7 +18,14 @@ import {
 import {SaveButton} from "../../components/SaveButton";
 import React, {useEffect, useState} from "react";
 import {CrudFilters, useGetIdentity} from "@refinedev/core";
-import {contractReasonLabelMap, DEBOUNCE_TIME, humanizeDate, humanizeFirstName, humanizeNumber} from "../../constants";
+import {
+    contractReasonLabelMap,
+    DEBOUNCE_TIME,
+    humanizeDate,
+    humanizeFirstName,
+    humanizeNumber,
+    paymentModeLabelMap
+} from "../../constants";
 import {DateRangePicker, DateRangePickerValue} from "@mantine/dates";
 import dayjs from "dayjs";
 import BeneficiarySelect from "../../components/beneficiary/BeneficiarySelect";
@@ -41,6 +48,8 @@ const ContractCreate = () => {
         vehicle: 0,
         beneficiary: 0,
         deposit: 315,
+        depositPaymentMode: undefined,
+        deposit_check_number: undefined,
         price: 100,
         start_date: new Date().toISOString(),
         end_date: new Date().toISOString(),
@@ -73,6 +82,8 @@ const ContractCreate = () => {
         if(currentStep === 2){
             return {
                 deposit: values.deposit ? (values.deposit < 0 ? "La caution ne peut pas être négative" : undefined) : "La caution est requise",
+                depositPaymentMode: values.depositPaymentMode ? undefined : "Le mode de paiement de la caution est requis",
+                deposit_check_number: values.depositPaymentMode === PaymentModeEnum.check && !values.deposit_check_number ? "Le numéro de chèque est requis" : undefined,
             }
         }
 
@@ -126,6 +137,8 @@ const ContractCreate = () => {
     const [selectedBeneficiary, setSelectedBeneficiary] = useState<Beneficiary>(beneficiaryObj?.id ? beneficiaryObj : undefined)
     const [selectedVehicle, setSelectedVehicle] = useState<Vehicle>(vehicleObj?.id ? vehicleObj : undefined)
     const [selectedReferent, setSelectedReferent] = useState<User>(referentObj?.id ? referentObj : undefined)
+
+    const paymentModeOptions = Object.values(PaymentModeEnum).map((mode) => ({ value: mode, label: paymentModeLabelMap[mode] }));
 
     const contractDuration = (contract: ContractWritableFields) => {
         const end = new Date(contract.end_date);
@@ -191,6 +204,10 @@ const ContractCreate = () => {
                 >
 
                     <NumberInput label="Caution" {...getInputProps("deposit")} error={errors.deposit} />
+                    <Select label="Mode de paiement" {...getInputProps("depositPaymentMode")} error={errors.depositPaymentMode} data={paymentModeOptions} withAsterisk/>
+                    {values.depositPaymentMode === PaymentModeEnum.check && (
+                        <NumberInput label="Numéro de chèque" {...getInputProps("deposit_check_number")} error={errors.deposit_check_number} />
+                    )}
 
                 </Stepper.Step>
 
@@ -204,7 +221,7 @@ const ContractCreate = () => {
                             <BeneficiaryCard title={<>Bénéficiaire</>} beneficiary={selectedBeneficiary} withName/>
                             <VehicleCard title={<>Véhicule</>} vehicle={selectedVehicle}/>
                         </Group>
-                        <Paper shadow="sm" p="md" style={{maxWidth:400, margin:"auto"}}>
+                        <Paper shadow="sm" p="md" style={{maxWidth:900, margin:"auto"}}>
                             <Flex direction="column" align="center" gap="xs">
                                 <Title style={{marginRight: "0.2em"}} order={2} >Contrat</Title>
                                 <SimpleGrid cols={2} verticalSpacing={1}>
@@ -213,11 +230,16 @@ const ContractCreate = () => {
                                     <Text><span style={{fontWeight: "bold"}}>Fin: </span> {humanizeDate(values.end_date)}</Text>
                                     <Text><span style={{fontWeight: "bold"}}>Prix: </span> {values.price}€</Text>
                                     <Text><span style={{fontWeight: "bold"}}>Temps du contrat: </span> { contractDuration(values)}j</Text>
+                                    <Text><span style={{fontWeight: "bold"}}>Remise: </span> {values.discount}€</Text>
+
                                     <Text><span style={{fontWeight: "bold"}}>Caution: </span> {values.deposit}€</Text>
 
                                     {/*<Text><span style={{fontWeight: "bold"}}>Km initial: </span> {humanizeNumber(values.start_kilometer)}km</Text>*/}
-                                    <Text><span style={{fontWeight: "bold"}}>Remise: </span> {values.discount}€</Text>
                                     <Text><span style={{fontWeight: "bold"}}>distance max: </span> {values.max_kilometer && humanizeNumber(values.max_kilometer)}km</Text>
+                                    <Text><span style={{fontWeight: "bold"}}>Mode de paiement: </span> {values.depositPaymentMode ? paymentModeLabelMap[values.depositPaymentMode] : ""}</Text>
+                                    {values.depositPaymentMode === PaymentModeEnum.check && (
+                                        <Text><span style={{fontWeight: "bold"}}>Numéro de chèque: </span> {values.deposit_check_number}</Text>
+                                    )}
                                     {/*<Text><span style={{fontWeight: "bold"}}>Km max final: </span> {humanizeNumber(kmFinalMax)}km</Text>*/}
 
                                 </SimpleGrid>
