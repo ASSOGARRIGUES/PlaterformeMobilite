@@ -8,7 +8,7 @@ import {humanizeDate, humanizeFirstName, humanizeLastName, humanizeNumber} from 
 import {CSSProperties} from "react";
 import ContractEditButton from "./ContractEditButton";
 
-const ContractCard = ({contract, withEdit, style}: {contract: CompleteContract | undefined, withEdit: boolean, style?:CSSProperties}) => {
+const ContractCard = ({contract, withEdit=false, style}: {contract: CompleteContract | undefined, withEdit?: boolean, style?:CSSProperties}) => {
 
     const editModalForm = useContractModalForm({action: "edit"});
     const {modal: { show: showEditModal},  getInputProps} = editModalForm;

@@ -6,7 +6,7 @@ import BeneficiaryModal from "./BeneficiaryModal";
 import {CSSProperties, ReactElement} from "react";
 import EditButton from "../EditButton";
 
-const BeneficiaryCard = ({beneficiary, withEdit = false, title=(<>Informations</>), style}: {beneficiary: Beneficiary | undefined, withEdit?: boolean, title?: ReactElement, style?:CSSProperties}) =>{
+const BeneficiaryCard = ({beneficiary, withEdit = false, withName = false, title=(<>Informations</>), style}: {beneficiary: Beneficiary | undefined, withEdit?: boolean, withName?:boolean, title?: ReactElement, style?:CSSProperties}) =>{
 
     const editModalForm = useBeneficiaryModalForm({action: "edit"});
     const {modal: { show: showEditModal },  } = editModalForm;
@@ -23,14 +23,23 @@ const BeneficiaryCard = ({beneficiary, withEdit = false, title=(<>Informations</
 
     const content = (
         <Group align="start">
-            <Flex direction="row">
-                <span style={{fontWeight: "bold"}}>Adresse: </span>
-                <Flex direction="column" style={{marginLeft:7}}>
-                    <span>{beneficiary?.address}</span>
-                    {beneficiary?.address_complement ?? <span>{beneficiary?.address_complement}</span>}
-                    <Flex>{beneficiary?.postal_code} {beneficiary?.city}</Flex>
+            <Stack spacing={0}>
+                {withName &&
+                    <>
+                        <div><span style={{fontWeight: "bold"}}>Nom:</span> {beneficiary?.last_name}</div>
+                        <div><span style={{fontWeight: "bold"}}>Prénom:</span> {beneficiary?.first_name}</div>
+                    </>
+                }
+                <Flex direction="row">
+                    <span style={{fontWeight: "bold"}}>Adresse: </span>
+                    <Flex direction="column" style={{marginLeft:7}}>
+                        <span>{beneficiary?.address}</span>
+                        {beneficiary?.address_complement ?? <span>{beneficiary?.address_complement}</span>}
+                        <Flex>{beneficiary?.postal_code} {beneficiary?.city}</Flex>
+                    </Flex>
+
                 </Flex>
-            </Flex>
+            </Stack>
             <Stack spacing={0}>
                 <div><span style={{fontWeight: "bold"}}>Email:</span> <a href={`mailto:${beneficiary?.email}`}>{beneficiary?.email}</a></div>
                 <div><span style={{fontWeight: "bold"}}>Téléphone:</span> <a href={`tel:${beneficiary?.phone}`}>{beneficiary?.phone}</a></div>
