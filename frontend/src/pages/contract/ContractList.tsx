@@ -20,11 +20,11 @@ import ContractEditButton from "../../components/contract/ContractEditButton";
 import {humanizeDate, humanizeFirstName} from "../../constants";
 import ContractSearchTooltip from "../../components/contract/ContractSearchTooltip";
 import ContractNewPaymentButton from "../../components/contract/ContractNewPaymentButton";
+import {useGo} from "@refinedev/core";
 
 const ContractList = () => {
 
-    const createModalForm = useContractModalForm({action: "create"});
-    const {modal: { show: showCreateModal },  } = createModalForm;
+    const go = useGo();
 
     const editModalForm = useContractModalForm({action: "edit"});
     const {modal: { show: showEditModal}} = editModalForm;
@@ -107,17 +107,16 @@ const ContractList = () => {
 
     return (
         <>
-            <ContractModal {...createModalForm}/>
             <ContractModal {...editModalForm}/>
             <EndContractModal {...endModalForm}/>
 
-            <List title="" wrapperProps={{children: undefined, style:{height:"100%", display:"flex", flexDirection:"column"}}} contentProps={{style:{flex:"auto", minHeight:0}}}>
+            <List title="" wrapperProps={{children: undefined, style:{height:"100%", display:"flex", flexDirection:"column"}}} contentProps={{style:{flex:"auto", minHeight:0}}} canCreate={false}>
                 <ContractTable
                     searchPlaceHolder={"Rechercher un contrat"}
                     columns={columns}
 
                     withAddIcon={true}
-                    addCallback={() => {showCreateModal()}}
+                    addCallback={() => {go({to:{resource:"contract", action:"create"}})}}
                     withReloadIcon
 
                     /*@ts-ignore*/

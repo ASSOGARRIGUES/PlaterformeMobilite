@@ -236,6 +236,6 @@ SPECTACULAR_SETTINGS = {
     'ENUM_NAME_OVERRIDES': {
         'VehicleStatusEnum': 'api.models.Vehicle.STATUS_CHOICES',
         'ContractStatusEnum': 'api.models.Contract.STATUS_CHOICES',
-        'PaymentModeEnum': 'api.models.Payment.Mode'
+        'PaymentModeEnum': 'api.models.PaymentMode'
     }
 }

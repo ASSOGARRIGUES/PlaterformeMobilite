@@ -33,6 +33,7 @@ import { ModalsProvider } from "@mantine/modals";
 import Dashboard from "./pages/dashboard/Dashboard";
 import {IconDashboard} from "@tabler/icons-react";
 import ContractShow from "./pages/contract/ContractShow";
+import ContractCreate from "./pages/contract/ContractCreate";
 
 function App() {
 
@@ -97,6 +98,7 @@ function App() {
                                     name: "contract",
                                     list: "contract/",
                                     show: "contract/:id",
+                                    create: "contract/create",
                                     meta: {
                                         label: "Contrats",
                                     },
@@ -156,6 +158,7 @@ function App() {
                                     <Route path="/contract">
                                         <Route index element={<ContractList />} />
                                         <Route path=":id" element={<ContractShow />} />
+                                        <Route path="create" element={<ContractCreate />} />
                                     </Route>
                                     <Route path="*" element={<ErrorComponent />} />
                                 </Route>

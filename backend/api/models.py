@@ -85,6 +85,20 @@ class Beneficiary(models.Model):
         return self.first_name.capitalize()+' '+self.last_name.capitalize()
 
 
+class PaymentMode(models.TextChoices):
+    CASH = 'cash'
+    CHECK = 'check'
+    CARD = 'card'
+
+    def toSTR(value):
+        display_dict = {
+            PaymentMode.CARD: 'Carte bancaire',
+            PaymentMode.CASH: 'Espèces',
+            PaymentMode.CHECK: 'Chèque',
+        }
+        return display_dict[value]
+
+
 class Contract(models.Model):
     # Contract status enum
     STATUS_CHOICES = (
@@ -115,8 +129,12 @@ class Contract(models.Model):
 
     max_kilometer = models.IntegerField(default=None, null=True)
     price = models.IntegerField()
-    deposit = models.IntegerField()
     discount = models.IntegerField(default=0)
+
+
+    deposit = models.IntegerField()
+    depositPaymentMode = models.CharField(max_length=20, choices=PaymentMode.choices, default=PaymentMode.CASH)
+    deposit_check_number = models.CharField(max_length=100, blank=True, null=True)
 
     start_kilometer = models.IntegerField()
     end_kilometer = models.IntegerField(default=None, null=True)
@@ -134,8 +152,6 @@ class Contract(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.pk:  # This is a new contract
-            self.start_kilometer = self.vehicle.kilometer
-
             created_by_id = kwargs.pop('created_by_id', None)
             if created_by_id:
                 self.created_by = get_user_model().objects.get(pk=created_by_id)
@@ -145,6 +161,7 @@ class Contract(models.Model):
         context = {
             "contract": self,
             "final_price": self.price - self.discount,
+            "deposit_mode_display": PaymentMode.toSTR(self.depositPaymentMode),
         }
         pdf = render_to_pdf('invoices/invoice.html', context)
         return pdf
@@ -173,14 +190,10 @@ class Contract(models.Model):
             self.save()
 
 class Payment(models.Model):
-    class Mode(models.TextChoices):
-        CASH = 'cash'
-        CHECK = 'check'
-        CARD = 'card'
 
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE, related_name='payments')
     amount = models.IntegerField()
-    mode = models.CharField(max_length=20, choices=Mode.choices)
+    mode = models.CharField(max_length=20, choices=PaymentMode.choices)
     check_number = models.CharField(max_length=100, blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -194,12 +207,7 @@ class Payment(models.Model):
 
     @property
     def mode_display(self):
-        display_dict = {
-            Payment.Mode.CARD: 'Carte bancaire',
-            Payment.Mode.CASH: 'Espèces',
-            Payment.Mode.CHECK: 'Chèque',
-        }
-        return display_dict[self.mode]
+        return PaymentMode.toSTR(self.mode)
 
     def render_participation_pdf(self):
         km_overpass = self.contract.end_kilometer > self.contract.max_kilometer + self.contract.start_kilometer if self.contract.end_kilometer else False

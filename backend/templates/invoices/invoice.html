@@ -525,16 +525,12 @@
     </tr>
     <tr>
         <td style="width: 60%">
-            Mode de paiement :
-            <div style="display: inline-block">
-                <span>&#x25A2; Chèque  </span>
-                <span>&#x25A2; Espèce</span>
-                <span>&#x25A2; CB</span>
-                <span>&#x25A2; Virement</span>
-            </div>
+            Mode de paiement : {{ deposit_mode_display }}
         </td>
         <td>
-            Banque:
+            {% if contract.depositPaymentMode == "check" %}
+                Numéro de chèque: <strong>{{ contract.deposit_check_number }}</strong><br>
+            {% endif %}
         </td>
     </tr>
     </tbody>

@@ -123,13 +123,14 @@ class ContractPaymentSummarySerializer(serializers.ModelSerializer):
 
 
 class ContractSerializer(serializers.ModelSerializer):
-    start_kilometer = serializers.IntegerField(read_only=True)
+    start_kilometer = serializers.IntegerField(required=False)
     end_kilometer = serializers.IntegerField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     created_by = UserSerializer(read_only=True)
     referent = UserSerializer()
     vehicle = VehicleSerializer()
     beneficiary = BeneficiarySerializer()
+
 
     class Meta:
         model = Contract
@@ -138,8 +139,13 @@ class ContractSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         print("create contract serializer")
         validated_data['created_by'] = self.context['request'].user
+        if not 'start_kilometer' in validated_data:
+            validated_data['start_kilometer'] = validated_data['vehicle'].kilometer
         contract = super().create(validated_data)
         contract.vehicle.status = 'rented'
+        #if the start_kilometer is provided, we update the vehicle kilometer
+        if 'start_kilometer' in validated_data:
+            contract.vehicle.kilometer = validated_data['start_kilometer']
         contract.vehicle.save()
         return contract
 
