@@ -516,7 +516,7 @@ export interface components {
         BlankEnum: BlankEnum;
         Contract: {
             readonly id: number;
-            readonly start_kilometer: number;
+            start_kilometer?: number;
             readonly end_kilometer: number;
             /** Format: date-time */
             readonly created_at: string;
@@ -579,7 +579,7 @@ export interface components {
         FuelTypeEnum: FuelTypeEnum;
         MutationContract: {
             readonly id: number;
-            readonly start_kilometer: number;
+            start_kilometer?: number;
             readonly end_kilometer: number;
             /** Format: date-time */
             readonly created_at: string;
@@ -745,7 +745,7 @@ export interface components {
         };
         PatchedContract: {
             readonly id?: number;
-            readonly start_kilometer?: number;
+            start_kilometer?: number;
             readonly end_kilometer?: number;
             /** Format: date-time */
             readonly created_at?: string;
@@ -785,7 +785,7 @@ export interface components {
         };
         PatchedMutationContract: {
             readonly id?: number;
-            readonly start_kilometer?: number;
+            start_kilometer?: number;
             readonly end_kilometer?: number;
             /** Format: date-time */
             readonly created_at?: string;
@@ -2639,7 +2639,7 @@ export enum PathsApiVehicleGetParametersQueryStatus__or {
     rented = "rented"
 }
 export enum BlankEnum {
-      ""
+     ""
 }
 export enum ContractStatusEnum {
     waiting = "waiting",

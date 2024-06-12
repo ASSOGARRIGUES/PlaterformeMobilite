@@ -13,7 +13,7 @@ interface VehicleSelectItem extends React.ComponentPropsWithoutRef<'div'>  {
     vehicle: Vehicle
 }
 
-const VehicleSelect = ({ value, onChange, filters, onChangeCompleteVehicle, ...otherProps }: Omit<SelectProps, "data"> & {filters?:CrudFilters, onChangeCompleteVehicle?: (vehicle: Vehicle) => any}) => {
+const VehicleSelect = ({ value, onChange, filters, onChangeCompleteVehicle, ...otherProps }: Omit<SelectProps, "data"> & {filters?:CrudFilters, onChangeCompleteVehicle?: (vehicle: Vehicle | undefined) => any}) => {
 
     const [search, setSearch] = useState("")
     const [searchDebounced] = useDebouncedValue(search, 300)
@@ -38,7 +38,7 @@ const VehicleSelect = ({ value, onChange, filters, onChangeCompleteVehicle, ...o
     const onChangeHandler = (value: string) => {
         if(onChange) onChange(value)
         const vehicle = vehicleOptions.find((vehicle) => vehicle.value === value)?.vehicle
-        if(vehicle && onChangeCompleteVehicle) onChangeCompleteVehicle(vehicle)
+        if(onChangeCompleteVehicle) onChangeCompleteVehicle(vehicle)
     }
 
 

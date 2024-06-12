@@ -36,7 +36,7 @@ const ContractCard = ({contract, withEdit=false, style}: {contract: CompleteCont
 
     const remainingDaysColor = contract && remainingDays(contract) < 0 ? theme.colors.red[6] : theme.colors.dark[9];
 
-    const kmFinalMax = contract ? contract.start_kilometer + (contract.max_kilometer as number) : 0;
+    const kmFinalMax = contract && contract.start_kilometer ? contract.start_kilometer + (contract.max_kilometer as number) : 0;
     const kmFinalColor = contract && contract.end_kilometer && contract.end_kilometer > kmFinalMax ? theme.colors.red[6] : theme.colors.dark[9];
 
     const content = contract ? (
@@ -53,7 +53,7 @@ const ContractCard = ({contract, withEdit=false, style}: {contract: CompleteCont
                 <Text><span style={{fontWeight: "bold"}}>Temps restant: </span> <span style={{color: remainingDaysColor}}>{ remainingDays(contract)}j</span></Text>
                 <Text><span style={{fontWeight: "bold"}}>Caution: </span> {contract.deposit}€</Text>
 
-                <Text><span style={{fontWeight: "bold"}}>Km initial: </span> {humanizeNumber(contract.start_kilometer)}km</Text>
+                <Text><span style={{fontWeight: "bold"}}>Km initial: </span> {contract.start_kilometer? humanizeNumber(contract.start_kilometer) : "---"}km</Text>
                 <Text><span style={{fontWeight: "bold"}}>Remise: </span> {contract.discount}€</Text>
                 <Text><span style={{fontWeight: "bold"}}>distance max: </span> {contract.max_kilometer && humanizeNumber(contract.max_kilometer)}km</Text>
                 <Text><span style={{fontWeight: "bold"}}>Km max final: </span> {humanizeNumber(kmFinalMax)}km</Text>

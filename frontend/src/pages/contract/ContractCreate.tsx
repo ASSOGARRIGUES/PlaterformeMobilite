@@ -3,7 +3,7 @@ import {BlankEnum, ContractStatusEnum, PaymentModeEnum, ReasonEnum} from "../../
 import {FormErrors, FormValidateInput} from "@mantine/form/lib/types";
 import {Create, useSelect, useStepsForm} from "@refinedev/mantine";
 import {
-    Button, Flex,
+    Button, Center, Flex,
     Group,
     Loader,
     NumberInput,
@@ -39,10 +39,12 @@ import VehicleCard from "../../components/Vehicle/VehicleCard";
 import ContractCard from "../../components/contract/ContractCard";
 import vehicleSelect from "../../components/Vehicle/VehicleSelect";
 import ContractStatusBadge from "../../components/contract/ContractStatusBadge";
+import {IconAlertTriangle} from "@tabler/icons-react";
 
 const ContractCreate = () => {
 
     const whoAmI = useGetIdentity<User>();
+    const [startKilometerDirty, setStartKilometerDirty] = useState(false);
 
     const initialValues: ContractWritableFields = {
         vehicle: 0,
@@ -50,6 +52,7 @@ const ContractCreate = () => {
         deposit: 315,
         depositPaymentMode: undefined,
         deposit_check_number: undefined,
+        start_kilometer: 0,
         price: 100,
         start_date: new Date().toISOString(),
         end_date: new Date().toISOString(),
@@ -100,6 +103,7 @@ const ContractCreate = () => {
         saveButtonProps,
         getInputProps,
         values,
+        isDirty,
         errors,
         steps: { currentStep, gotoStep },
     } = useStepsForm({
@@ -108,6 +112,12 @@ const ContractCreate = () => {
         validateInputOnBlur: true,
         refineCoreProps:{
             redirect: "show"
+        },
+        transformValues: (values) => {
+            return {
+                ...values,
+                start_kilometer: startKilometerDirty ? values.start_kilometer : undefined,
+            }
         }
     })
 
@@ -135,7 +145,7 @@ const ContractCreate = () => {
     const referentValue = referentObj?.id || referentObj;
 
     const [selectedBeneficiary, setSelectedBeneficiary] = useState<Beneficiary>(beneficiaryObj?.id ? beneficiaryObj : undefined)
-    const [selectedVehicle, setSelectedVehicle] = useState<Vehicle>(vehicleObj?.id ? vehicleObj : undefined)
+    const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | undefined>(vehicleObj?.id ? vehicleObj : undefined)
     const [selectedReferent, setSelectedReferent] = useState<User>(referentObj?.id ? referentObj : undefined)
 
     const paymentModeOptions = Object.values(PaymentModeEnum).map((mode) => ({ value: mode, label: paymentModeLabelMap[mode] }));
@@ -148,6 +158,22 @@ const ContractCreate = () => {
         return days;
     }
 
+    useEffect(() => {
+        getInputProps("start_kilometer").onChange(selectedVehicle?.kilometer || 0);
+    }, [selectedVehicle]);
+
+    useEffect(() => {
+        setStartKilometerDirty((selectedVehicle!=undefined && values.start_kilometer !== selectedVehicle.kilometer))
+    }, [selectedVehicle, values.start_kilometer]);
+
+
+    const warningMessage = (
+        <Group  style={{display:startKilometerDirty? "flex" : "none"}} align="center">
+            <IconAlertTriangle size={35} color="red" />
+            <p style={{color:"red", flex:"auto"}}>Le kilométrage initial entré est différent du kilométrage actuellement connu du véhicule. <br/>
+                La création du contrat entraînera une modification irrémédiable du kilométrage du véhicule.</p>
+        </Group>
+    )
 
     return (
         <Create
@@ -177,6 +203,11 @@ const ContractCreate = () => {
                     <BeneficiarySelect label="Bénéficiaire" value={beneficiaryValue} {...beneficiaryInputProps} error={errors.beneficiary} onChangeCompleteBeneficiary={setSelectedBeneficiary}/>
 
                     <VehicleSelect label="Véhicule" value={vehicleValue} {...vehicleInputProps} error={errors.vehicle} filters={[{field: "status", operator: "in", value: ["available"]}]} onChangeCompleteVehicle={setSelectedVehicle}/>
+
+                    <NumberInput label="Kilométrage initial" {...getInputProps("start_kilometer")} error={errors.start_kilometer} disabled={selectedVehicle===undefined}/>
+
+                    {warningMessage}
+
                 </Stepper.Step>
 
                 <Stepper.Step
@@ -193,8 +224,6 @@ const ContractCreate = () => {
                     <Select label="Motif" {...getInputProps("reason")} error={errors.reason} data={reasonOptions} maxDropdownHeight={300} styles={{dropdown:{position:"fixed" }}}/>
 
                     <ReferentSelect label="Référent" value={referentValue} {...referentInputProps} error={errors.referent} onChangeCompleteReferent={setSelectedReferent}/>
-
-
                 </Stepper.Step>
 
                 <Stepper.Step
@@ -234,9 +263,10 @@ const ContractCreate = () => {
 
                                     <Text><span style={{fontWeight: "bold"}}>Caution: </span> {values.deposit}€</Text>
 
-                                    {/*<Text><span style={{fontWeight: "bold"}}>Km initial: </span> {humanizeNumber(values.start_kilometer)}km</Text>*/}
-                                    <Text><span style={{fontWeight: "bold"}}>distance max: </span> {values.max_kilometer && humanizeNumber(values.max_kilometer)}km</Text>
+                                    <Text><span style={{fontWeight: "bold"}}>Km initial: </span> <span style={{color:startKilometerDirty ? "red" : undefined}}> {values.start_kilometer ? humanizeNumber(values.start_kilometer): "---"}km </span></Text>
+
                                     <Text><span style={{fontWeight: "bold"}}>Mode de paiement: </span> {values.depositPaymentMode ? paymentModeLabelMap[values.depositPaymentMode] : ""}</Text>
+                                    <Text><span style={{fontWeight: "bold"}}>distance max: </span> {values.max_kilometer && humanizeNumber(values.max_kilometer)}km</Text>
                                     {values.depositPaymentMode === PaymentModeEnum.check && (
                                         <Text><span style={{fontWeight: "bold"}}>Numéro de chèque: </span> {values.deposit_check_number}</Text>
                                     )}
@@ -245,6 +275,9 @@ const ContractCreate = () => {
                                 </SimpleGrid>
                             </Flex>
                         </Paper>
+                        <Center>
+                            {warningMessage}
+                        </Center>
                     </Stack>
                 </Stepper.Step>
 

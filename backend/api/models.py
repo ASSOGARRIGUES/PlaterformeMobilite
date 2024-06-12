@@ -152,8 +152,6 @@ class Contract(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.pk:  # This is a new contract
-            self.start_kilometer = self.vehicle.kilometer
-
             created_by_id = kwargs.pop('created_by_id', None)
             if created_by_id:
                 self.created_by = get_user_model().objects.get(pk=created_by_id)
