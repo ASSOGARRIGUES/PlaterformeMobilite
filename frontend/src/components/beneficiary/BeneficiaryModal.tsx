@@ -3,7 +3,7 @@ import React, {useEffect} from "react";
 import {BaseRecord, HttpError} from "@refinedev/core";
 import {BeneficiaryWritableFields} from "../../types/beneficiary";
 import {Box, Group, LoadingOverlay, Modal, TextInput} from "@mantine/core";
-import {DatePicker} from "@mantine/dates";
+import {DateInput} from "@mantine/dates";
 import dayjs from "dayjs";
 
 
@@ -51,7 +51,7 @@ const BeneficiaryModal: React.FC<
             <TextInput label="Téléphone" {...getInputProps("phone")} error={errors.phone} withAsterisk/>
             <Group grow>
                 <TextInput label="Numéro de permis" {...getInputProps("license_number")} error={errors.license_number} />
-                <DatePicker locale="fr" inputFormat="DD/MM/YYYY" allowFreeInput placeholder="Date de délivrance " label="Délivré le" value={licenseDeliveryDate} onChange={handleLicenseDeliveryDateChange} error={errors.license_delivery_date}/>
+                <DateInput locale="fr" valueFormat="DD/MM/YYYY" placeholder="Date de délivrance " label="Délivré le" value={licenseDeliveryDate} onChange={handleLicenseDeliveryDateChange} error={errors.license_delivery_date}/>
             </Group>
             <Box mt={8} sx={{ display: "flex", justifyContent: "flex-end" }}>
                 <SaveButton {...saveButtonProps} />

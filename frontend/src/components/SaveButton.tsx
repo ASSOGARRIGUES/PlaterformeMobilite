@@ -3,10 +3,29 @@ import {
   RefineButtonClassNames,
   RefineButtonTestIds,
 } from "@refinedev/ui-types";
-import { ActionIcon, Button } from "@mantine/core";
-import { IconDeviceFloppy } from "@tabler/icons-react";
+import {ActionIcon, Button, ButtonProps} from "@mantine/core";
+import {IconDeviceFloppy, IconProps} from "@tabler/icons-react";
 
-import {mapButtonVariantToActionIconVariant, SaveButtonProps} from "@refinedev/mantine";
+import {RefineSaveButtonProps} from "@refinedev/ui-types/dist";
+import {ActionIconProps} from "@mantine/core/lib/ActionIcon/ActionIcon";
+
+export type SaveButtonProps = RefineSaveButtonProps<
+  ButtonProps,
+  {
+    svgIconProps?: Omit<IconProps, "ref">;
+  }
+>;
+
+const mapButtonVariantToActionIconVariant = (
+  variant?: ButtonProps["variant"],
+): ActionIconProps['variant'] | undefined => {
+  switch (variant) {
+    case "white":
+      return "default";
+    default:
+      return variant;
+  }
+};
 
 /**
  * `<SaveButton>` uses Mantine {@link https://mantine.dev/core/button `<Button> `}.

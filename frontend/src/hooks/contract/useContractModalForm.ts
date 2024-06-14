@@ -1,4 +1,4 @@
-import {CrudFilters, FormAction, RedirectAction} from "@refinedev/core";
+import {BaseOption, CrudFilters, FormAction, Prettify, RedirectAction} from "@refinedev/core";
 import {ContractWritableFields} from "../../types/contract";
 import {BlankEnum} from "../../types/schema.d";
 import {useModalForm, UseSelectReturnType,UseModalFormReturnType, useSelect} from "@refinedev/mantine";
@@ -6,9 +6,10 @@ import {FormValidateInput, LooseKeys} from "@mantine/form/lib/types";
 import {BaseRecord, HttpError} from "@refinedev/core/dist";
 import {DEBOUNCE_TIME} from "../../constants";
 import {useEffect, useState} from "react";
+import {SelectProps} from "@mantine/core";
 
 //Building a GetSelectProps function to get the selectProps of a specific field just as the getInputProps function does
-export type ContractGetSelectPropsFields<Values> = <Field extends LooseKeys<Values>>(path: Field) => UseSelectReturnType["selectProps"] & {isLoading: boolean};
+export type ContractGetSelectPropsFields<Values> = <Field extends LooseKeys<Values>>(path: Field) => Prettify<Omit<SelectProps, "data"> & {data: BaseOption[];}> & {isLoading: boolean};
 
 
 //Modifiy this type to add a new Selectable fields. WARNING: don't forget to add the logic to query the selectable fields and add it to the getSelectProps function below
@@ -208,7 +209,7 @@ const useContractModalForm = ({action, redirect=false}: {action: FormAction | un
      * Get the selectProps of a specific field
      * @param field
      */
-    modalForm.getSelectProps = (field: LooseKeys<ContractSelectableFields>) => {
+    modalForm.getSelectProps = ((field: LooseKeys<ContractSelectableFields>) => {
         switch (field) {
             case "vehicle":
                 return {...vehicleSelectProps, isLoading: isVehicleLoading};
@@ -219,7 +220,7 @@ const useContractModalForm = ({action, redirect=false}: {action: FormAction | un
             default:
                 throw new Error(`Field ${field} is not a select field of the form`);
         }
-    }
+    }) as ContractGetSelectPropsFields<ContractSelectableFields>;
 
     return modalForm;
 }

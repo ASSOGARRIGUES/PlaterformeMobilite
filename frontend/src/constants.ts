@@ -6,6 +6,7 @@ import {
     TypeEnum,
 } from "./types/schema.d";
 import {axiosInstance} from "./providers/rest-data-provider/utils";
+import {DateInputProps} from "@mantine/dates";
 
 
 export const ACCESS_TOKEN_KEY = 'auth_access';
@@ -106,4 +107,14 @@ export const openPdfInNewTab = async (pdfUrl: string) => {
     }catch (e){
         console.error(e);
     }
+}
+
+
+/**
+ * Parse a date string in the fr format (DD/MM/YYYY) to a Date object
+ * @param input
+ */
+const dateParser: DateInputProps['dateParser'] = (input) => {
+    //pars the date in the format DD/MM/YYYY using dayjs
+    return input ? new Date(input) : null;
 }

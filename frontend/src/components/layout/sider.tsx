@@ -233,7 +233,7 @@ export const ThemedSiderV2: React.FC<RefineThemedLayoutV2SiderProps> = ({
           zIndex={1200}
           withCloseButton={false}
           styles={{
-            drawer: {
+            content: {
               overflow: "hidden",
             },
           }}

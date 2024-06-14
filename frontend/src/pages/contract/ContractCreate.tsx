@@ -12,7 +12,7 @@ import {
     SimpleGrid,
     Stack,
     Stepper,
-    Text,
+    Text, TextInput,
     Title
 } from "@mantine/core";
 import {SaveButton} from "../../components/SaveButton";
@@ -26,7 +26,6 @@ import {
     humanizeNumber,
     paymentModeLabelMap
 } from "../../constants";
-import {DateRangePicker, DateRangePickerValue} from "@mantine/dates";
 import dayjs from "dayjs";
 import BeneficiarySelect from "../../components/beneficiary/BeneficiarySelect";
 import VehicleSelect from "../../components/Vehicle/VehicleSelect";
@@ -40,6 +39,8 @@ import ContractCard from "../../components/contract/ContractCard";
 import vehicleSelect from "../../components/Vehicle/VehicleSelect";
 import ContractStatusBadge from "../../components/contract/ContractStatusBadge";
 import {IconAlertTriangle} from "@tabler/icons-react";
+import {DatePickerInput} from "@mantine/dates";
+import {DatePickerValue, DatesRangeValue} from "@mantine/dates/lib/types/DatePickerValue";
 
 const ContractCreate = () => {
 
@@ -128,9 +129,9 @@ const ContractCreate = () => {
     const endDateInputProps = getInputProps("end_date");
 
 
-    const [dateValue, setDateValue] = React.useState<DateRangePickerValue>([new Date(startDateInputProps.value), new Date(endDateInputProps.value)]);
+    const [dateValue, setDateValue] = React.useState<DatesRangeValue>([new Date(startDateInputProps.value), new Date(endDateInputProps.value)]);
 
-    function handleDateChange(value: DateRangePickerValue) {
+    function handleDateChange(value: DatesRangeValue) {
         setDateValue(value);
         startDateInputProps.onChange(dayjs(value[0]).format("YYYY-MM-DD"));
         endDateInputProps.onChange(dayjs(value[1]).format("YYYY-MM-DD"));
@@ -215,7 +216,8 @@ const ContractCreate = () => {
                     description="Informations générales"
                     allowStepSelect={currentStep > 1}
                 >
-                    <DateRangePicker locale="fr" label="Période du contrat" inputFormat="DD MMMM YYYY" labelFormat="DD-MM-YYYY" value={dateValue} onChange={handleDateChange} error={errors.start_date} placeholder="Début" />
+                    {/*inputFormat="DD MMMM YYYY"*/}
+                    <DatePickerInput type="range" locale="fr" label="Période du contrat"  valueFormat="DD/MM/YYYY" value={dateValue} onChange={handleDateChange} error={errors.start_date} placeholder="Début" />
 
                     <NumberInput label="Prix du contrat" {...getInputProps("price")} error={errors.price} />
                     <NumberInput label="Remise" {...getInputProps("discount")} error={errors.discount} />
@@ -235,7 +237,7 @@ const ContractCreate = () => {
                     <NumberInput label="Caution" {...getInputProps("deposit")} error={errors.deposit} />
                     <Select label="Mode de paiement" {...getInputProps("depositPaymentMode")} error={errors.depositPaymentMode} data={paymentModeOptions} withAsterisk/>
                     {values.depositPaymentMode === PaymentModeEnum.check && (
-                        <NumberInput label="Numéro de chèque" {...getInputProps("deposit_check_number")} error={errors.deposit_check_number} />
+                        <TextInput label="Numéro de chèque" {...getInputProps("deposit_check_number")} error={errors.deposit_check_number} />
                     )}
 
                 </Stepper.Step>
