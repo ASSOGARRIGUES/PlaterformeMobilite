@@ -3,7 +3,7 @@ import {  Refine } from "@refinedev/core";
 import {
     ErrorComponent,
     RefineThemes,
-    useNotificationProvider, ThemedTitleV2
+    useNotificationProvider, ThemedTitleV2, ThemedLayoutContextProvider
 } from "@refinedev/mantine";
 
 import routerBindings, {
@@ -21,9 +21,8 @@ import { Login } from "./pages/login";
 import {API_URL, APP_TITLE} from "./constants";
 import BeneficiaryList from "./pages/beneficiary/BeneficiaryList";
 import {dataProvider} from "./providers/rest-data-provider";
-import {MantineProvider, Title} from "@mantine/core";
+import {createTheme, MantineProvider, Title} from "@mantine/core";
 import { MantineInferencer } from "@refinedev/inferencer/mantine";
-import {ThemedLayoutV2} from "./components/layout";
 import VehicleList from "./pages/vehicle/VehicleList";
 import ContractList from "./pages/contract/ContractList";
 import BeneficiaryShow from "./pages/beneficiary/BeneficiaryShow";
@@ -37,6 +36,9 @@ import {Notifications} from "@mantine/notifications";
 import {Authenticated} from "./components/forkedFromRefine/Authenticated";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+
+import '@mantine/core/styles.css';
+import {Layout} from "./components/layout";
 
 function App() {
 
@@ -59,13 +61,16 @@ function App() {
     //Add the customParseFormat plugin to dayjs
     dayjs.extend(customParseFormat);
 
+    const theme = createTheme({
+
+    })
+
 
     return (
         <BrowserRouter>
             <MantineProvider
                 // theme={RefineThemes.Blue}
-                withNormalizeCSS
-                withGlobalStyles
+                theme={theme}
             >
                 <ModalsProvider>
                     <Notifications position="bottom-right"/>
@@ -135,36 +140,39 @@ function App() {
                                         key="authenticated-inner"
                                         // fallback={<CatchAllNavigate to="/login" />}
                                     >
-                                        <ThemedLayoutV2 Title={({ collapsed }) => (
-                                            <ThemedTitleV2
-                                                // collapsed is a boolean value that indicates whether the <Sidebar> is collapsed or not
-                                                collapsed={collapsed}
+                                        <ThemedLayoutContextProvider>
+                                            <Layout Title={({ collapsed }) => (
+                                                <ThemedTitleV2
+                                                    // collapsed is a boolean value that indicates whether the <Sidebar> is collapsed or not
+                                                    collapsed={collapsed}
 
-                                                text={APP_TITLE}
-                                            />
-                                        )}>
-                                            <Outlet />
-                                        </ThemedLayoutV2>
+                                                    text={APP_TITLE}
+                                                />
+                                            )}>
+                                                <Outlet />
+                                            </Layout>
+                                        </ThemedLayoutContextProvider>
                                     </Authenticated>
                                 }
                             >
                                 <Route
                                     index
-                                    element={<Dashboard/>}
+                                    // element={<Dashboard/>}
+                                    element={<Title>Dashboard</Title>}
                                 />
-                                <Route path="/beneficiary">
-                                    <Route index element={<BeneficiaryList />} />
-                                    <Route path=":id" element={<BeneficiaryShow />} />
-                                </Route>
-                                <Route path="/vehicle">
-                                    <Route index element={<VehicleList />} />
-                                    <Route path=":id" element={<VehicleShow />} />
-                                </Route>
-                                <Route path="/contract">
-                                    <Route index element={<ContractList />} />
-                                    <Route path=":id" element={<ContractShow />} />
-                                    <Route path="create" element={<ContractCreate />} />
-                                </Route>
+                                {/*<Route path="/beneficiary">*/}
+                                {/*    <Route index element={<BeneficiaryList />} />*/}
+                                {/*    <Route path=":id" element={<BeneficiaryShow />} />*/}
+                                {/*</Route>*/}
+                                {/*<Route path="/vehicle">*/}
+                                {/*    <Route index element={<VehicleList />} />*/}
+                                {/*    <Route path=":id" element={<VehicleShow />} />*/}
+                                {/*</Route>*/}
+                                {/*<Route path="/contract">*/}
+                                {/*    <Route index element={<ContractList />} />*/}
+                                {/*    <Route path=":id" element={<ContractShow />} />*/}
+                                {/*    <Route path="create" element={<ContractCreate />} />*/}
+                                {/*</Route>*/}
                                 <Route path="*" element={<ErrorComponent />} />
                             </Route>
 

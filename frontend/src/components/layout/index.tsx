@@ -1,48 +1,36 @@
 import React from "react";
 import { ThemedLayoutContextProvider } from "@refinedev/mantine";
-import { ThemedHeaderV2 as DefaultHeader } from "./header";
-import { ThemedSiderV2 as DefaultSider } from "./sider";
-import { Box } from "@mantine/core";
+import Header from "./header";
+import {AppShell, Box} from "@mantine/core";
 import type { RefineThemedLayoutV2Props } from "@refinedev/mantine";
+import NavBar from "./sider";
+import {useThemedLayoutContext} from "@refinedev/mantine";
 
-export const ThemedLayoutV2: React.FC<RefineThemedLayoutV2Props> = ({
-  Sider,
-  Header,
-  Title,
-  Footer,
-  OffLayoutArea,
-  initialSiderCollapsed,
-  children,
-}) => {
-  const SiderToRender = Sider ?? DefaultSider;
-  const HeaderToRender = Header ?? DefaultHeader;
+export const Layout: React.FC<RefineThemedLayoutV2Props> = ({
+                                                                Title,
+                                                                initialSiderCollapsed,
+                                                                children,
+                                                            }) => {
 
-  return (
-    <ThemedLayoutContextProvider initialSiderCollapsed={initialSiderCollapsed}>
-      <Box sx={{ display: "flex", height: "100%" }}>
-        <SiderToRender Title={Title} />
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            flex: 1,
-          }}
+    const { siderCollapsed, mobileSiderOpen, setMobileSiderOpen } =
+        useThemedLayoutContext();
+
+    const navBarWidth = siderCollapsed ? 80 : 200;
+    console.log(mobileSiderOpen)
+
+    return (
+        <AppShell
+            layout="alt"
+            header={{height:52}}
+            navbar={{width:navBarWidth, breakpoint:"md", collapsed:{mobile:!mobileSiderOpen}}}
         >
-          <HeaderToRender />
-          <Box
-            component="main"
-            sx={(theme) => ({
-              padding: theme.spacing.sm,
-                flex: "auto",
-                minHeight: 0,
-            })}
-          >
-            {children}
-          </Box>
-          {Footer && <Footer />}
-        </Box>
-        {OffLayoutArea && <OffLayoutArea />}
-      </Box>
-    </ThemedLayoutContextProvider>
-  );
+            <Header />
+            <NavBar Title={Title} />
+
+            <AppShell.Main>
+                {children}
+            </AppShell.Main>
+
+        </AppShell>
+    );
 };
