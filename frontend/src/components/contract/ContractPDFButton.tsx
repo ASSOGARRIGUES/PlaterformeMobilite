@@ -2,8 +2,7 @@ import {CompleteContract, Contract} from "../../types/contract";
 import {ActionIcon, Button, Tooltip} from "@mantine/core";
 import ContractIcon from "../../assets/contract.svg";
 import {useApiUrl, useResource} from "@refinedev/core";
-import {axiosInstance} from "../../providers/rest-data-provider/utils";
-import {downloadInBrowser, openPdfInNewTab} from "../../constants";
+import {openPdfInNewTab} from "../../constants";
 
 type ContractButtonVariant = "icon" | "button"
 
@@ -31,10 +30,12 @@ const ContractPDFButton = ({contract, variant="icon"}: {contract: Contract | Com
     }else {
         content = (
              <ActionIcon
+                variant="subtle"
                 color = "blue"
                 onClick={(e)=>{e.stopPropagation(); openPDF()}}
+                style={{overflow: "visible"}}
             >
-                <img src = {ContractIcon}/>
+                <img src = {ContractIcon} width="25px"/>
             </ActionIcon>
         )
     }

@@ -13,7 +13,7 @@ export type EditButtonProps = {record: MinimalRecord, showEditModal:(id:number)=
 const EditButton = ({record, showEditModal, disabled}: EditButtonProps) => {
     return (
         <Tooltip label={"Editer"} position="bottom" openDelay={300}>
-            <ActionIcon onClick={(e)=>{e.stopPropagation(); showEditModal(record.id)}}  color="blue" disabled={disabled}>
+            <ActionIcon onClick={(e)=>{e.stopPropagation(); showEditModal(record.id)}}  variant="subtle" color="blue" disabled={disabled}>
                 <IconEdit size={25} />
             </ActionIcon>
         </Tooltip>

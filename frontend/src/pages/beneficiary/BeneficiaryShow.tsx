@@ -1,18 +1,12 @@
-import {Show} from "@refinedev/mantine";
 import {useShow} from "@refinedev/core";
 import BeneficiaryCard from "../../components/beneficiary/BeneficiaryCard";
-import {ActionIcon, Box, Center, Flex, Group, Paper, Stack, Title} from "@mantine/core";
-import BeneficiaryModal from "../../components/beneficiary/BeneficiaryModal";
-import useBeneficiaryModalForm from "../../hooks/beneficiary/useBeneficiaryModalForm";
+import {Group, Paper, Stack, Title, useMantineTheme} from "@mantine/core";
 import {Beneficiary} from "../../types/beneficiary";
-import {IconEdit} from "@tabler/icons-react";
 import {useMemo} from "react";
-import {DataTableColumn} from "mantine-datatable/dist/types/DataTableColumn";
 import {CompleteContract} from "../../types/contract";
 import {Vehicle} from "../../types/vehicle";
 import VehicleBadge from "../../components/Vehicle/VehicleBadge";
 import ContractTable from "../../components/contract/ContractTable";
-import EditButton from "../../components/EditButton";
 import OnePDFButton from "../../components/contract/OnePDFButton";
 import ContractExtraActionMenu from "../../components/contract/ContractExtraActionMenu";
 import ContractModal from "../../components/contract/ContractModal";
@@ -24,9 +18,15 @@ import ContractEditButton from "../../components/contract/ContractEditButton";
 import {humanizeDate} from "../../constants";
 import ContractSearchTooltip from "../../components/contract/ContractSearchTooltip";
 import BeneficiaryBadge from "../../components/beneficiary/BeneficiaryBadge";
+import {DataTableColumn} from "mantine-datatable";
+import {Show} from "../../components/forkedFromRefine/Show";
+import {useMediaQuery} from "@mantine/hooks";
 
 
 const BeneficiaryShow = () => {
+    const theme = useMantineTheme();
+    const smallerThanMd = useMediaQuery(`(max-width: ${theme.breakpoints.md})`);
+
     const { queryResult: showResponse } = useShow<Beneficiary>()
 
     const beneficiary  = showResponse.data?.data;
@@ -67,6 +67,7 @@ const BeneficiaryShow = () => {
                 textAlignment:"center",
                 sortable: true,
                 render: (contract) => (<ContractStatusBadge contract={contract}/>),
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
             },
             {
                 accessor: "action",
@@ -80,6 +81,7 @@ const BeneficiaryShow = () => {
                         </Group>
                     );
                 },
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
             }
         ],
         [],
@@ -93,11 +95,11 @@ const BeneficiaryShow = () => {
 
             <Stack style={{height:"100%"}}>
 
-                <Show title={<Title><BeneficiaryBadge beneficiary={beneficiary} noLink/></Title>} contentProps={{style:{padding:0}}}/>
+                <Show title={<Title><BeneficiaryBadge beneficiary={beneficiary} noLink/></Title>} wrapperProps={{flex: "none"}} contentProps={{style:{padding:0}}}/>
 
                 <BeneficiaryCard beneficiary={beneficiary} withEdit />
 
-                <Paper shadow="sm" p="md" style={{flex: "auto", minHeight:0, display: "flex", flexDirection: "column", alignItems:"center", gap:"10px", paddingRight:20, paddingLeft:20, paddingTop:10}}>
+                <Paper shadow="sm" p="md" style={{flex: "auto", minHeight:(smallerThanMd ? "100vh" : 0), display: "flex", flexDirection: "column", alignItems:"center", gap:"10px", paddingRight:20, paddingLeft:20, paddingTop:10}}>
                     <Title order={2}>Contrats</Title>
                     <ContractTable
                         searchPlaceHolder={"Rechercher un contrat"}

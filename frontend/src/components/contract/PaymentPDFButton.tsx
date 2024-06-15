@@ -16,6 +16,7 @@ const PaymentPDFButton = ({contract, payment}: {contract: Contract, payment: Pay
     return (
         <Tooltip label={"Télécharger le bulletin de participation"} position="bottom" openDelay={200}>
             <ActionIcon
+                variant="subtle"
                 color="blue"
                 onClick={(e)=>{e.stopPropagation(); openPDF()}}
             >

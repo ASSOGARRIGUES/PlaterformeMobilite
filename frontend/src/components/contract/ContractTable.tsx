@@ -4,16 +4,18 @@ import {
     TextInput,
     Group,
     ActionIcon,
-    MantineNumberSize,
-    GroupPosition,
     Tooltip,
-    MediaQuery, useMantineTheme, Switch
+    useMantineTheme, Switch
 } from "@mantine/core";
 import {IconCirclePlus, IconInfoCircle, IconRefresh, IconSearch} from "@tabler/icons-react";
-import {DataTable, DataTableSortStatus} from "mantine-datatable";
+import {
+    DataTable,
+    DataTableColumn,
+    DataTableProps,
+    DataTableRowClickHandler,
+    DataTableSortStatus
+} from "mantine-datatable";
 import React, {CSSProperties, useEffect, useState} from "react";
-import { DataTableColumn } from "mantine-datatable/dist/types/DataTableColumn";
-import { DataTableProps } from "mantine-datatable/dist/types";
 import {
     BaseRecord,
     CrudFilter,
@@ -26,12 +28,13 @@ import {
 } from "@refinedev/core";
 import { Beneficiary } from "../../types/beneficiary";
 import { PAGE_SIZE } from "../../constants";
-import {useDebouncedValue, useToggle} from "@mantine/hooks";
+import {useDebouncedValue, useToggle,useMediaQuery} from "@mantine/hooks";
 import { useMany, useGetToPath, useGo} from "@refinedev/core";
 import { Vehicle } from "../../types/vehicle";
-import {CompleteContract} from "../../types/contract";
+import {CompleteContract, Contract} from "../../types/contract";
 import {User} from "../../types/auth";
-
+import {MantineSpacing} from "@mantine/core/lib/core";
+import {GroupProps} from "@mantine/core/lib/components/Group/Group";
 /*
 Ce composant donne une datable triable avec un champ de recherche et la logique de tri intégré.
 Les columns triable et recherchable sont les colones avec l'attribut (sortable: true).
@@ -57,8 +60,8 @@ type SearchableDataTableProps<T> = {
     defaultSortedColumn?: keyof T;
     defaultSortedDirection?: "asc" | "desc";
     styles?: any;
-    elementSpacing?: MantineNumberSize;
-    searchBarPosition?: GroupPosition;
+    elementSpacing?: MantineSpacing;
+    searchBarPosition?: GroupProps["justify"];
     withAddIcon?: boolean;
     withReloadIcon?: boolean;
     addCallback?: () => void;
@@ -108,6 +111,7 @@ function ContractTable<T extends BaseRecord>({
     });
 
     const theme = useMantineTheme();
+    const smallerThanMd = useMediaQuery(`(max-width: ${theme.breakpoints.md})`);
 
     const go = useGo();
     const getToPath = useGetToPath();
@@ -155,8 +159,6 @@ function ContractTable<T extends BaseRecord>({
     let data = tableQueryResult?.data?.data ?? [];
 
 
-
-
     //Data object is now complete
 
     useEffect(() => {
@@ -182,7 +184,7 @@ function ContractTable<T extends BaseRecord>({
     };
 
 
-    const rowClickHandler = (contract: T, rowIndex: number) => {
+    const rowClickHandler:DataTableRowClickHandler<T> = ({record:contract, index, event}) => {
         const path = getToPath({
             resource: contractResourceItem,
             action: "show",
@@ -198,44 +200,42 @@ function ContractTable<T extends BaseRecord>({
 
 
     return (
-        <Stack spacing={elementSpacing} style={{ height: "100%", width:"100%", ...style}}>
+         <Stack gap={elementSpacing} style={{ height: "100%", width:"100%", ...style}}>
             {(withAddIcon || withReloadIcon || extraButtons || !withoutSearch) && (
                 <Group
-                    spacing="xs"
-                    position={searchBarPosition}
-                    style={styles?.searchBar}
+                    gap="xs"
+                    justify={searchBarPosition}
+                    style={{justifyContent: withoutSearch? "end":undefined, ...styles?.searchBar}}
                 >
                     {/* Ajout du champ de recherche si withoutSearch n'est pas défini*/}
                     {!withoutSearch && (
-                        <Group style={{flex: "auto", maxWidth:"40em",}} spacing="xs">
+                        <Group style={{flex: "1 2 auto", maxWidth:"40em"}} gap="xs">
                             <TextInput
                                 placeholder={searchPlaceHolder}
-                                icon={<IconSearch size={14} stroke={1.5} />}
+                                leftSection={<IconSearch size={14} stroke={1.5} />}
                                 style={{flex: "auto", maxWidth:"35em", ...styles?.input}}
                                 value={search}
                                 onChange={(event) => setSearch(event.currentTarget.value)}
                             />
 
                             {searchInfoTooltip && (
-                                <MediaQuery smallerThan="md" styles={{display:"none"}}>
-                                    <Tooltip label={searchInfoTooltip}>
-                                        <IconInfoCircle color={theme.colors.blue[6]} />
-                                    </Tooltip>
-                                </MediaQuery>
+                                <Tooltip label={searchInfoTooltip} position="bottom">
+                                    <IconInfoCircle className={"mantine-visible-from-md"} color={theme.colors.blue[6]} />
+                                </Tooltip>
                             )}
                         </Group>
                     )}
 
                     {/* Ajout des boutons d'ajout et de refresh si demandé par l'utilisateur*/}
                     {(withAddIcon || withReloadIcon || extraButtons || withArchivedSwitch) && (
-                        <Group style={{ alignItems: "center", ...styles?.buttons }}>
+                        <Group style={{alignItems: "center", ...styles?.buttons}}>
                             {/* Ajout du selector si demandé par l'utilisateur*/}
                             {categoriesSelector}
 
                             {extraButtons}
-
                             {withArchivedSwitch && (
                                 <Switch
+                                    visibleFrom="md"
                                     label="Archives"
                                     checked={showArchived}
                                     onChange={(event) => setShowArchived(!showArchived)}
@@ -244,59 +244,55 @@ function ContractTable<T extends BaseRecord>({
 
                             {withAddIcon && (
                                 <Tooltip label={"Nouveau"} position={"bottom"} openDelay={200} >
-                            <ActionIcon
-                                style={{ flex: "initial" }}
-                                size={33}
-                                color="green"
-                                onClick={() => addCallback ? addCallback() : ""}
-                            >
-                                <IconCirclePlus size={33} />
-                            </ActionIcon>
-                        </Tooltip>
+                                    <ActionIcon  style={{flex:"initial"}} size={35} variant="subtle" radius="lg" color = "green" onClick={()=>addCallback ? addCallback() : ""}>
+                                        <IconCirclePlus size={33}/>
+                                    </ActionIcon>
+                                </Tooltip>
+                            )}
+
+                            {withReloadIcon && (
+                                <Tooltip label={"Rafraichir"} position={"bottom"} openDelay={200} >
+                                    <ActionIcon style={{flex:"initial"}} size={35} variant="subtle" radius="lg" color = "blue" onClick={()=>reloadCallback()}>
+                                        <IconRefresh size={33}/>
+                                    </ActionIcon>
+                                </Tooltip>
+                            )}
+
+                        </Group>
                     )}
 
-                    {withReloadIcon && (
-                        <Tooltip label={"Rafraichir"} position={"bottom"} openDelay={200} >
-                    <ActionIcon
-                        style={{ flex: "initial" }}
-                        size={33}
-                        color="blue"
-                        onClick={() => reloadCallback()}
-                    >
-                        <IconRefresh size={33} />
-                    </ActionIcon>
-                </Tooltip>
-            )}
                 </Group>
-                )}
-        </Group>
-    )}
+            )}
 
-{secondBarNodes}
+            {secondBarNodes}
 
-    <Box
-        style={{
-            flex: "1 1 auto",
-            overflow: "hidden",
-        }}
-    >
-        <DataTable<T>
-            minHeight={150}
-            striped
-            highlightOnHover
-            records={data}
-            columns={columns}
-            fetching={tableQueryResult.isFetching}
-            sortStatus={sortStatus as DataTableSortStatus}
-            onSortStatusChange={setSortStatus}
-            totalRecords={tableQueryResult.data?.total ?? 0}
-            page={((data.length==0 )? undefined : currentPage ) as number}
-            onPageChange={setCurrentPage}
-            recordsPerPage={apiPageSize}
-            style={styles?.datatable}
-            onRowClick={rowClickHandler}
-            {...othersProps}
-        />
+            <Box style={{
+                flex: "1 1 auto",
+                overflow: "hidden"
+            }}>
+                <DataTable<T>
+                    minHeight={150}
+                    striped
+                    highlightOnHover
+                    records={data}
+                    columns={columns}
+                    fetching={tableQueryResult.isFetching}
+                    sortStatus={sortStatus as DataTableSortStatus}
+                    onSortStatusChange={setSortStatus}
+
+                    totalRecords={tableQueryResult.data?.total ?? 0}
+                    page={currentPage}
+                    onPageChange={setCurrentPage}
+                    recordsPerPage={apiPageSize}
+
+                    paginationText={smallerThanMd ? ({from, to, totalRecords}) => <></> : undefined}
+                    paginationSize={smallerThanMd ? "xs" : undefined}
+
+                    style = {styles?.datatable}
+                    onRowClick={rowClickHandler}
+
+                    {...othersProps}
+                />
     </Box>
 </Stack>
 );

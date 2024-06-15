@@ -34,6 +34,7 @@ const BillPDFButton = ({contract, variant="icon"}: {contract: Contract | Complet
     }else{
         content = (
             <ActionIcon
+                variant="subtle"
                 style={{width:"100%"}}
                 color="blue"
                 disabled={disabled}

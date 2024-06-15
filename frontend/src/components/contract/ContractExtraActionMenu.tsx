@@ -51,7 +51,7 @@ const ContractExtraActionMenu = ({contract, showEndModal}: {contract: Contract |
     return (
         <Menu>
             <Menu.Target>
-                <ActionIcon color="blue" onClick={(e)=>e.stopPropagation()}>
+                <ActionIcon variant="subtle" color="blue" onClick={(e)=>e.stopPropagation()}>
                     <IconDots size={25} />
                 </ActionIcon>
             </Menu.Target>

@@ -3,7 +3,7 @@ import React, {useEffect} from "react";
 import {BaseRecord, HttpError} from "@refinedev/core";
 import {BeneficiaryWritableFields} from "../../types/beneficiary";
 import {Box, Group, LoadingOverlay, Modal, TextInput} from "@mantine/core";
-import {DateInput} from "@mantine/dates";
+import {DateInput, DateValue} from "@mantine/dates";
 import dayjs from "dayjs";
 
 
@@ -28,7 +28,7 @@ const BeneficiaryModal: React.FC<
         setLicenseDeliveryDate(licenseDeliveryDateInputProps.value ? new Date(licenseDeliveryDateInputProps.value) : null);
     }, [licenseDeliveryDateInputProps.value, visible]);
 
-    const handleLicenseDeliveryDateChange = (date: Date) => {
+    const handleLicenseDeliveryDateChange = (date: DateValue) => {
         setLicenseDeliveryDate(date);
         if(!date) return licenseDeliveryDateInputProps.onChange(undefined);
         licenseDeliveryDateInputProps.onChange(dayjs((date)).format("YYYY-MM-DD"));
@@ -36,7 +36,7 @@ const BeneficiaryModal: React.FC<
 
     return (
         <Modal opened={visible} onClose={close} title={title}>
-             <LoadingOverlay visible={refineCore.formLoading} overlayBlur={2} />
+             <LoadingOverlay visible={refineCore.formLoading} overlayProps={{blur:2}} />
             <TextInput label="Prénom" {...getInputProps("first_name")} error={errors.first_name} withAsterisk/>
             <TextInput label="Nom" {...getInputProps("last_name")} error={errors.last_name} withAsterisk/>
             <TextInput label="Adresse" {...getInputProps("address")} error={errors.address} withAsterisk/>

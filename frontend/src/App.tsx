@@ -29,7 +29,8 @@ import BeneficiaryShow from "./pages/beneficiary/BeneficiaryShow";
 import VehicleShow from "./pages/vehicle/VehicleShow";
 import { ModalsProvider } from "@mantine/modals";
 import Dashboard from "./pages/dashboard/Dashboard";
-import {IconDashboard} from "@tabler/icons-react";
+import {IconAddressBook, IconCar, IconDashboard} from "@tabler/icons-react";
+import ContractIcon from "./assets/contract.svg";
 import ContractShow from "./pages/contract/ContractShow";
 import ContractCreate from "./pages/contract/ContractCreate";
 import {Notifications} from "@mantine/notifications";
@@ -38,6 +39,8 @@ import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 
 import '@mantine/core/styles.css';
+import './style/global.css'
+import 'mantine-datatable/styles.css';
 import {Layout} from "./components/layout";
 
 function App() {
@@ -94,6 +97,7 @@ function App() {
                                 show: "beneficiary/:id",
                                 meta: {
                                     label: "Bénéficiaires",
+                                    icon: <IconAddressBook/>
                                 },
                             },
                             {
@@ -102,6 +106,7 @@ function App() {
                                 show: "vehicle/:id",
                                 meta: {
                                     label: "Véhicules",
+                                    icon: <IconCar/>
                                 },
                             },
                             {
@@ -111,6 +116,7 @@ function App() {
                                 create: "contract/create",
                                 meta: {
                                     label: "Contrats",
+                                    icon: <img src = {ContractIcon} width="20px" style={{marginRight: 5}}/>,
                                 },
                             }
                         ]}
@@ -138,14 +144,13 @@ function App() {
                                 element={
                                     <Authenticated
                                         key="authenticated-inner"
-                                        // fallback={<CatchAllNavigate to="/login" />}
+                                        fallback={<CatchAllNavigate to="/login" />}
                                     >
                                         <ThemedLayoutContextProvider>
                                             <Layout Title={({ collapsed }) => (
                                                 <ThemedTitleV2
                                                     // collapsed is a boolean value that indicates whether the <Sidebar> is collapsed or not
                                                     collapsed={collapsed}
-
                                                     text={APP_TITLE}
                                                 />
                                             )}>
@@ -157,22 +162,21 @@ function App() {
                             >
                                 <Route
                                     index
-                                    // element={<Dashboard/>}
-                                    element={<Title>Dashboard</Title>}
+                                    element={<Dashboard/>}
                                 />
-                                {/*<Route path="/beneficiary">*/}
-                                {/*    <Route index element={<BeneficiaryList />} />*/}
-                                {/*    <Route path=":id" element={<BeneficiaryShow />} />*/}
-                                {/*</Route>*/}
+                                <Route path="/beneficiary">
+                                    <Route index element={<BeneficiaryList />} />
+                                    <Route path=":id" element={<BeneficiaryShow />} />
+                                </Route>
                                 {/*<Route path="/vehicle">*/}
                                 {/*    <Route index element={<VehicleList />} />*/}
                                 {/*    <Route path=":id" element={<VehicleShow />} />*/}
                                 {/*</Route>*/}
-                                {/*<Route path="/contract">*/}
-                                {/*    <Route index element={<ContractList />} />*/}
-                                {/*    <Route path=":id" element={<ContractShow />} />*/}
-                                {/*    <Route path="create" element={<ContractCreate />} />*/}
-                                {/*</Route>*/}
+                                <Route path="/contract">
+                                    <Route index element={<ContractList />} />
+                                    <Route path=":id" element={<ContractShow />} />
+                                    <Route path="create" element={<ContractCreate />} />
+                                </Route>
                                 <Route path="*" element={<ErrorComponent />} />
                             </Route>
 

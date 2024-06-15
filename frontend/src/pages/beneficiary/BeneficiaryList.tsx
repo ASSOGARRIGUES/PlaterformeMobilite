@@ -2,13 +2,14 @@ import {Beneficiary} from "../../types/beneficiary";
 import {useMemo, useState} from "react";
 import {List, useModalForm} from "@refinedev/mantine";
 import SearchableDataTable from "../../components/SearchableDataTable";
-import {DataTableColumn} from "mantine-datatable/dist/types/DataTableColumn";
 import BeneficiaryModal from "../../components/beneficiary/BeneficiaryModal";
 import {ActionIcon, Center} from "@mantine/core";
 import {IconEdit} from "@tabler/icons-react";
 import {useGetToPath, useGo} from "@refinedev/core";
 import useBeneficiaryModalForm from "../../hooks/beneficiary/useBeneficiaryModalForm";
 import BeneficiarySearchTooltip from "../../components/beneficiary/BeneficiarySearchTooltip";
+import {DataTableColumn, DataTableRowClickHandler} from "mantine-datatable";
+import EditButton from "../../components/EditButton";
 
 
 function BeneficiaryList() {
@@ -22,18 +23,6 @@ function BeneficiaryList() {
 
     const editModalForm = useBeneficiaryModalForm({action: "edit"});
     const {modal: { show: showEditModal },  } = editModalForm;
-
-
-    const EditButton = ({beneficiary}: {beneficiary: Beneficiary}) => {
-
-        return (
-            <Center>
-                <ActionIcon onClick={(e)=>{e.stopPropagation();showEditModal(beneficiary.id)}}  color="blue">
-                    <IconEdit size={25} />
-                </ActionIcon>
-            </Center>
-        )
-    }
 
     const columns = useMemo<DataTableColumn<Beneficiary>[]>(
         () => [
@@ -51,23 +40,25 @@ function BeneficiaryList() {
                 accessor: 'address', //normal accessorKey
                 title: 'Addresse',
                 sortable: true,
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
             },
             {
                 accessor: 'city',
                 title: 'Ville',
                 sortable: true,
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
             },
             {
                 accessor: "actions",
                 title:"Actions",
                 textAlignment:"center",
-                render: (beneficiary) => (<EditButton beneficiary={beneficiary}/>),
+                render: (beneficiary) => (<EditButton record={beneficiary} showEditModal={showEditModal}/>),
             }
         ],
         [],
     );
 
-    const rowClickHandler = (beneficiary: Beneficiary, rowIndex: number) => {
+    const rowClickHandler: DataTableRowClickHandler<Beneficiary> = ({record : beneficiary, index, event}) => {
         const path = getToPath({
             action: "show",
             meta: {
@@ -85,7 +76,7 @@ function BeneficiaryList() {
             <BeneficiaryModal {...createModalForm}/>
             <BeneficiaryModal {...editModalForm}/>
 
-            <List title="" wrapperProps={{children: undefined, style:{height:"100%", display:"flex", flexDirection:"column"}}} contentProps={{style:{flex:"auto", minHeight:0}}}>
+            <List title="" wrapperProps={{children: undefined, style:{height:"100%", display:"flex", flexDirection:"column", paddingBottom:2}}} contentProps={{style:{flex:"auto", minHeight:0}}}>
                 <SearchableDataTable
                     searchPlaceHolder={"Rechercher un beneficiaire"}
                     columns={columns}
