@@ -1,12 +1,10 @@
 import {useShow} from "@refinedev/core";
 import {Beneficiary} from "../../types/beneficiary";
 import {useMemo} from "react";
-import {DataTableColumn} from "mantine-datatable/dist/types/DataTableColumn";
 import {CompleteContract} from "../../types/contract";
 import {Vehicle} from "../../types/vehicle";
 import VehicleBadge from "../../components/Vehicle/VehicleBadge";
-import {Group, Paper, Stack, Title} from "@mantine/core";
-import {Show} from "@refinedev/mantine";
+import {Group, Paper, Stack, Title, useMantineTheme} from "@mantine/core";
 import ContractTable from "../../components/contract/ContractTable";
 import BeneficiaryBadge from "../../components/beneficiary/BeneficiaryBadge";
 import VehicleCard from "../../components/Vehicle/VehicleCard";
@@ -21,10 +19,16 @@ import ContractEditButton from "../../components/contract/ContractEditButton";
 import {humanizeDate} from "../../constants";
 import ContractSearchTooltip from "../../components/contract/ContractSearchTooltip";
 import VehicleActions from "../../components/Vehicle/VehicleActions";
+import {DataTableColumn} from "mantine-datatable";
+import {Show} from "../../components/forkedFromRefine/Show";
+import {useMediaQuery} from "@mantine/hooks";
 
 const VehicleShow = (props: any) => {
-    const { queryResult: showResponse } = useShow<Vehicle>()
 
+    const theme = useMantineTheme();
+    const smallerThanMd = useMediaQuery(`(max-width: ${theme.breakpoints.md})`);
+
+    const { queryResult: showResponse } = useShow<Vehicle>()
     const vehicle  = showResponse.data?.data;
 
     const editModalForm = useContractModalForm({action: "edit"});
@@ -63,6 +67,7 @@ const VehicleShow = (props: any) => {
                 textAlignment:"center",
                 sortable: true,
                 render: (contract) => (<ContractStatusBadge contract={contract}/>),
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
             },
             {
                 accessor: "action",
@@ -76,6 +81,7 @@ const VehicleShow = (props: any) => {
                         </Group>
                     );
                 },
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
             }
         ],
         [],
@@ -88,7 +94,7 @@ const VehicleShow = (props: any) => {
 
             <Stack style={{height:"100%"}}>
 
-                <Show title={<Title><VehicleBadge vehicle={vehicle} noLink/> </Title>} contentProps={{style:{padding:0}}}/>
+                <Show title={<Title><VehicleBadge vehicle={vehicle} noLink noColor/> </Title>} wrapperProps={{flex:"none"}} contentProps={{style:{padding:0}}}/>
 
                 <Group grow style={{alignItems:"stretch"}}>
                     <VehicleCard vehicle={vehicle} withEdit style={{flexGrow:2, maxWidth:"100%"}}/>
@@ -96,7 +102,7 @@ const VehicleShow = (props: any) => {
                 </Group>
 
 
-                <Paper shadow="sm" p="md" style={{flex: "auto", minHeight:0, display: "flex", flexDirection: "column", alignItems:"center", gap:"10px", paddingRight:20, paddingLeft:20, paddingTop:10}}>
+                <Paper shadow="sm" p="md" style={{flex: "auto", minHeight:(smallerThanMd ? "100vh" : 0), display: "flex", flexDirection: "column", alignItems:"center", gap:"10px", paddingRight:20, paddingLeft:20, paddingTop:10}}>
                     <Title order={2}>Contrats</Title>
                     <ContractTable
                         searchPlaceHolder={"Rechercher un contrat"}

@@ -168,10 +168,10 @@ function App() {
                                     <Route index element={<BeneficiaryList />} />
                                     <Route path=":id" element={<BeneficiaryShow />} />
                                 </Route>
-                                {/*<Route path="/vehicle">*/}
-                                {/*    <Route index element={<VehicleList />} />*/}
-                                {/*    <Route path=":id" element={<VehicleShow />} />*/}
-                                {/*</Route>*/}
+                                <Route path="/vehicle">
+                                    <Route index element={<VehicleList />} />
+                                    <Route path=":id" element={<VehicleShow />} />
+                                </Route>
                                 <Route path="/contract">
                                     <Route index element={<ContractList />} />
                                     <Route path=":id" element={<ContractShow />} />

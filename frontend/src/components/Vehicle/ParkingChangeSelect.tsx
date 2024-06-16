@@ -1,16 +1,17 @@
 import ParkingSelect from "./ParkingSelect";
 import {Parking, Vehicle} from "../../types/vehicle";
-import {ComponentProps, CSSProperties} from "react";
+import {ComponentProps} from "react";
 import {useUpdate} from "@refinedev/core";
 import {Loader} from "@mantine/core";
-import {SelectProps} from "@mantine/core/lib/Select/Select";
+import {VehicleStatusEnum} from "../../types/schema.d";
 
-const ParkingChangeSelect = ({ vehicle, ...otherProps }:{vehicle: Vehicle | undefined} & Omit<ComponentProps<typeof ParkingSelect>, "onChange">) => {
+const ParkingChangeSelect = ({ vehicle, disabled, ...otherProps }:{vehicle: Vehicle | undefined} & Omit<ComponentProps<typeof ParkingSelect>, "onChange">) => {
 
     const { mutate, isLoading } = useUpdate();
 
-    const handleChange = (parking: Parking) => {
+    const handleChange = (parking: Parking | undefined) => {
         if(!vehicle) return;
+        if(!parking) return;
 
         mutate({
             resource: "vehicle",
@@ -27,7 +28,7 @@ const ParkingChangeSelect = ({ vehicle, ...otherProps }:{vehicle: Vehicle | unde
     }
 
     return (
-        <ParkingSelect {...otherProps} withLabel onChange={handleChange} value={vehicle?.parking} rightSection={isLoading? (<Loader size="xs"/>) : undefined}/>
+        <ParkingSelect {...otherProps} disabled={disabled || vehicle?.status === VehicleStatusEnum.rented} withLabel onChange={handleChange} value={vehicle?.parking} rightSection={isLoading? (<Loader size="xs"/>) : undefined}/>
     )
 }
 

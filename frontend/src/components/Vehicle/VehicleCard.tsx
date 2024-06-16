@@ -1,21 +1,15 @@
 import {Vehicle} from "../../types/vehicle";
 import {
-    ActionIcon,
-    Avatar,
-    Center,
     Flex,
     Group,
-    Image,
     Paper, SimpleGrid,
     Skeleton,
-    Stack, Text,
+    Text,
     Title,
     useMantineTheme
 } from "@mantine/core";
-import {IconEdit} from "@tabler/icons-react";
 import useVehicleModalForm from "../../hooks/vehicle/useVehicleModalForm";
 import VehicleModal from "./VehicleModal";
-import carIcon from "../../assets/car.svg";
 import {CSSProperties} from "react";
 import {humanizeNumber, vehicleTypeLabelMap} from "../../constants";
 import VehicleStatusBadge from "./VehicleStatusBadge";
@@ -39,11 +33,14 @@ const VehicleCard = ({vehicle, withEdit=false, title=(<>Informations</>), style}
     )
 
     const content = vehicle ? (
-        <Group align="start" position="center">
+        <Group align="start" justify="center">
             <VehicleAvatar vehicle={vehicle} size={120} radius={60}/>
             <SimpleGrid cols={2} verticalSpacing={0}>
                 <Text><span style={{fontWeight: "bold"}}>Numéro de flotte: </span> {vehicle?.fleet_id}</Text>
-                <Text><span style={{fontWeight: "bold"}}>Statut: </span> <VehicleStatusBadge vehicle={vehicle}/></Text>
+                <Group style={{alignItems:"center"}}>
+                    <Text><span style={{fontWeight: "bold"}}>Statut: </span></Text>
+                    <VehicleStatusBadge vehicle={vehicle}/>
+                </Group>
                 <Text><span style={{fontWeight: "bold"}}>Type: </span> {vehicle?.type ? vehicleTypeLabelMap[vehicle?.type] : "Inconnu"}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Marque: </span> {vehicle?.brand}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Modèle: </span> {vehicle?.modele}</Text>

@@ -16,11 +16,13 @@ export const Layout: React.FC<RefineThemedLayoutV2Props> = ({
     const { siderCollapsed, mobileSiderOpen, setMobileSiderOpen } =
         useThemedLayoutContext();
 
-    const pinned = useHeadroom({fixedAt:120})
+
 
     const navBarWidth = siderCollapsed ? 80 : 200;
 
     const headerHeight = 52;
+
+    const pinned = useHeadroom({fixedAt:headerHeight})
 
     return (
         <AppShell

@@ -1,11 +1,9 @@
-import {List, useModalForm} from "@refinedev/mantine";
-import {ActionIcon, Center, Group} from "@mantine/core";
-import {IconEdit} from "@tabler/icons-react";
+import {List} from "@refinedev/mantine";
+import { Group} from "@mantine/core";
 import {useMemo} from "react";
-import {DataTableColumn} from "mantine-datatable/dist/types/DataTableColumn";
 import SearchableDataTable from "../../components/SearchableDataTable";
 import {Vehicle} from "../../types/vehicle";
-import {FuelTypeEnum, TransmissionEnum, TypeEnum} from "../../types/schema.d";
+import {FuelTypeEnum, TransmissionEnum} from "../../types/schema.d";
 import VehicleModal from "../../components/Vehicle/VehicleModal";
 import TransmissionIcon from "../../components/Vehicle/TransmissionIcon";
 import FuelIcon from "../../components/Vehicle/FuelIcon";
@@ -16,10 +14,16 @@ import EditButton from "../../components/EditButton";
 import VehicleStatusBadge from "../../components/Vehicle/VehicleStatusBadge";
 import VehicleSearchTooltip from "../../components/Vehicle/VehicleSearchTooltip";
 import VehicleAvatar from "../../components/Vehicle/VehicleAvatar";
-import {humanizeNumber} from "../../constants";
+import {DataTableColumn, DataTableRowClickHandler} from "mantine-datatable";
+import VehicleBadge from "../../components/Vehicle/VehicleBadge";
+import {useMantineTheme} from "@mantine/core";
+import {useMediaQuery} from "@mantine/hooks";
 
 
 const VehicleList = () => {
+
+    const theme = useMantineTheme();
+    const smallerThanMd = useMediaQuery(`(max-width: ${theme.breakpoints.md})`);
 
     const go = useGo();
     const getToPath = useGetToPath();
@@ -46,13 +50,20 @@ const VehicleList = () => {
                 title: 'ID',
                 sortable: true,
                 width:80,
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
+            },
+            {
+                accessor: 'mobile-badge',
+                title: "ID",
+                render: (vehicle) => (<VehicleBadge vehicle={vehicle} noLink noColor/>),
+                visibleMediaQuery: (theme) => `(max-width: ${theme.breakpoints.md})`
             },
             {
                 accessor: 'photo',
                 title: 'Photo',
                 render: (vehicle) => (<VehicleAvatar vehicle={vehicle} size={40}/>),
                 width: 60,
-                cellsStyle: {paddingTop: 0, paddingBottom: 0}
+                cellsStyle: ()=>({paddingTop: 0, paddingBottom: 0})
             },
             {
                 accessor: 'type-icon',
@@ -63,16 +74,19 @@ const VehicleList = () => {
                 accessor: 'brand',
                 title: 'Marque',
                 sortable: true,
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
             },
             {
                 accessor: 'modele', //normal accessorKey
                 title: 'Modèle',
                 sortable: true,
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
             },
             {
                 accessor: 'imat',
                 title: 'IMMAT',
                 sortable: true,
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
             },
             {
                 accessor: 'status',
@@ -83,18 +97,19 @@ const VehicleList = () => {
             {
                 accessor: "actions",
                 title:"Actions",
-                textAlignment:"center",
+                textAlign: "center",
                 render: (car) => (<EditButton record={car} showEditModal={showEditModal}/>),
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
             }
         ],
         [],
     );
 
-    const rowClickHandler = (beneficiary: Beneficiary, rowIndex: number) => {
+    const rowClickHandler: DataTableRowClickHandler<Vehicle> = ({record : vehicle, index, event}) => {
         const path = getToPath({
             action: "show",
             meta: {
-                id: beneficiary.id
+                id: vehicle.id
             }
         });
 
@@ -109,7 +124,7 @@ const VehicleList = () => {
             <VehicleModal {...createModalForm}/>
             <VehicleModal {...editModalForm}/>
 
-            <List title="" wrapperProps={{children: undefined, style:{height:"100%", display:"flex", flexDirection:"column"}}} contentProps={{style:{flex:"auto", minHeight:0}}}>
+            <List title="" wrapperProps={{children: undefined, style:{height:(smallerThanMd ? "100vh" : "100%"), display:"flex", flexDirection:"column"}}} contentProps={{style:{flex:"auto", minHeight:0}}}>
                 <SearchableDataTable
                     searchPlaceHolder={"Rechercher un véhicule"}
                     columns={columns}

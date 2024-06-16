@@ -12,7 +12,7 @@ const VehicleAvatar = ({ vehicle, ...avatarProps}: { vehicle: Vehicle } & Omit<A
     const defaultIcon = vehicle?.type === TypeEnum.scouter ? scooterIcon : carIcon;
 
     return (
-        <Avatar src={vehicle?.photo} alt="Véhicule" size={120} radius={60} color={theme.colors.gray[1]} {...avatarProps}>
+        <Avatar src={vehicle?.photo} alt="Véhicule" size={120} radius={60} color={theme.colors.blue[5]} {...avatarProps}>
             <Image src={defaultIcon} alt="Véhicule"/>
         </Avatar>
     )
