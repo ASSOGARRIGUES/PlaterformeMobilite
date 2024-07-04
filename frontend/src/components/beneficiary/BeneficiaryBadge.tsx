@@ -27,7 +27,7 @@ const BeneficiaryBadge = ({ beneficiary, noLink }: { beneficiary: Beneficiary | 
     }
 
     return (
-        <Anchor onClick={(e) => {e.stopPropagation(); click(e)}}>
+        <Anchor onClick={(e) => {e.stopPropagation(); click(e)}} inherit>
             {content}
         </Anchor>
     );

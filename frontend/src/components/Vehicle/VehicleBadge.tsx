@@ -28,7 +28,7 @@ const vehicleBadge = ({vehicle, noLink, noColor}: {vehicle: Vehicle | undefined,
     }
 
     return (
-        <Anchor onClick={(e) => {e.stopPropagation(); click(e)}}>
+        <Anchor onClick={(e) => {e.stopPropagation(); click(e)}} inherit>
             {content}
         </Anchor>
     );

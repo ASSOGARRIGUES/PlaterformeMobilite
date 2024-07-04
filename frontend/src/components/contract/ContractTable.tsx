@@ -18,21 +18,15 @@ import {
 import React, {CSSProperties, useEffect, useState} from "react";
 import {
     BaseRecord,
-    CrudFilter,
     CrudFilters,
     HttpError,
     useParsed,
     useResource,
-    useResourceParams,
     useTable
 } from "@refinedev/core";
-import { Beneficiary } from "../../types/beneficiary";
 import { PAGE_SIZE } from "../../constants";
-import {useDebouncedValue, useToggle,useMediaQuery} from "@mantine/hooks";
-import { useMany, useGetToPath, useGo} from "@refinedev/core";
-import { Vehicle } from "../../types/vehicle";
-import {CompleteContract, Contract} from "../../types/contract";
-import {User} from "../../types/auth";
+import {useDebouncedValue, useMediaQuery} from "@mantine/hooks";
+import { useGetToPath, useGo} from "@refinedev/core";
 import {MantineSpacing} from "@mantine/core/lib/core";
 import {GroupProps} from "@mantine/core/lib/components/Group/Group";
 /*
@@ -85,7 +79,7 @@ function ContractTable<T extends BaseRecord>({
                                                  defaultSortedColumn,
                                                  styles,
                                                  elementSpacing = "xs",
-                                                 searchBarPosition = "apart",
+                                                 searchBarPosition = "space-between",
                                                  withAddIcon,
                                                  withReloadIcon,
                                                  addCallback,

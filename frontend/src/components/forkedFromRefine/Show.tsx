@@ -174,7 +174,7 @@ export const Show: React.FC<ShowProps> = (props) => {
     const footerButtons = null;
 
     return (
-        <Card p="md" {...wrapperProps}>
+        <Card p="md" flex="none" {...wrapperProps}>
             <LoadingOverlay visible={loadingOverlayVisible} />
             <Group justify="space-between" align="center" {...headerProps}>
                 {/*<Stack gap="xs">*/}

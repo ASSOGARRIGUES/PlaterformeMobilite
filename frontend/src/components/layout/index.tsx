@@ -1,11 +1,11 @@
-import React from "react";
+import React, {useEffect} from "react";
 import { ThemedLayoutContextProvider } from "@refinedev/mantine";
 import Header from "./header";
-import {AppShell, Box, rem} from "@mantine/core";
+import {AppShell, Box, px, rem, useMantineTheme} from "@mantine/core";
 import type { RefineThemedLayoutV2Props } from "@refinedev/mantine";
 import NavBar from "./sider";
 import {useThemedLayoutContext} from "@refinedev/mantine";
-import {useHeadroom} from "@mantine/hooks";
+import {useHeadroom, useWindowScroll} from "@mantine/hooks";
 
 export const Layout: React.FC<RefineThemedLayoutV2Props> = ({
                                                                 Title,
@@ -16,7 +16,20 @@ export const Layout: React.FC<RefineThemedLayoutV2Props> = ({
     const { siderCollapsed, mobileSiderOpen, setMobileSiderOpen } =
         useThemedLayoutContext();
 
-
+    // const theme = useMantineTheme()
+    //
+    // const [scroll, scrollTo] = useWindowScroll();
+    //
+    // useEffect(() => {
+    //     if(scroll.y===0) {
+    //         setTimeout(() => {
+    //             if(scroll.y===0) {
+    //                 scrollTo({y:headerHeight+Number(px(theme.spacing.md))})
+    //             }
+    //         }, 5000);
+    //     }
+    //
+    // }, [scroll]);
 
     const navBarWidth = siderCollapsed ? 80 : 200;
 
@@ -35,7 +48,7 @@ export const Layout: React.FC<RefineThemedLayoutV2Props> = ({
 
             <AppShell.Main
                 pt = {`calc(${rem(headerHeight)} + var(--mantine-spacing-md))`}
-            style={{backgroundColor: "var(--mantine-color-scheme-dark)", height: "100vh"}}
+                style={{backgroundColor: "var(--mantine-color-scheme-dark)", height: "100vh"}}
             >
                 {children}
             </AppShell.Main>

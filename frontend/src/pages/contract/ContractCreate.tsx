@@ -1,11 +1,10 @@
-import {CompleteContract, ContractWritableFields} from "../../types/contract";
-import {BlankEnum, ContractStatusEnum, PaymentModeEnum, ReasonEnum} from "../../types/schema.d";
-import {FormErrors, FormValidateInput} from "@mantine/form/lib/types";
-import {Create, useSelect, useStepsForm} from "@refinedev/mantine";
+import {ContractWritableFields} from "../../types/contract";
+import {BlankEnum, PaymentModeEnum, ReasonEnum} from "../../types/schema.d";
+import {FormErrors} from "@mantine/form/lib/types";
+import {Create, useStepsForm} from "@refinedev/mantine";
 import {
     Button, Center, Flex,
     Group,
-    Loader,
     NumberInput,
     Paper,
     Select,
@@ -17,10 +16,9 @@ import {
 } from "@mantine/core";
 import {SaveButton} from "../../components/SaveButton";
 import React, {useEffect, useState} from "react";
-import {CrudFilters, useGetIdentity} from "@refinedev/core";
+import { useGetIdentity} from "@refinedev/core";
 import {
     contractReasonLabelMap,
-    DEBOUNCE_TIME,
     humanizeDate,
     humanizeFirstName,
     humanizeNumber,
@@ -35,12 +33,9 @@ import {Vehicle} from "../../types/vehicle";
 import {User} from "../../types/auth";
 import BeneficiaryCard from "../../components/beneficiary/BeneficiaryCard";
 import VehicleCard from "../../components/Vehicle/VehicleCard";
-import ContractCard from "../../components/contract/ContractCard";
-import vehicleSelect from "../../components/Vehicle/VehicleSelect";
-import ContractStatusBadge from "../../components/contract/ContractStatusBadge";
 import {IconAlertTriangle} from "@tabler/icons-react";
 import {DatePickerInput} from "@mantine/dates";
-import {DatePickerValue, DatesRangeValue} from "@mantine/dates/lib/types/DatePickerValue";
+import {DatesRangeValue} from "@mantine/dates/lib/types/DatePickerValue";
 
 const ContractCreate = () => {
 
@@ -180,7 +175,7 @@ const ContractCreate = () => {
         <Create
             title={<Title order={3}>Créer un contrat</Title>}
             footerButtons={
-                <Group position="right" mt="xl">
+                <Group gap="right" mt="xl">
                     {currentStep !== 0 && (
                         <Button variant="default" onClick={() => gotoStep(currentStep - 1)}>
                             Retour
@@ -195,7 +190,7 @@ const ContractCreate = () => {
             //wrapperProps={{style:{minHeight: "50vh"}, children:undefined}}
         >
 
-            <Stepper active={currentStep} onStepClick={gotoStep} breakpoint="xs" styles={{content: {maxWidth: currentStep !== 3 ? 800 : undefined, margin:"auto"}}}>
+            <Stepper active={currentStep} onStepClick={gotoStep}  styles={{content: {maxWidth: currentStep !== 3 ? 800 : undefined, margin:"auto"}}}>
                 <Stepper.Step
                     label="Cibles"
                     description="Bénéficiaire et véhicule"

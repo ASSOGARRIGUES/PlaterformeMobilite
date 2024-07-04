@@ -1,23 +1,29 @@
-import React from "react";
+import React, {PropsWithChildren} from "react";
 import {
   RefineButtonClassNames,
   RefineButtonTestIds,
 } from "@refinedev/ui-types";
-import {ActionIcon, Button, ButtonProps} from "@mantine/core";
+import {ActionIcon, ActionIconProps, Button, ButtonProps} from "@mantine/core";
 import {IconDeviceFloppy, IconProps} from "@tabler/icons-react";
 
-import {RefineSaveButtonProps} from "@refinedev/ui-types/dist";
-import {ActionIconProps} from "@mantine/core/lib/ActionIcon/ActionIcon";
+
+export type RefineSaveButtonProps<
+    TComponentProps extends {} = Record<string, unknown>,
+    TExtraProps extends {} = {},
+> = PropsWithChildren<{hideText?: boolean;}> &
+    { onClick?: React.PointerEventHandler<HTMLButtonElement>; } &
+    TComponentProps &
+    TExtraProps & {};
 
 export type SaveButtonProps = RefineSaveButtonProps<
-  ButtonProps,
-  {
-    svgIconProps?: Omit<IconProps, "ref">;
-  }
+    ButtonProps,
+    {
+      svgIconProps?: Omit<IconProps, "ref">;
+    }
 >;
 
 const mapButtonVariantToActionIconVariant = (
-  variant?: ButtonProps["variant"],
+    variant?: ButtonProps["variant"],
 ): ActionIconProps['variant'] | undefined => {
   switch (variant) {
     case "white":
@@ -34,38 +40,38 @@ const mapButtonVariantToActionIconVariant = (
  * @see {@link https://refine.dev/docs/api-reference/mantine/components/buttons/save-button} for more details.
  */
 export const SaveButton: React.FC<SaveButtonProps> = ({
-  hideText = false,
-  svgIconProps,
-  children,
-  ...rest
-}) => {
+                                                        hideText = false,
+                                                        svgIconProps,
+                                                        children,
+                                                        ...rest
+                                                      }) => {
   const label = "Enregistrer"
 
-  const { variant, styles, ...commonProps } = rest;
+  const { variant, styles, size, ...commonProps } = rest;
 
   return hideText ? (
-    <ActionIcon
-      {...(variant
-        ? {
-            variant: mapButtonVariantToActionIconVariant(variant),
-          }
-        : { variant: "filled", color: "primary" })}
-      aria-label={label}
-      data-testid={RefineButtonTestIds.SaveButton}
-      className={RefineButtonClassNames.SaveButton}
-      {...commonProps}
-    >
-      <IconDeviceFloppy size={18} {...svgIconProps} />
-    </ActionIcon>
+      <ActionIcon
+          {...(variant
+              ? {
+                variant: mapButtonVariantToActionIconVariant(variant),
+              }
+              : { variant: "filled", color: "primary" })}
+          aria-label={label}
+          data-testid={RefineButtonTestIds.SaveButton}
+          className={RefineButtonClassNames.SaveButton}
+          //{...commonProps}
+      >
+        <IconDeviceFloppy size={18} {...svgIconProps} />
+      </ActionIcon>
   ) : (
-    <Button
-      variant="filled"
-      leftIcon={<IconDeviceFloppy size={18} {...svgIconProps} />}
-      data-testid={RefineButtonTestIds.SaveButton}
-      className={RefineButtonClassNames.SaveButton}
-      {...rest}
-    >
-      {children ?? label}
-    </Button>
+      <Button
+          variant="filled"
+          leftSection={<IconDeviceFloppy size={18} {...svgIconProps} />}
+          data-testid={RefineButtonTestIds.SaveButton}
+          className={RefineButtonClassNames.SaveButton}
+          {...rest}
+      >
+        {children ?? label}
+      </Button>
   );
 };

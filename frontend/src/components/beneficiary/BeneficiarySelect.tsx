@@ -1,10 +1,10 @@
-import {Loader, Select} from "@mantine/core"
+import {Loader, Select, SelectProps} from "@mantine/core"
 import {useList} from "@refinedev/core";
 import {Beneficiary} from "../../types/beneficiary";
 import {humanizeFirstName, humanizeLastName} from "../../constants";
 import React, {useState} from "react";
-import {SelectProps} from "@mantine/core/lib/Select/Select";
 import {useDebouncedValue} from "@mantine/hooks";
+import {ComboboxItem} from "@mantine/core/lib/components/Combobox";
 
 
 const BeneficiarySelect = ({ value, onChange, onChangeCompleteBeneficiary, ...otherProps }: Omit<SelectProps, "data"> & {onChangeCompleteBeneficiary?: (beneficiry: Beneficiary) => any}) => {
@@ -30,8 +30,8 @@ const BeneficiarySelect = ({ value, onChange, onChangeCompleteBeneficiary, ...ot
         label: humanizeFirstName(beneficiary.first_name)+" "+humanizeLastName(beneficiary.last_name),
     })) || []
 
-    const onChangeHandler = (value: string) => {
-        if(onChange) onChange(value)
+    const onChangeHandler = (value: string | null, option: ComboboxItem) => {
+        if(onChange) onChange(value, option)
         const beneficiary = data?.data.find((beneficiary) => beneficiary.id.toString() === value)
         if(beneficiary && onChangeCompleteBeneficiary) onChangeCompleteBeneficiary(beneficiary)
     }
@@ -48,7 +48,7 @@ const BeneficiarySelect = ({ value, onChange, onChangeCompleteBeneficiary, ...ot
             clearable
             searchValue={search}
             onSearchChange={setSearch}
-            rightSection={isFetching ? <Loader  size="xs" variant="bars"/>: undefined}
+            rightSection={isFetching ? <Loader  size="xs" type="bars"/>: undefined}
             {...otherProps}
         />
     )

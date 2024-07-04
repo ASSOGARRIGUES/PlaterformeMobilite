@@ -42,6 +42,7 @@ import '@mantine/core/styles.css';
 import './style/global.css'
 import 'mantine-datatable/styles.css';
 import {Layout} from "./components/layout";
+import '@mantine/dates/styles.css';
 
 function App() {
 
