@@ -22,7 +22,7 @@ const ContractBadge = ({ contract }: { contract: CompleteContract | undefined })
     const vehicle = contract.vehicle as Vehicle
 
     return (
-        <span> #{contract.id} - <BeneficiaryBadge beneficiary={beneficiary}/> <VehicleBadge vehicle={vehicle}/> </span>
+        <span> #{contract.id} - <BeneficiaryBadge beneficiary={beneficiary} noLink/> <VehicleBadge vehicle={vehicle} noLink/> </span>
     )
 
 

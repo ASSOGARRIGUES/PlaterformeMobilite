@@ -51,7 +51,7 @@ const ContractList = () => {
                 sortable: true,
                 render: (contract) => {
                     const beneficiary = contract.beneficiary as Beneficiary
-                    return beneficiary.hasOwnProperty("id") ? <BeneficiaryBadge beneficiary={beneficiary}/> : "Loading..."
+                    return beneficiary.hasOwnProperty("id") ? <BeneficiaryBadge beneficiary={beneficiary} noLink/> : "Loading..."
                 }
             },
             {
@@ -60,7 +60,7 @@ const ContractList = () => {
                 sortable: true,
                 render: (contract) => {
                     const vehicle = contract.vehicle as Vehicle
-                    return vehicle.hasOwnProperty("id") ? <VehicleBadge vehicle={vehicle} noColor={smallerThanMd}/> : "Loading..."
+                    return vehicle.hasOwnProperty("id") ? <VehicleBadge vehicle={vehicle} noColor={smallerThanMd} noLink/> : "Loading..."
                 }
 
             },

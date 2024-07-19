@@ -120,7 +120,7 @@ const ContractShow = () => {
 
             <Stack style={{height:"100%"}} >
 
-                <Show title={<Title><ContractBadge contract={contractResponse}/> </Title>} contentProps={{style:{padding:0}}}/>
+                <Show title={<Title><ContractBadge contract={contractResponse} /> </Title>} contentProps={{style:{padding:0}}}/>
 
                 <Group grow style={{alignItems:"stretch"}}>
                     <BeneficiaryCard style={{flex:"1 1 8%", minWidth:"290px", maxWidth:"100%"}} beneficiary={beneficiary} title={benefTitle}/>
