@@ -38,7 +38,7 @@ const Dashboard = () => {
                 </Center>
             </Paper>
 
-            <Group position="apart" grow style={{alignItems: "stretch"}}>
+            <Group justify="space-between" grow style={{alignItems: "stretch"}}>
                 <Paper style={{display:"flex", flexDirection: "column"}}>
                     <Center><Title order={2}>Retour du jour</Title></Center>
                     <div style={{flex: "auto", padding:"0 0.4em"}}>

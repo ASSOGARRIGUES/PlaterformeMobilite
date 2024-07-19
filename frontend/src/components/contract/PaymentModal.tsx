@@ -23,7 +23,7 @@ const PaymentModal : React.FC<
 
     return (
         <Modal opened={visible} onClose={close} title={"Edition paiements"}>
-            <LoadingOverlay visible={refineCore.formLoading} overlayBlur={2} />
+            <LoadingOverlay visible={refineCore.formLoading} overlayProps={{blur: 2}} />
 
             <Stack>
                 <Stack>
@@ -42,7 +42,7 @@ const PaymentModal : React.FC<
                         <TextInput label="Numéro de chèque" {...getInputProps("check_number")} error={errors.check_number} withAsterisk/>
                     )}
 
-                    <Box mt={8} sx={{ display: "flex", justifyContent: "flex-end" }}>
+                    <Box mt={8} style={{ display: "flex", justifyContent: "flex-end" }}>
                         <SaveButton {...saveButtonProps} />
                     </Box>
                 </Stack>

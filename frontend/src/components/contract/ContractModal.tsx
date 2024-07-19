@@ -1,13 +1,16 @@
 import React, {useEffect} from "react";
-import {Box, Group, Loader, LoadingOverlay, Modal, NumberInput, Select} from "@mantine/core";
+import {Box, LoadingOverlay, Modal, NumberInput, Select} from "@mantine/core";
 import "dayjs/locale/fr";
 import dayjs from "dayjs";
 import {ReasonEnum} from "../../types/schema.d";
-import {contractReasonLabelMap, DEBOUNCE_TIME} from "../../constants";
+import {contractReasonLabelMap} from "../../constants";
 import type {ContractModalReturnType} from "../../hooks/contract/useContractModalForm";
 import {DatePickerInput} from "@mantine/dates";
 import { DatesRangeValue} from "@mantine/dates/lib/types/DatePickerValue";
 import {SaveButton} from "../SaveButton";
+import ReferentSelect from "../user/UserSelect";
+import BeneficiarySelect from "../beneficiary/BeneficiarySelect";
+import VehicleSelect from "../Vehicle/VehicleSelect";
 
 
 
@@ -29,23 +32,29 @@ const ContractModal : React.FC<
     const endDateInputProps = getInputProps("end_date");
 
 
-    const [dateValue, setDateValue] = React.useState<DatesRangeValue>([new Date(startDateInputProps.value), new Date(endDateInputProps.value)]);
+    const [dateValue, setDateValue] = React.useState<DatesRangeValue>([null, null]);
 
     useEffect(() => {
-        if(!visible) return;
-        setDateValue([new Date(startDateInputProps.value), new Date(endDateInputProps.value)])
-    }, [startDateInputProps.value, endDateInputProps.value, visible]);
+        if(!visible ) return;
 
+        const startDate = startDateInputProps.value ? new Date(startDateInputProps.value) : null;
+        const endDate = endDateInputProps.value ? new Date(endDateInputProps.value) : null;
+
+        const dateValue : DatesRangeValue = [startDate, endDate]
+        setDateValue(dateValue)
+
+
+    }, [startDateInputProps.value, endDateInputProps.value, visible]);
 
     function handleDateChange(value: DatesRangeValue) {
         setDateValue(value);
-        startDateInputProps.onChange(dayjs(value[0]).format("YYYY-MM-DD"));
-        endDateInputProps.onChange(dayjs(value[1]).format("YYYY-MM-DD"));
-    }
 
-    const {isLoading: isBeneficiaryLoading, ...beneficiarySelectProps} = getSelectProps("beneficiary");
-    const {isLoading: isVehicleLoading, ...vehicleSelectProps} = getSelectProps("vehicle");
-    const {isLoading: isReferentLoading, ...referentSelectProps} = getSelectProps("referent");
+        const startDate = value[0] ? dayjs(value[0]).format("YYYY-MM-DD") : null;
+        const endDate = value[1] ? dayjs(value[1]).format("YYYY-MM-DD") : null;
+
+        startDateInputProps.onChange(startDate);
+        endDateInputProps.onChange(endDate);
+    }
 
     const {value: beneficiaryObj, ...beneficiaryInputProps} = getInputProps("beneficiary");
     const {value: vehicleObj, ...vehicleInputProps} = getInputProps("vehicle");
@@ -53,13 +62,14 @@ const ContractModal : React.FC<
 
     return (
         <Modal opened={visible} onClose={close} title={title}>
-            <LoadingOverlay visible={refineCore.formLoading} overlayBlur={2} />
+            <LoadingOverlay visible={refineCore.formLoading} overlayProps={{blur:2}} />
 
-            <Select label="Bénéficiaire" value={beneficiaryObj?.id} {...beneficiaryInputProps} error={errors.beneficiary}  {...beneficiarySelectProps}  rightSection={isBeneficiaryLoading ? <Loader  size="xs" variant="bars"/>: undefined}/>
+            <BeneficiarySelect label="Bénéficiaire" value={beneficiaryObj?.id} {...beneficiaryInputProps} error={errors.beneficiary} disabled/>
 
-            <Select label="Véhicule" value={vehicleObj?.id} {...vehicleInputProps} error={errors.vehicle}  {...vehicleSelectProps} rightSection={isVehicleLoading ? <Loader  size="xs" variant="bars"/>: undefined}/>
+            <VehicleSelect label="Véhicule" value={vehicleObj?.id} {...vehicleInputProps} error={errors.vehicle} disabled/>
 
             <DatePickerInput type="range" locale="fr" label="Période du contrat"  valueFormat="DD/MM/YYYY" value={dateValue} onChange={handleDateChange} error={errors.start_date} />
+
 
             <NumberInput label="Prix du contrat" {...getInputProps("price")} error={errors.price} />
             <NumberInput label="Caution" {...getInputProps("deposit")} error={errors.deposit} />
@@ -68,9 +78,9 @@ const ContractModal : React.FC<
 
             <Select label="Motif" {...getInputProps("reason")} error={errors.reason} data={reasonOptions}/>
 
-            <Select label="Référent" value={referentObj?.id} {...referentInputProps} error={errors.referent}  {...referentSelectProps} rightSection={isReferentLoading ? <Loader  size="xs" variant="bars"/>: undefined}/>
+            <ReferentSelect label="Référent" value={referentObj?.id} {...referentInputProps} error={errors.referent} />
 
-            <Box mt={8} sx={{ display: "flex", justifyContent: "flex-end" }}>
+            <Box mt={8} style={{ display: "flex", justifyContent: "flex-end" }}>
                 <SaveButton {...saveButtonProps} />
             </Box>
         </Modal>

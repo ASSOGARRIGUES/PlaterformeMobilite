@@ -128,8 +128,11 @@ const ContractCreate = () => {
 
     function handleDateChange(value: DatesRangeValue) {
         setDateValue(value);
-        startDateInputProps.onChange(dayjs(value[0]).format("YYYY-MM-DD"));
-        endDateInputProps.onChange(dayjs(value[1]).format("YYYY-MM-DD"));
+        const startDate = value[0] ? dayjs(value[0]).format("YYYY-MM-DD") : null;
+        const endDate = value[1] ? dayjs(value[1]).format("YYYY-MM-DD") : null;
+
+        startDateInputProps.onChange(startDate);
+        endDateInputProps.onChange(endDate);
     }
 
     const {value: beneficiaryObj, ...beneficiaryInputProps} = getInputProps("beneficiary");

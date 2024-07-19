@@ -13,7 +13,7 @@ const EndContractModal = ({
 
     return (
         <Modal opened={visible} onClose={close} title={title}>
-            <LoadingOverlay visible={false} overlayBlur={2} />
+            <LoadingOverlay visible={false} overlayProps={{blur:2}} />
 
             <form onSubmit={submit}>
                 <NumberInput label="Prix du contrat" {...getInputProps("price")} error={errors.price} />
@@ -24,7 +24,7 @@ const EndContractModal = ({
 
                 <NumberInput label="Kilométrage de la voiture" {...getInputProps("end_kilometer")} error={errors.end_kilometer} />
 
-                <Button type="submit" color="red" sx={{marginTop: 20, width: "100%"}} disabled={isFormValid ? !isFormValid(): true}>Clôturer</Button>
+                <Button type="submit" color="red" style={{marginTop: 20, width: "100%"}} disabled={isFormValid ? !isFormValid(): true}>Clôturer</Button>
             </form>
         </Modal>
     );

@@ -1,5 +1,4 @@
 import {useMemo} from "react";
-import {DataTableColumn} from "mantine-datatable/dist/types/DataTableColumn";
 import {CompleteContract} from "../../types/contract";
 import {Vehicle} from "../../types/vehicle";
 import VehicleBadge from "../Vehicle/VehicleBadge";
@@ -11,6 +10,7 @@ import {WhoAmI} from "../../types/auth";
 import {CrudFilter} from "@refinedev/core";
 import {ContractStatusEnum} from "../../types/schema.d";
 import {humanizeDate, StatusConsideredOngoing} from "../../constants";
+import {DataTableColumn} from "mantine-datatable";
 
 const OnGoingContractTable = ({onlyForUser}: {onlyForUser?: WhoAmI} ) => {
 

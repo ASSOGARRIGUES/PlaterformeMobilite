@@ -50,7 +50,10 @@ export const Layout: React.FC<RefineThemedLayoutV2Props> = ({
                 pt = {`calc(${rem(headerHeight)} + var(--mantine-spacing-md))`}
                 style={{backgroundColor: "var(--mantine-color-scheme-dark)", height: "100vh"}}
             >
-                {children}
+                <div style={{paddingRight: 8, paddingLeft: 8, height:"100%"}}>
+                    {children}
+                </div>
+
             </AppShell.Main>
 
         </AppShell>

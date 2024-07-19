@@ -28,7 +28,7 @@ import {
   BoxProps,
   CardProps,
   Group,
-  useMantineTheme,
+  useMantineTheme, useMantineColorScheme,
 } from "@mantine/core";
 
 type ResetPassworProps = ForgotPasswordPageProps<
@@ -50,6 +50,7 @@ export const ForgotPasswordPage: React.FC<ResetPassworProps> = ({
   title,
 }) => {
   const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
   const { useForm, FormProvider } = FormContext;
   const { onSubmit: onSubmitProp, ...useFormProps } = formProps || {};
   const translate = useTranslate();
@@ -90,7 +91,7 @@ export const ForgotPasswordPage: React.FC<ResetPassworProps> = ({
     <Card style={cardStyles} {...(contentProps ?? {})}>
       <Title
         style={titleStyles}
-        color={theme.colorScheme === "dark" ? "brand.5" : "brand.8"}
+        c={colorScheme === "dark" ? "brand.5" : "brand.8"}
       >
         {translate("pages.forgotPassword.title", "Forgot your password?")}
       </Title>
@@ -115,7 +116,7 @@ export const ForgotPasswordPage: React.FC<ResetPassworProps> = ({
           />
 
           {loginLink ?? (
-            <Group mt="md" position={loginLink ? "left" : "right"}>
+            <Group mt="md" justify={loginLink ? "flex-start" : "flex-end"}>
               <Text size="xs">
                 {translate(
                   "pages.login.forgotPassword.haveAccount",

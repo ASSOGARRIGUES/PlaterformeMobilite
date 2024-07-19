@@ -1,5 +1,4 @@
 import {useMemo} from "react";
-import {DataTableColumn} from "mantine-datatable/dist/types/DataTableColumn";
 import {CompleteContract} from "../../types/contract";
 import {Vehicle} from "../../types/vehicle";
 import VehicleBadge from "../Vehicle/VehicleBadge";
@@ -10,6 +9,7 @@ import ContractTable from "../contract/ContractTable";
 import {WhoAmI} from "../../types/auth";
 import {CrudFilter} from "@refinedev/core";
 import {ContractStatusEnum} from "../../types/schema.d";
+import {DataTableColumn} from "mantine-datatable";
 
 const LateReturnTable = ({onlyForUser}: {onlyForUser?: WhoAmI} ) => {
 

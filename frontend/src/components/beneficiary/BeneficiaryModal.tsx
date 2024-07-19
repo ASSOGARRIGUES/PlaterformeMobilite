@@ -53,7 +53,7 @@ const BeneficiaryModal: React.FC<
                 <TextInput label="Numéro de permis" {...getInputProps("license_number")} error={errors.license_number} />
                 <DateInput locale="fr" valueFormat="DD/MM/YYYY" placeholder="Date de délivrance " label="Délivré le" value={licenseDeliveryDate} onChange={handleLicenseDeliveryDateChange} error={errors.license_delivery_date}/>
             </Group>
-            <Box mt={8} sx={{ display: "flex", justifyContent: "flex-end" }}>
+            <Box mt={8} style={{ display: "flex", justifyContent: "flex-end" }}>
                 <SaveButton {...saveButtonProps} />
             </Box>
         </Modal>

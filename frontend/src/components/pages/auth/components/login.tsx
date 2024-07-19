@@ -27,7 +27,7 @@ import {
   Stack,
   BoxProps,
   CardProps,
-  useMantineTheme,
+  useMantineTheme, useMantineColorScheme,
 } from "@mantine/core";
 
 import {cardStyles, layoutStyles, pageTitleStyles, titleStyles} from "./styles";
@@ -51,6 +51,7 @@ export const LoginPage: React.FC<LoginProps> = ({
   hideForm,
 }) => {
   const theme = useMantineTheme();
+  const {colorScheme} = useMantineColorScheme();
   const { useForm, FormProvider } = FormContext;
   const { onSubmit: onSubmitProp, ...useFormProps } = formProps || {};
   const translate = useTranslate();
@@ -90,14 +91,14 @@ export const LoginPage: React.FC<LoginProps> = ({
     if (providers && providers.length > 0) {
       return (
         <>
-          <Stack spacing={8}>
+          <Stack gap={8}>
             {providers.map((provider) => {
               return (
                 <Button
                   key={provider.name}
                   variant="default"
                   fullWidth
-                  leftIcon={provider.icon}
+                  leftSection={provider.icon}
                   onClick={() =>
                     login({
                       providerName: provider.name,
@@ -128,7 +129,7 @@ export const LoginPage: React.FC<LoginProps> = ({
     <Card style={cardStyles} {...(contentProps ?? {})}>
       <Title
         style={titleStyles}
-        color={theme.colorScheme === "dark" ? "brand.5" : "brand.8"}
+        c={colorScheme === "dark" ? "brand.5" : "brand.8"}
       >
         {"Connexion à votre compte"}
       </Title>
@@ -159,7 +160,7 @@ export const LoginPage: React.FC<LoginProps> = ({
               });
             })}
           >
-            <Text color="red" mt="md">
+            <Text c="red" mt="md">
               {loginError}
             </Text>
 
@@ -180,7 +181,7 @@ export const LoginPage: React.FC<LoginProps> = ({
             />
             <Box
               mt="md"
-              sx={{
+              style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
