@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'django_filters',
+    'tinymce',
     'core',
     'api',
     'drf_spectacular',
@@ -65,6 +66,7 @@ INSTALLED_APPS = [
     'dbbackup_admin',
     'django_crontab',
     'bugtracker',
+    'inappcom',
 ]
 
 MIDDLEWARE = [

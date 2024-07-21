@@ -27,7 +27,8 @@ urlpatterns = [
     path('admin/', include('core.urls')),
     path('admin/', admin.site.urls),
     path("status/", include("health_check.urls")),
-    path('api/', include('api.urls')),
+    path(r'api/', include('api.urls')),
+    path(r'api/appcom/', include('inappcom.urls')),
     path('api/bugtracker/', include('bugtracker.urls')),
     path("api/api-auth", include("rest_framework.urls", namespace="rest_framework")),
     path(
@@ -37,6 +38,7 @@ urlpatterns = [
         "api/token/refresh/", jwt_views.TokenRefreshView.as_view(), name="token_refresh"
     ),
     path('api-schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('tinymce/', include('tinymce.urls'))
 ]
 
 if settings.DEBUG:
