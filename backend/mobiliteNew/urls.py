@@ -28,6 +28,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("status/", include("health_check.urls")),
     path('api/', include('api.urls')),
+    path('api/bugtracker/', include('bugtracker.urls')),
     path("api/api-auth", include("rest_framework.urls", namespace="rest_framework")),
     path(
         "api/token/", jwt_views.TokenObtainPairView.as_view(), name="token_obtain_pair"

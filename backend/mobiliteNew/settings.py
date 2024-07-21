@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'solo',
     'dbbackup_admin',
     'django_crontab',
+    'bugtracker',
 ]
 
 MIDDLEWARE = [
@@ -233,7 +234,11 @@ CRONJOBS = [
 SPECTACULAR_SETTINGS = {
     'ENUM_NAME_OVERRIDES': {
         'VehicleStatusEnum': 'api.models.Vehicle.STATUS_CHOICES',
+        'VehicleTypeEnum': 'api.models.Vehicle.VEHICLE_TYPE_CHOICES',
         'ContractStatusEnum': 'api.models.Contract.STATUS_CHOICES',
-        'PaymentModeEnum': 'api.models.PaymentMode'
+        'PaymentModeEnum': 'api.models.PaymentMode',
+        'BugSeverityEnum': 'bugtracker.models.Bug.SEVERITY_CHOICES',
+        'BugTypeEnum': 'bugtracker.models.Bug.TYPE_CHOICES',
+        'BugStatusEnum': 'bugtracker.models.Bug.STATUS_CHOICES',
     }
 }
