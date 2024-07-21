@@ -43,6 +43,8 @@ import './style/global.css'
 import 'mantine-datatable/styles.css';
 import {Layout} from "./components/layout";
 import '@mantine/dates/styles.css';
+import {BugReporterProvider} from "./context/BugReporterProvider";
+import logSaver from "./logSaver";
 
 function App() {
 
@@ -62,6 +64,9 @@ function App() {
         return Reflect.apply(origProp, obj, args); // (E)
     }
 
+    //Register the logSaver for the bug reporter
+    logSaver.overrideConsole();
+
     //Add the customParseFormat plugin to dayjs
     dayjs.extend(customParseFormat);
 
@@ -77,6 +82,7 @@ function App() {
                 theme={theme}
             >
                 <ModalsProvider>
+
                     <Notifications position="bottom-right"/>
                     <Refine
                         dataProvider={dataProvider(API_URL)}
@@ -140,63 +146,65 @@ function App() {
                         }}
 
                     >
-                        <Routes>
-                            <Route
-                                element={
-                                    <Authenticated
-                                        key="authenticated-inner"
-                                        fallback={<CatchAllNavigate to="/login" />}
-                                    >
-                                        <ThemedLayoutContextProvider>
-                                            <Layout Title={({ collapsed }) => (
-                                                <ThemedTitleV2
-                                                    // collapsed is a boolean value that indicates whether the <Sidebar> is collapsed or not
-                                                    collapsed={collapsed}
-                                                    text={APP_TITLE}
-                                                />
-                                            )}>
-                                                <Outlet />
-                                            </Layout>
-                                        </ThemedLayoutContextProvider>
-                                    </Authenticated>
-                                }
-                            >
+                        <BugReporterProvider>
+                            <Routes>
                                 <Route
-                                    index
-                                    element={<Dashboard/>}
-                                />
-                                <Route path="/beneficiary">
-                                    <Route index element={<BeneficiaryList />} />
-                                    <Route path=":id" element={<BeneficiaryShow />} />
+                                    element={
+                                        <Authenticated
+                                            key="authenticated-inner"
+                                            fallback={<CatchAllNavigate to="/login" />}
+                                        >
+                                            <ThemedLayoutContextProvider>
+                                                <Layout Title={({ collapsed }) => (
+                                                    <ThemedTitleV2
+                                                        // collapsed is a boolean value that indicates whether the <Sidebar> is collapsed or not
+                                                        collapsed={collapsed}
+                                                        text={APP_TITLE}
+                                                    />
+                                                )}>
+                                                    <Outlet />
+                                                </Layout>
+                                            </ThemedLayoutContextProvider>
+                                        </Authenticated>
+                                    }
+                                >
+                                    <Route
+                                        index
+                                        element={<Dashboard/>}
+                                    />
+                                    <Route path="/beneficiary">
+                                        <Route index element={<BeneficiaryList />} />
+                                        <Route path=":id" element={<BeneficiaryShow />} />
+                                    </Route>
+                                    <Route path="/vehicle">
+                                        <Route index element={<VehicleList />} />
+                                        <Route path=":id" element={<VehicleShow />} />
+                                    </Route>
+                                    <Route path="/contract">
+                                        <Route index element={<ContractList />} />
+                                        <Route path=":id" element={<ContractShow />} />
+                                        <Route path="create" element={<ContractCreate />} />
+                                    </Route>
+                                    <Route path="*" element={<ErrorComponent />} />
                                 </Route>
-                                <Route path="/vehicle">
-                                    <Route index element={<VehicleList />} />
-                                    <Route path=":id" element={<VehicleShow />} />
-                                </Route>
-                                <Route path="/contract">
-                                    <Route index element={<ContractList />} />
-                                    <Route path=":id" element={<ContractShow />} />
-                                    <Route path="create" element={<ContractCreate />} />
-                                </Route>
-                                <Route path="*" element={<ErrorComponent />} />
-                            </Route>
 
-                            <Route
-                                element={
-                                    <Authenticated
-                                        key="authenticated-outer"
-                                        fallback={<Outlet />}
-                                    >
-                                        <NavigateToResource />
-                                    </Authenticated>
-                                }
-                            >
-                                <Route path="/login" element={<Login />} />
-                            </Route>
-                        </Routes>
+                                <Route
+                                    element={
+                                        <Authenticated
+                                            key="authenticated-outer"
+                                            fallback={<Outlet />}
+                                        >
+                                            <NavigateToResource />
+                                        </Authenticated>
+                                    }
+                                >
+                                    <Route path="/login" element={<Login />} />
+                                </Route>
+                            </Routes>
 
-                        {/*<UnsavedChangesNotifier />*/}
-                        {/*<DocumentTitleHandler />*/}
+                            {/*<UnsavedChangesNotifier />*/}
+                            {/*<DocumentTitleHandler />*/}
+                        </BugReporterProvider>
                     </Refine>
                 </ModalsProvider>
             </MantineProvider>

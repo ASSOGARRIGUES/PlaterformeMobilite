@@ -525,6 +525,164 @@ paths:
               schema:
                 $ref: '#/components/schemas/Beneficiary'
           description: ''
+  /api/bugtracker/bugs/:
+    get:
+      operationId: api_bugtracker_bugs_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBugList'
+          description: ''
+    post:
+      operationId: api_bugtracker_bugs_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Bug'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Bug'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Bug'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bug'
+          description: ''
+  /api/bugtracker/bugs/{id}/:
+    get:
+      operationId: api_bugtracker_bugs_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this bug.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bug'
+          description: ''
+    put:
+      operationId: api_bugtracker_bugs_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this bug.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Bug'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Bug'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Bug'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bug'
+          description: ''
+    patch:
+      operationId: api_bugtracker_bugs_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this bug.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBug'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBug'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBug'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bug'
+          description: ''
+    delete:
+      operationId: api_bugtracker_bugs_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this bug.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/contract/:
     get:
       operationId: api_contract_list
@@ -2043,6 +2201,75 @@ components:
     BlankEnum:
       enum:
       - ''
+    Bug:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        description:
+          type: string
+        reproduction_steps:
+          type: string
+          nullable: true
+        targeted_version:
+          type: string
+          maxLength: 200
+        logfile:
+          type: string
+          format: uri
+          nullable: true
+        date:
+          type: string
+          format: date-time
+          readOnly: true
+        severity:
+          $ref: '#/components/schemas/BugSeverityEnum'
+        type:
+          $ref: '#/components/schemas/BugTypeEnum'
+        status:
+          $ref: '#/components/schemas/BugStatusEnum'
+        resolve_version:
+          type: string
+          nullable: true
+          maxLength: 200
+      required:
+      - date
+      - description
+      - id
+      - targeted_version
+    BugSeverityEnum:
+      enum:
+      - low
+      - medium
+      - high
+      - critical
+      type: string
+      description: |-
+        * `low` - Low
+        * `medium` - Medium
+        * `high` - High
+        * `critical` - Critical
+    BugStatusEnum:
+      enum:
+      - open
+      - closed
+      - pending
+      type: string
+      description: |-
+        * `open` - Open
+        * `closed` - Closed
+        * `pending` - Pending
+    BugTypeEnum:
+      enum:
+      - bug
+      - feature
+      - suggestion
+      type: string
+      description: |-
+        * `bug` - Bug
+        * `feature` - Feature
+        * `suggestion` - Suggestions
     Contract:
       type: object
       properties:
@@ -2307,7 +2534,7 @@ components:
         parking:
           type: integer
         type:
-          $ref: '#/components/schemas/TypeEnum'
+          $ref: '#/components/schemas/VehicleTypeEnum'
         transmission:
           $ref: '#/components/schemas/TransmissionEnum'
         fuel_type:
@@ -2383,6 +2610,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Beneficiary'
+    PaginatedBugList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bug'
     PaginatedContractList:
       type: object
       required:
@@ -2552,6 +2802,38 @@ components:
           maxLength: 100
         archived:
           type: boolean
+    PatchedBug:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        description:
+          type: string
+        reproduction_steps:
+          type: string
+          nullable: true
+        targeted_version:
+          type: string
+          maxLength: 200
+        logfile:
+          type: string
+          format: uri
+          nullable: true
+        date:
+          type: string
+          format: date-time
+          readOnly: true
+        severity:
+          $ref: '#/components/schemas/BugSeverityEnum'
+        type:
+          $ref: '#/components/schemas/BugTypeEnum'
+        status:
+          $ref: '#/components/schemas/BugStatusEnum'
+        resolve_version:
+          type: string
+          nullable: true
+          maxLength: 200
     PatchedContract:
       type: object
       properties:
@@ -2734,7 +3016,7 @@ components:
         parking:
           type: integer
         type:
-          $ref: '#/components/schemas/TypeEnum'
+          $ref: '#/components/schemas/VehicleTypeEnum'
         transmission:
           $ref: '#/components/schemas/TransmissionEnum'
         fuel_type:
@@ -2856,7 +3138,7 @@ components:
           - $ref: '#/components/schemas/Parking'
           readOnly: true
         type:
-          $ref: '#/components/schemas/TypeEnum'
+          $ref: '#/components/schemas/VehicleTypeEnum'
         transmission:
           $ref: '#/components/schemas/TransmissionEnum'
         fuel_type:
@@ -3005,14 +3287,6 @@ components:
       description: |-
         * `manuelle` - Manuelle
         * `automatique` - Automatique
-    TypeEnum:
-      enum:
-      - voiture
-      - scouter
-      type: string
-      description: |-
-        * `voiture` - Voiture
-        * `scouter` - Scooter
     User:
       type: object
       properties:
@@ -3057,7 +3331,7 @@ components:
           - $ref: '#/components/schemas/Parking'
           readOnly: true
         type:
-          $ref: '#/components/schemas/TypeEnum'
+          $ref: '#/components/schemas/VehicleTypeEnum'
         transmission:
           $ref: '#/components/schemas/TransmissionEnum'
         fuel_type:
@@ -3118,6 +3392,14 @@ components:
         * `available` - Disponible
         * `rented` - A dispo
         * `maintenance` - En maintenance
+    VehicleTypeEnum:
+      enum:
+      - voiture
+      - scouter
+      type: string
+      description: |-
+        * `voiture` - Voiture
+        * `scouter` - Scooter
   securitySchemes:
     cookieAuth:
       type: apiKey

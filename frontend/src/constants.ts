@@ -1,9 +1,11 @@
 import {
+    BugSeverityEnum,
+    BugTypeEnum,
     ContractStatusEnum,
     FuelTypeEnum,
     PaymentModeEnum,
     ReasonEnum,
-    TypeEnum,
+    VehicleTypeEnum,
 } from "./types/schema.d";
 import {axiosInstance} from "./providers/rest-data-provider/utils";
 import {DateInputProps} from "@mantine/dates";
@@ -33,8 +35,8 @@ export const contractReasonLabelMap: Record<string,string> = {
 }
 
 export const vehicleTypeLabelMap: Record<string,string> = {
-    [TypeEnum.voiture]: "Voiture",
-    [TypeEnum.scouter]: "Scooter",
+    [VehicleTypeEnum.voiture]: "Voiture",
+    [VehicleTypeEnum.scouter]: "Scooter",
 }
 
 export const fuelTypeLabelMap: Record<string,string> = {
@@ -47,6 +49,19 @@ export const paymentModeLabelMap: Record<string,string> = {
     [PaymentModeEnum.cash]: "Espèces",
     [PaymentModeEnum.card]: "Carte bancaire",
     [PaymentModeEnum.check]: "Chèque",
+}
+
+export const bugTypeLabelMap: Record<string,string> = {
+    [BugTypeEnum.bug]: "Bug",
+    [BugTypeEnum.feature]: "Fonctionnalité",
+    [BugTypeEnum.suggestion]: "Suggestion",
+}
+
+export const bugSeverityLabelMap: Record<string,string> = {
+    [BugSeverityEnum.low]: "Pas pressé",
+    [BugSeverityEnum.medium]: "Génant: Un peu génant mais peu d'influence sur mon travail",
+    [BugSeverityEnum.high]: "Ralentissant: Ne me bloque pas mais me ralentit fortement",
+    [BugSeverityEnum.critical]: "Bloquant: je suis bloqué(e) dans mon travail",
 }
 
 export const StatusConsideredOngoing = [ContractStatusEnum.pending,ContractStatusEnum.over,ContractStatusEnum.waiting];
