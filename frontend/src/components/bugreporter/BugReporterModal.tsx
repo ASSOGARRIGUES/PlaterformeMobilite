@@ -69,7 +69,7 @@ const BugReporterModal = ({isBugModalOpen, setBugModalOpen}:{isBugModalOpen: boo
         #########################
     */
     const {onFinish} = useRefineForm<BugWritableFields>({
-        resource: "bugtracker/bugs",
+        resource: "bugtracker/bug",
         action: "create",
         redirect: false,
         onMutationSuccess: () => {
@@ -148,7 +148,7 @@ const BugReporterModal = ({isBugModalOpen, setBugModalOpen}:{isBugModalOpen: boo
                     </Group>
                 </RadioGroup>
 
-                <Button type="submit">Enregistrer</Button>
+                <Button type="submit" style={{marginTop: 20,width:"100%"}}>Enregistrer</Button>
             </form>
 
 

@@ -104,36 +104,36 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/bugtracker/bugs/": {
+    "/api/bugtracker/bug/": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["api_bugtracker_bugs_list"];
+        get: operations["api_bugtracker_bug_list"];
         put?: never;
-        post: operations["api_bugtracker_bugs_create"];
+        post: operations["api_bugtracker_bug_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/bugtracker/bugs/{id}/": {
+    "/api/bugtracker/bug/{id}/": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["api_bugtracker_bugs_retrieve"];
-        put: operations["api_bugtracker_bugs_update"];
+        get: operations["api_bugtracker_bug_retrieve"];
+        put: operations["api_bugtracker_bug_update"];
         post?: never;
-        delete: operations["api_bugtracker_bugs_destroy"];
+        delete: operations["api_bugtracker_bug_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_bugtracker_bugs_partial_update"];
+        patch: operations["api_bugtracker_bug_partial_update"];
         trace?: never;
     };
     "/api/contract/": {
@@ -548,13 +548,14 @@ export interface components {
         BlankEnum: BlankEnum;
         Bug: {
             readonly id: number;
+            /** Format: uri */
+            logfile?: string;
+            readonly reporter: components["schemas"]["User"];
             description: string;
             reproduction_steps?: string | null;
             targeted_version: string;
-            /** Format: uri */
-            logfile?: string | null;
             /** Format: date-time */
-            readonly date: string;
+            readonly created_at: string;
             severity?: components["schemas"]["BugSeverityEnum"];
             type?: components["schemas"]["BugTypeEnum"];
             status?: components["schemas"]["BugStatusEnum"];
@@ -828,13 +829,14 @@ export interface components {
         };
         PatchedBug: {
             readonly id?: number;
+            /** Format: uri */
+            logfile?: string;
+            readonly reporter?: components["schemas"]["User"];
             description?: string;
             reproduction_steps?: string | null;
             targeted_version?: string;
-            /** Format: uri */
-            logfile?: string | null;
             /** Format: date-time */
-            readonly date?: string;
+            readonly created_at?: string;
             severity?: components["schemas"]["BugSeverityEnum"];
             type?: components["schemas"]["BugTypeEnum"];
             status?: components["schemas"]["BugStatusEnum"];
@@ -1406,13 +1408,45 @@ export interface operations {
             };
         };
     };
-    api_bugtracker_bugs_list: {
+    api_bugtracker_bug_list: {
         parameters: {
             query?: {
+                id?: number;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                id__in?: number[];
                 /** @description Number of results to return per page. */
                 limit?: number;
                 /** @description The initial index from which to return the results. */
                 offset?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                resolve_version?: string;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                resolve_version__in?: string[];
+                /** @description A search term. */
+                search?: string;
+                /** @description * `low` - Low
+                 *     * `medium` - Medium
+                 *     * `high` - High
+                 *     * `critical` - Critical */
+                severity?: PathsApiBugtrackerBugGetParametersQuerySeverity;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                severity__in?: string[];
+                /** @description * `open` - Open
+                 *     * `closed` - Closed
+                 *     * `pending` - Pending */
+                status?: PathsApiBugtrackerBugGetParametersQueryStatus;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                status__in?: string[];
+                targeted_version?: string;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                targeted_version__in?: string[];
+                /** @description * `bug` - Bug
+                 *     * `feature` - Feature
+                 *     * `suggestion` - Suggestions */
+                type?: PathsApiBugtrackerBugGetParametersQueryType;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                type__in?: string[];
             };
             header?: never;
             path?: never;
@@ -1430,7 +1464,7 @@ export interface operations {
             };
         };
     };
-    api_bugtracker_bugs_create: {
+    api_bugtracker_bug_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -1455,7 +1489,7 @@ export interface operations {
             };
         };
     };
-    api_bugtracker_bugs_retrieve: {
+    api_bugtracker_bug_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -1477,7 +1511,7 @@ export interface operations {
             };
         };
     };
-    api_bugtracker_bugs_update: {
+    api_bugtracker_bug_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -1505,7 +1539,7 @@ export interface operations {
             };
         };
     };
-    api_bugtracker_bugs_destroy: {
+    api_bugtracker_bug_destroy: {
         parameters: {
             query?: never;
             header?: never;
@@ -1526,7 +1560,7 @@ export interface operations {
             };
         };
     };
-    api_bugtracker_bugs_partial_update: {
+    api_bugtracker_bug_partial_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -2866,6 +2900,22 @@ export enum PathsApiSchemaGetParametersQueryLang {
     vi = "vi",
     zh_hans = "zh-hans",
     zh_hant = "zh-hant"
+}
+export enum PathsApiBugtrackerBugGetParametersQuerySeverity {
+    critical = "critical",
+    high = "high",
+    low = "low",
+    medium = "medium"
+}
+export enum PathsApiBugtrackerBugGetParametersQueryStatus {
+    closed = "closed",
+    open = "open",
+    pending = "pending"
+}
+export enum PathsApiBugtrackerBugGetParametersQueryType {
+    bug = "bug",
+    feature = "feature",
+    suggestion = "suggestion"
 }
 export enum PathsApiContractGetParametersQueryStatus {
     over = "over",

@@ -6,7 +6,7 @@ from . import views
 from rest_framework import routers
 
 router = routers.DefaultRouter()
-router.register(r'bugs', views.BugViewSet)
+router.register(r'bug', views.BugViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

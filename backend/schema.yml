@@ -525,10 +525,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/Beneficiary'
           description: ''
-  /api/bugtracker/bugs/:
+  /api/bugtracker/bug/:
     get:
-      operationId: api_bugtracker_bugs_list
+      operationId: api_bugtracker_bug_list
       parameters:
+      - in: query
+        name: id
+        schema:
+          type: integer
+      - in: query
+        name: id__in
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
       - name: limit
         required: false
         in: query
@@ -541,6 +554,109 @@ paths:
         description: The initial index from which to return the results.
         schema:
           type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: resolve_version
+        schema:
+          type: string
+      - in: query
+        name: resolve_version__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: severity
+        schema:
+          type: string
+          enum:
+          - critical
+          - high
+          - low
+          - medium
+        description: |-
+          * `low` - Low
+          * `medium` - Medium
+          * `high` - High
+          * `critical` - Critical
+      - in: query
+        name: severity__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - closed
+          - open
+          - pending
+        description: |-
+          * `open` - Open
+          * `closed` - Closed
+          * `pending` - Pending
+      - in: query
+        name: status__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: targeted_version
+        schema:
+          type: string
+      - in: query
+        name: targeted_version__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: type
+        schema:
+          type: string
+          enum:
+          - bug
+          - feature
+          - suggestion
+        description: |-
+          * `bug` - Bug
+          * `feature` - Feature
+          * `suggestion` - Suggestions
+      - in: query
+        name: type__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
       tags:
       - api
       security:
@@ -554,7 +670,7 @@ paths:
                 $ref: '#/components/schemas/PaginatedBugList'
           description: ''
     post:
-      operationId: api_bugtracker_bugs_create
+      operationId: api_bugtracker_bug_create
       tags:
       - api
       requestBody:
@@ -579,9 +695,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Bug'
           description: ''
-  /api/bugtracker/bugs/{id}/:
+  /api/bugtracker/bug/{id}/:
     get:
-      operationId: api_bugtracker_bugs_retrieve
+      operationId: api_bugtracker_bug_retrieve
       parameters:
       - in: path
         name: id
@@ -602,7 +718,7 @@ paths:
                 $ref: '#/components/schemas/Bug'
           description: ''
     put:
-      operationId: api_bugtracker_bugs_update
+      operationId: api_bugtracker_bug_update
       parameters:
       - in: path
         name: id
@@ -635,7 +751,7 @@ paths:
                 $ref: '#/components/schemas/Bug'
           description: ''
     patch:
-      operationId: api_bugtracker_bugs_partial_update
+      operationId: api_bugtracker_bug_partial_update
       parameters:
       - in: path
         name: id
@@ -667,7 +783,7 @@ paths:
                 $ref: '#/components/schemas/Bug'
           description: ''
     delete:
-      operationId: api_bugtracker_bugs_destroy
+      operationId: api_bugtracker_bug_destroy
       parameters:
       - in: path
         name: id
@@ -2207,6 +2323,13 @@ components:
         id:
           type: integer
           readOnly: true
+        logfile:
+          type: string
+          format: uri
+        reporter:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
         description:
           type: string
         reproduction_steps:
@@ -2215,11 +2338,7 @@ components:
         targeted_version:
           type: string
           maxLength: 200
-        logfile:
-          type: string
-          format: uri
-          nullable: true
-        date:
+        created_at:
           type: string
           format: date-time
           readOnly: true
@@ -2234,9 +2353,10 @@ components:
           nullable: true
           maxLength: 200
       required:
-      - date
+      - created_at
       - description
       - id
+      - reporter
       - targeted_version
     BugSeverityEnum:
       enum:
@@ -2808,6 +2928,13 @@ components:
         id:
           type: integer
           readOnly: true
+        logfile:
+          type: string
+          format: uri
+        reporter:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
         description:
           type: string
         reproduction_steps:
@@ -2816,11 +2943,7 @@ components:
         targeted_version:
           type: string
           maxLength: 200
-        logfile:
-          type: string
-          format: uri
-          nullable: true
-        date:
+        created_at:
           type: string
           format: date-time
           readOnly: true

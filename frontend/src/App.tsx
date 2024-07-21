@@ -45,6 +45,7 @@ import {Layout} from "./components/layout";
 import '@mantine/dates/styles.css';
 import {BugReporterProvider} from "./context/BugReporterProvider";
 import logSaver from "./logSaver";
+import BugList from "./pages/bugtracker/BugList";
 
 function App() {
 
@@ -185,6 +186,7 @@ function App() {
                                         <Route path=":id" element={<ContractShow />} />
                                         <Route path="create" element={<ContractCreate />} />
                                     </Route>
+                                    <Route path={"/buglist"} element={<BugList/>} />
                                     <Route path="*" element={<ErrorComponent />} />
                                 </Route>
 
