@@ -1,4 +1,4 @@
-import {Button, Group, Modal, Radio, RadioGroup, Select, Textarea} from "@mantine/core";
+import {Button, Group, Loader, Modal, Radio, RadioGroup, Select, Textarea} from "@mantine/core";
 import {useForm as useMantineForm} from "@mantine/form";
 import {useForm as useRefineForm} from "@refinedev/core";
 import {bugSeverityLabelMap, bugTypeLabelMap, vehicleTypeLabelMap, VERSION} from "../../constants";
@@ -68,7 +68,7 @@ const BugReporterModal = ({isBugModalOpen, setBugModalOpen}:{isBugModalOpen: boo
         ######## API FORM #######
         #########################
     */
-    const {onFinish} = useRefineForm<BugWritableFields>({
+    const {onFinish, formLoading} = useRefineForm<BugWritableFields>({
         resource: "bugtracker/bug",
         action: "create",
         redirect: false,
@@ -148,9 +148,8 @@ const BugReporterModal = ({isBugModalOpen, setBugModalOpen}:{isBugModalOpen: boo
                     </Group>
                 </RadioGroup>
 
-                <Button type="submit" style={{marginTop: 20,width:"100%"}}>Enregistrer</Button>
+                <Button type="submit" disabled={formLoading} style={{marginTop: 20,width:"100%"}}>{formLoading ? <Loader color="black" size="sm"/> :  "Enregistrer"}</Button>
             </form>
-
 
         </Modal>
     );

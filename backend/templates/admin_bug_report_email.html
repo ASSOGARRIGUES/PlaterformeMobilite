@@ -1,0 +1,18 @@
+{% autoescape off %}
+    Un nouveau bug a été signalé par {{ bug.reporter.first_name }} {{ bug.reporter.last_name }}.
+
+    Il s'agit d'un report de type {{ bug.type }}.
+
+    Description du bug :
+    {{ bug.description }}
+
+    Etapes de reproduction :
+    {{ bug.reproduction_steps }}
+
+    Sévérité du bug : {{ bug.severity }}
+
+    Version concernée : {{ bug.targeted_version }}
+
+    L'adresse email du rapporteur est : {{ bug.reporter.email }}
+
+{% endautoescape %}

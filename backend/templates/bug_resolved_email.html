@@ -1,0 +1,12 @@
+{% autoescape off %}
+    Bonjour {{ user.first_name }},
+    Le bug que vous avez signalé le {{ bug.created_at }} a été résolu dans la version v.{{ bug.resolve_version }}.
+    Pour rappel, ce bug portait sûr:
+    {{ bug.description }}
+
+    Si la version actuelle du logiciel n'est pas encore la v.{{ bug.resolve_version }}, cette dernière devrait être automatiquement déployée dans les prochaines heures.
+    Si le bug persiste après le déploiement de la version v.{{ bug.resolve_version }}, merci d'effectuer une nouvelle demande de support.
+
+    Bien à vous,
+    Le developpeur.
+{% endautoescape %}
