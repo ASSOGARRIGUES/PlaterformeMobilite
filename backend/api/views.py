@@ -172,7 +172,7 @@ class ContractViewSet(ArchivableModelViewSet):
     permission_classes = (permissions.DjangoModelPermissions,)
 
     filter_backends = [SearchFilter, OrderingFilter,DjangoFilterBackend]
-    search_fields = ['vehicle__brand', 'vehicle__modele', 'vehicle__fleet_id', 'beneficiary__first_name',
+    search_fields = ['id', 'vehicle__brand', 'vehicle__modele', 'vehicle__fleet_id', 'beneficiary__first_name',
                      'beneficiary__last_name', 'start_date', 'end_date', 'referent__first_name', 'referent__last_name']
     filterset_fields = {
         'beneficiary': ["in", "exact"],
