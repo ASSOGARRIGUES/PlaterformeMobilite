@@ -27,6 +27,7 @@ const DeleteButton = ({ resource, id, onDelete}: { resource: string, id:BaseKey,
             <ActionIcon
                 color="red"
                 radius="md"
+                variant="subtle"
                 onClick={() => {
                     openDeleteModal()
                 }}

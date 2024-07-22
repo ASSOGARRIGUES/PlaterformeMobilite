@@ -1,6 +1,6 @@
 import React from "react";
 import { useRouterContext, useRouterType, useLink } from "@refinedev/core";
-import { Center, Text, useMantineTheme } from "@mantine/core";
+import {Center, Text, useMantineColorScheme, useMantineTheme} from "@mantine/core";
 import type { RefineLayoutThemedTitleProps } from "@refinedev/mantine";
 
 const defaultText = "Refine Project";
@@ -38,6 +38,8 @@ export const ThemedTitleV2: React.FC<RefineLayoutThemedTitleProps> = ({
   const Link = useLink();
   const { Link: LegacyLink } = useRouterContext();
 
+  const {colorScheme} = useMantineColorScheme()
+
   const ActiveLink = routerType === "legacy" ? LegacyLink : Link;
 
   return (
@@ -55,14 +57,14 @@ export const ThemedTitleV2: React.FC<RefineLayoutThemedTitleProps> = ({
         <Text
           lh={0}
           fz="inherit"
-          color={theme.colorScheme === "dark" ? "brand.5" : "brand.6"}
+          c={colorScheme === "dark" ? "brand.5" : "brand.6"}
         >
           {icon}
         </Text>
         {!collapsed && (
           <Text
             fz="inherit"
-            color={theme.colorScheme === "dark" ? "white" : "black"}
+            c={colorScheme === "dark" ? "white" : "black"}
           >
             {text}
           </Text>

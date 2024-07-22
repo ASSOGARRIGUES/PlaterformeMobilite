@@ -1,48 +1,61 @@
-import React from "react";
+import React, {useEffect} from "react";
 import { ThemedLayoutContextProvider } from "@refinedev/mantine";
-import { ThemedHeaderV2 as DefaultHeader } from "./header";
-import { ThemedSiderV2 as DefaultSider } from "./sider";
-import { Box } from "@mantine/core";
+import Header from "./header";
+import {AppShell, Box, px, rem, useMantineTheme} from "@mantine/core";
 import type { RefineThemedLayoutV2Props } from "@refinedev/mantine";
+import NavBar from "./sider";
+import {useThemedLayoutContext} from "@refinedev/mantine";
+import {useHeadroom, useWindowScroll} from "@mantine/hooks";
 
-export const ThemedLayoutV2: React.FC<RefineThemedLayoutV2Props> = ({
-  Sider,
-  Header,
-  Title,
-  Footer,
-  OffLayoutArea,
-  initialSiderCollapsed,
-  children,
-}) => {
-  const SiderToRender = Sider ?? DefaultSider;
-  const HeaderToRender = Header ?? DefaultHeader;
+export const Layout: React.FC<RefineThemedLayoutV2Props> = ({
+                                                                Title,
+                                                                initialSiderCollapsed,
+                                                                children,
+                                                            }) => {
 
-  return (
-    <ThemedLayoutContextProvider initialSiderCollapsed={initialSiderCollapsed}>
-      <Box sx={{ display: "flex", height: "100%" }}>
-        <SiderToRender Title={Title} />
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            flex: 1,
-          }}
+    const { siderCollapsed, mobileSiderOpen, setMobileSiderOpen } =
+        useThemedLayoutContext();
+
+    // const theme = useMantineTheme()
+    //
+    // const [scroll, scrollTo] = useWindowScroll();
+    //
+    // useEffect(() => {
+    //     if(scroll.y===0) {
+    //         setTimeout(() => {
+    //             if(scroll.y===0) {
+    //                 scrollTo({y:headerHeight+Number(px(theme.spacing.md))})
+    //             }
+    //         }, 5000);
+    //     }
+    //
+    // }, [scroll]);
+
+    const navBarWidth = siderCollapsed ? 80 : 200;
+
+    const headerHeight = 52;
+
+    const pinned = useHeadroom({fixedAt:headerHeight})
+
+    return (
+        <AppShell
+            layout="alt"
+            header={{height:52, collapsed: !pinned, offset: false}}
+            navbar={{width:navBarWidth, breakpoint:"md", collapsed:{mobile:!mobileSiderOpen}}}
         >
-          <HeaderToRender />
-          <Box
-            component="main"
-            sx={(theme) => ({
-              padding: theme.spacing.sm,
-                flex: "auto",
-                minHeight: 0,
-            })}
-          >
-            {children}
-          </Box>
-          {Footer && <Footer />}
-        </Box>
-        {OffLayoutArea && <OffLayoutArea />}
-      </Box>
-    </ThemedLayoutContextProvider>
-  );
+            <Header />
+            <NavBar Title={Title} />
+
+            <AppShell.Main
+                pt = {`calc(${rem(headerHeight)} + var(--mantine-spacing-md))`}
+                style={{backgroundColor: "var(--mantine-color-scheme-dark)", height: "100vh"}}
+            >
+                <div style={{paddingRight: 8, paddingLeft: 8, height:"100%"}}>
+                    {children}
+                </div>
+
+            </AppShell.Main>
+
+        </AppShell>
+    );
 };

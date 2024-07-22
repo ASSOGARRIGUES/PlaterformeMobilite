@@ -1,7 +1,6 @@
 import {List} from "@refinedev/mantine";
-import {Group} from "@mantine/core";
+import {Group, useMantineTheme} from "@mantine/core";
 import {useMemo} from "react";
-import {DataTableColumn} from "mantine-datatable/dist/types/DataTableColumn";
 import ContractModal from "../../components/contract/ContractModal";
 import {CompleteContract} from "../../types/contract";
 import {Vehicle} from "../../types/vehicle";
@@ -21,8 +20,13 @@ import {humanizeDate, humanizeFirstName} from "../../constants";
 import ContractSearchTooltip from "../../components/contract/ContractSearchTooltip";
 import ContractNewPaymentButton from "../../components/contract/ContractNewPaymentButton";
 import {useGo} from "@refinedev/core";
+import {DataTableColumn} from "mantine-datatable";
+import {useMediaQuery} from "@mantine/hooks";
 
 const ContractList = () => {
+
+    const theme = useMantineTheme();
+    const smallerThanMd = useMediaQuery(`(max-width: ${theme.breakpoints.md})`);
 
     const go = useGo();
 
@@ -39,16 +43,7 @@ const ContractList = () => {
                 title: "ID",
                 sortable: true,
                 width: 80,
-            },
-            {
-                accessor: 'vehicle', //access nested data with dot notation
-                title: 'Véhicule',
-                sortable: true,
-                render: (contract) => {
-                    const vehicle = contract.vehicle as Vehicle
-                    return vehicle.hasOwnProperty("id") ? <VehicleBadge vehicle={vehicle}/> : "Loading..."
-                }
-
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
             },
             {
                 accessor: 'beneficiary',
@@ -56,20 +51,32 @@ const ContractList = () => {
                 sortable: true,
                 render: (contract) => {
                     const beneficiary = contract.beneficiary as Beneficiary
-                    return beneficiary.hasOwnProperty("id") ? <BeneficiaryBadge beneficiary={beneficiary}/> : "Loading..."
+                    return beneficiary.hasOwnProperty("id") ? <BeneficiaryBadge beneficiary={beneficiary} noLink/> : "Loading..."
                 }
             },
             {
-                accessor: 'start_date', //normal accessorKey
+                accessor: 'vehicle',
+                title: 'Véhicule',
+                sortable: true,
+                render: (contract) => {
+                    const vehicle = contract.vehicle as Vehicle
+                    return vehicle.hasOwnProperty("id") ? <VehicleBadge vehicle={vehicle} noColor={smallerThanMd} noLink/> : "Loading..."
+                }
+
+            },
+            {
+                accessor: 'start_date',
                 title: 'Début',
                 sortable: true,
                 render: (contract) => (humanizeDate(contract.start_date)),
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
             },
             {
                 accessor: 'end_date',
                 title: 'Fin',
                 sortable: true,
                 render: (contract) => (humanizeDate(contract.end_date)),
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
             },
             {
                 accessor: "status",
@@ -84,7 +91,8 @@ const ContractList = () => {
                 sortable: true,
                 render: (contract) => {
                     return contract.referent?.hasOwnProperty("id") ? humanizeFirstName(contract.referent.first_name)+" "+contract.referent.last_name?.substring(0,1).toUpperCase()+"."  : "---"
-                }
+                },
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
             },
             {
                 accessor: "action",
@@ -99,6 +107,7 @@ const ContractList = () => {
                         </Group>
                     );
                 },
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
             }
         ],
         [],
@@ -110,7 +119,7 @@ const ContractList = () => {
             <ContractModal {...editModalForm}/>
             <EndContractModal {...endModalForm}/>
 
-            <List title="" wrapperProps={{children: undefined, style:{height:"100%", display:"flex", flexDirection:"column"}}} contentProps={{style:{flex:"auto", minHeight:0}}} canCreate={false}>
+            <List title="" wrapperProps={{children: undefined, style:{height:(smallerThanMd ? "100vh" : "100%"), display:"flex", flexDirection:"column"}}} contentProps={{style:{flex:"auto", minHeight:0}}} canCreate={false}>
                 <ContractTable
                     searchPlaceHolder={"Rechercher un contrat"}
                     columns={columns}

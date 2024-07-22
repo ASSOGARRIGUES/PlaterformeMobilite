@@ -23,7 +23,7 @@ const BeneficiaryCard = ({beneficiary, withEdit = false, withName = false, title
 
     const content = (
         <Group align="start">
-            <Stack spacing={0}>
+            <Stack gap={0}>
                 {withName &&
                     <>
                         <div><span style={{fontWeight: "bold"}}>Nom:</span> {beneficiary?.last_name}</div>
@@ -40,7 +40,7 @@ const BeneficiaryCard = ({beneficiary, withEdit = false, withName = false, title
 
                 </Flex>
             </Stack>
-            <Stack spacing={0}>
+            <Stack gap={0}>
                 <div><span style={{fontWeight: "bold"}}>Email:</span> <a href={`mailto:${beneficiary?.email}`}>{beneficiary?.email}</a></div>
                 <div><span style={{fontWeight: "bold"}}>Téléphone:</span> <a href={`tel:${beneficiary?.phone}`}>{beneficiary?.phone}</a></div>
                 <div><span style={{fontWeight: "bold"}}>Numéro de permis:</span> {beneficiary?.license_number!=="" ? beneficiary?.license_number : "pas de permis"}</div>

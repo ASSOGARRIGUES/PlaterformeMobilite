@@ -43,7 +43,10 @@ const ContractCard = ({contract, withEdit=false, style}: {contract: CompleteCont
         <Group align="start">
             <SimpleGrid cols={2} verticalSpacing={1}>
                 <Text><span style={{fontWeight: "bold"}}>Numéro contrat: </span> {contract.id }</Text>
-                <Text><span style={{fontWeight: "bold"}}>Status: </span> {<ContractStatusBadge contract={contract}/> }</Text>
+                <Flex align="center" gap="xs">
+                    <Text fw={700}>Status:</Text>
+                    <ContractStatusBadge contract={contract}/>
+                </Flex>
                 <Text><span style={{fontWeight: "bold"}}>Créé le: </span> {humanizeDate(contract.created_at)} </Text>
                 <Text><span style={{fontWeight: "bold"}}>Par: </span> { contract.created_by?.first_name && contract.created_by?.last_name ? humanizeFirstName(contract.created_by.first_name)+" "+contract.created_by.last_name.substring(1,0).toUpperCase()+"." : "--"} </Text>
                 <Text><span style={{fontWeight: "bold"}}>Début: </span> {humanizeDate(contract.start_date)} </Text>

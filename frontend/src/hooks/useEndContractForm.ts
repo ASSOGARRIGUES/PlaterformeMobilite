@@ -83,6 +83,7 @@ const useEndContractForm = (): UseEndContractFormType => {
 
     useEffect(() => {
         if(data) {
+            if(data.end_kilometer==undefined) data.end_kilometer = 0;
             form.setValues(data);
         }
     }, [data]);

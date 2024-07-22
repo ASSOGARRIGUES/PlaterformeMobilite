@@ -1,7 +1,6 @@
 import {Contract, Payment} from "../../types/contract";
 import SearchableDataTable from "../SearchableDataTable";
 import {useMemo} from "react";
-import {DataTableColumn} from "mantine-datatable/dist/types/DataTableColumn";
 import {humanizeDate, humanizeNumber, paymentModeLabelMap} from "../../constants";
 import {Group, Stack} from "@mantine/core";
 import {PaymentModeEnum} from "../../types/schema.d";
@@ -11,6 +10,7 @@ import PaymentModal from "./PaymentModal";
 import EditButton from "../EditButton";
 import DeleteButton from "../DeleteButton";
 import {useQueryClient} from "@tanstack/react-query";
+import {DataTableColumn} from "mantine-datatable";
 
 const PaymentTable = ({contract}: {contract: Contract}) => {
 
@@ -28,7 +28,7 @@ const PaymentTable = ({contract}: {contract: Contract}) => {
 
     const paymentModeRenderer = (payment: Payment) => {
         return (
-            <Stack spacing={0}>
+            <Stack gap={0}>
                 <span><b>{paymentModeLabelMap[payment.mode]}</b></span>
                 {payment.mode === PaymentModeEnum.check && (
                     <span>n° de chèque: <b>{payment.check_number}</b></span>
@@ -39,7 +39,7 @@ const PaymentTable = ({contract}: {contract: Contract}) => {
 
     const paymentActionRenderer = (payment: Payment) => {
         return (
-            <Group spacing={3}>
+            <Group gap={3}>
                 <PaymentPDFButton contract={contract} payment={payment}/>
                 {payment.editable && <EditButton record={payment} showEditModal={showEditModal}/>}
                 {payment.editable && <DeleteButton resource={`contract/${contract.id}/payment`} id={payment.id} onDelete={invalidateSummary}/>}

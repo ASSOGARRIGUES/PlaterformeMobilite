@@ -21,7 +21,7 @@ const ContractNewPaymentButton = ({contract, variant="icon"}: {contract: Contrac
                 variant="light"
                 size="md"
                 radius="md"
-                leftIcon={<IconCoins size={18} />}
+                leftSection={<IconCoins size={18} />}
                 disabled={disabled}
                 onClick={(e) => {
                     e.stopPropagation();
@@ -34,6 +34,7 @@ const ContractNewPaymentButton = ({contract, variant="icon"}: {contract: Contrac
     }else{
         content = (
             <ActionIcon
+                variant="subtle"
                 style={{width:"100%"}}
                 color="blue"
                 disabled={disabled}

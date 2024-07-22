@@ -1,10 +1,9 @@
 import {Vehicle} from "../../types/vehicle";
-import {CSSProperties, useEffect, useState} from "react";
-import {Button, Loader, useMantineTheme} from "@mantine/core";
+import {useEffect, useState} from "react";
+import {Button, ButtonProps, Loader, useMantineTheme} from "@mantine/core";
 import {VehicleStatusEnum} from "../../types/schema.d";
 import {useUpdate} from "@refinedev/core";
-import {useDebouncedValue, useTimeout} from "@mantine/hooks";
-import {ButtonProps} from "@mantine/core/lib/Button/Button";
+import {useTimeout} from "@mantine/hooks";
 
 const QuickStatusButton = ({ vehicle, disabled: disabledProps, ...otherProps}: {vehicle: Vehicle | undefined} & ButtonProps) => {
 

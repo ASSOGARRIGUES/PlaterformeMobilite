@@ -1,8 +1,6 @@
-import {useForm as useRefineForm, BaseKey, useUpdate, useApiUrl, useCustom} from "@refinedev/core";
-import {Button, Loader} from "@mantine/core";
+import {BaseKey, useUpdate, useApiUrl} from "@refinedev/core";
+import {Button, ButtonProps, Loader} from "@mantine/core";
 import {closeAllModals, openConfirmModal, openModal} from "@mantine/modals";
-import {CSSProperties, ReactNode, useEffect} from "react";
-import {ButtonProps} from "@mantine/core/lib/Button/Button";
 import {axiosInstance} from "../providers/rest-data-provider/utils";
 import ContractBadge from "./contract/ContractBadge";
 

@@ -1,10 +1,10 @@
-import {Loader, Select} from "@mantine/core"
+import {Loader, Select, SelectProps} from "@mantine/core"
 import {CrudFilters, useList} from "@refinedev/core";
 import {humanizeFirstName, humanizeLastName} from "../../constants";
 import React, {useState} from "react";
-import {SelectProps} from "@mantine/core/lib/Select/Select";
 import {useDebouncedValue} from "@mantine/hooks";
 import {User} from "../../types/auth";
+import {ComboboxItem} from "@mantine/core/lib/components/Combobox";
 
 
 const ReferentSelect = ({ value, onChange, filters, onChangeCompleteReferent, ...otherProps }: Omit<SelectProps, "data"> & {filters?:CrudFilters, onChangeCompleteReferent?:(referent: User)=>any}) => {
@@ -32,8 +32,8 @@ const ReferentSelect = ({ value, onChange, filters, onChangeCompleteReferent, ..
         label: humanizeFirstName(referent.first_name)+" "+humanizeLastName(referent.last_name),
     })) || []
 
-    const onChangeHandler = (value: string) => {
-        if(onChange) onChange(value)
+    const onChangeHandler = (value: string | null, option: ComboboxItem) => {
+        if(onChange) onChange(value, option)
         const referent = data?.data.find((referent) => referent.id.toString() === value)
         if(referent && onChangeCompleteReferent) onChangeCompleteReferent(referent)
     }

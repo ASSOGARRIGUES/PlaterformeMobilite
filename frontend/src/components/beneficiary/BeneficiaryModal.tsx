@@ -3,7 +3,7 @@ import React, {useEffect} from "react";
 import {BaseRecord, HttpError} from "@refinedev/core";
 import {BeneficiaryWritableFields} from "../../types/beneficiary";
 import {Box, Group, LoadingOverlay, Modal, TextInput} from "@mantine/core";
-import {DatePicker} from "@mantine/dates";
+import {DateInput, DateValue} from "@mantine/dates";
 import dayjs from "dayjs";
 
 
@@ -28,7 +28,7 @@ const BeneficiaryModal: React.FC<
         setLicenseDeliveryDate(licenseDeliveryDateInputProps.value ? new Date(licenseDeliveryDateInputProps.value) : null);
     }, [licenseDeliveryDateInputProps.value, visible]);
 
-    const handleLicenseDeliveryDateChange = (date: Date) => {
+    const handleLicenseDeliveryDateChange = (date: DateValue) => {
         setLicenseDeliveryDate(date);
         if(!date) return licenseDeliveryDateInputProps.onChange(undefined);
         licenseDeliveryDateInputProps.onChange(dayjs((date)).format("YYYY-MM-DD"));
@@ -36,7 +36,7 @@ const BeneficiaryModal: React.FC<
 
     return (
         <Modal opened={visible} onClose={close} title={title}>
-             <LoadingOverlay visible={refineCore.formLoading} overlayBlur={2} />
+             <LoadingOverlay visible={refineCore.formLoading} overlayProps={{blur:2}} />
             <TextInput label="Prénom" {...getInputProps("first_name")} error={errors.first_name} withAsterisk/>
             <TextInput label="Nom" {...getInputProps("last_name")} error={errors.last_name} withAsterisk/>
             <TextInput label="Adresse" {...getInputProps("address")} error={errors.address} withAsterisk/>
@@ -51,9 +51,9 @@ const BeneficiaryModal: React.FC<
             <TextInput label="Téléphone" {...getInputProps("phone")} error={errors.phone} withAsterisk/>
             <Group grow>
                 <TextInput label="Numéro de permis" {...getInputProps("license_number")} error={errors.license_number} />
-                <DatePicker locale="fr" inputFormat="DD/MM/YYYY" allowFreeInput placeholder="Date de délivrance " label="Délivré le" value={licenseDeliveryDate} onChange={handleLicenseDeliveryDateChange} error={errors.license_delivery_date}/>
+                <DateInput locale="fr" valueFormat="DD/MM/YYYY" placeholder="Date de délivrance " label="Délivré le" value={licenseDeliveryDate} onChange={handleLicenseDeliveryDateChange} error={errors.license_delivery_date}/>
             </Group>
-            <Box mt={8} sx={{ display: "flex", justifyContent: "flex-end" }}>
+            <Box mt={8} style={{ display: "flex", justifyContent: "flex-end" }}>
                 <SaveButton {...saveButtonProps} />
             </Box>
         </Modal>

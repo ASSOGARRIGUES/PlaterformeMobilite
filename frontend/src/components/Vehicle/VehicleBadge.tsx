@@ -2,7 +2,7 @@ import {Vehicle} from "../../types/vehicle";
 import {useGetToPath, useGo, useResource} from "@refinedev/core";
 import {Anchor} from "@mantine/core";
 
-const vehicleBadge = ({vehicle, noLink}: {vehicle: Vehicle | undefined, noLink?: boolean}) => {
+const vehicleBadge = ({vehicle, noLink, noColor}: {vehicle: Vehicle | undefined, noLink?: boolean, noColor?:boolean}) => {
     const go = useGo();
     const getToPath = useGetToPath();
     const { select } = useResource();
@@ -20,7 +20,7 @@ const vehicleBadge = ({vehicle, noLink}: {vehicle: Vehicle | undefined, noLink?:
     }
 
     const content =(
-        <span> {vehicle?.fleet_id} - {vehicle?.brand} {vehicle?.modele} {vehicle?.color ?? ""} </span>
+        <span> {vehicle?.fleet_id} - {vehicle?.brand} {vehicle?.modele} {!noColor && (vehicle?.color ?? "")} </span>
     )
 
     if(noLink){
@@ -28,7 +28,7 @@ const vehicleBadge = ({vehicle, noLink}: {vehicle: Vehicle | undefined, noLink?:
     }
 
     return (
-        <Anchor onClick={(e) => {e.stopPropagation(); click(e)}}>
+        <Anchor onClick={(e) => {e.stopPropagation(); click(e)}} inherit>
             {content}
         </Anchor>
     );

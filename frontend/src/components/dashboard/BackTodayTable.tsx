@@ -1,19 +1,15 @@
 import SearchableDataTable from "../SearchableDataTable";
 import {useMemo} from "react";
-import {DataTableColumn} from "mantine-datatable/dist/types/DataTableColumn";
 import {CompleteContract} from "../../types/contract";
 import {Vehicle} from "../../types/vehicle";
 import VehicleBadge from "../Vehicle/VehicleBadge";
 import {Beneficiary} from "../../types/beneficiary";
 import BeneficiaryBadge from "../beneficiary/BeneficiaryBadge";
 import ContractStatusBadge from "../contract/ContractStatusBadge";
-import {Group} from "@mantine/core";
-import EditButton from "../EditButton";
-import OnePDFButton from "../contract/OnePDFButton";
-import ContractExtraActionMenu from "../contract/ContractExtraActionMenu";
 import ContractTable from "../contract/ContractTable";
 import {WhoAmI} from "../../types/auth";
 import {CrudFilter} from "@refinedev/core";
+import {DataTableColumn} from "mantine-datatable";
 
 const BackTodayTable = ({onlyForUser}: {onlyForUser?: WhoAmI} ) => {
     const columns = useMemo<DataTableColumn<CompleteContract>[]>(

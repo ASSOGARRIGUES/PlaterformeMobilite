@@ -4,19 +4,18 @@ import {
     TextInput,
     Group,
     ActionIcon,
-    MantineNumberSize,
-    GroupPosition,
     Tooltip,
-    MediaQuery, useMantineTheme, Switch
+    useMantineTheme, Switch
 } from "@mantine/core";
 import {IconCirclePlus, IconInfoCircle, IconRefresh, IconSearch} from "@tabler/icons-react";
-import {DataTable, DataTableSortStatus} from "mantine-datatable";
+import {DataTable, DataTableColumn, DataTableProps, DataTableSortStatus} from "mantine-datatable";
 import React, {CSSProperties, useEffect, useState} from "react";
-import {DataTableColumn} from "mantine-datatable/dist/types/DataTableColumn";
-import {DataTableProps} from "mantine-datatable/dist/types";
 import {BaseRecord, CrudFilters, HttpError, useParsed, useTable} from "@refinedev/core";
 import {PAGE_SIZE} from "../constants";
-import {useDebouncedValue, useToggle} from "@mantine/hooks";
+import {useDebouncedValue, useMediaQuery, useToggle} from "@mantine/hooks";
+import {MantineSpacing} from "@mantine/core/lib/core";
+import {GroupProps} from "@mantine/core/lib/components/Group/Group";
+
 
 /*
 Ce composant donne une datable triable avec un champ de recherche et la logique de tri intégré.
@@ -43,8 +42,8 @@ type SearchableDataTableProps<T> = {
     defaultSortedColumn?: keyof T,
     defaultSortedDirection?: "asc" | "desc";
     styles?: any,
-    elementSpacing?: MantineNumberSize;
-    searchBarPosition?: GroupPosition;
+    elementSpacing?: MantineSpacing;
+    searchBarPosition?: GroupProps["justify"];
     withAddIcon?: boolean,
     withReloadIcon?: boolean,
     addCallback?: ()=>void,
@@ -59,8 +58,7 @@ type SearchableDataTableProps<T> = {
     resource?: string;
     defaultArchived?: boolean;
     withArchivedSwitch?: boolean;
-    othersProps?: DataTableProps<T>
-}
+} & DataTableProps<T>
 
 function SearchableDataTable<T extends BaseRecord>({
                                                        searchPlaceHolder,
@@ -68,7 +66,7 @@ function SearchableDataTable<T extends BaseRecord>({
                                                        defaultSortedColumn,
                                                        styles,
                                                        elementSpacing="xs",
-                                                       searchBarPosition = "apart",
+                                                       searchBarPosition = "space-between",
                                                        withAddIcon,
                                                        withReloadIcon,
                                                        addCallback,
@@ -93,6 +91,7 @@ function SearchableDataTable<T extends BaseRecord>({
     });
 
     const theme = useMantineTheme();
+    const smallerThanMd = useMediaQuery(`(max-width: ${theme.breakpoints.md})`);
 
 
     const {params: urlParams} = useParsed()
@@ -102,7 +101,7 @@ function SearchableDataTable<T extends BaseRecord>({
     const [debouncedSearch] = useDebouncedValue(search, 200, { leading: true });
 
     const urlArchived = urlParams?.filters?.find((filter: any) => filter.field === "archived")?.value // Retrieve archived filter from url
-       const [showArchived, setShowArchived] = useState<false | true>(urlArchived!==undefined ? urlArchived==="1" : false);
+    const [showArchived, setShowArchived] = useState<false | true>(urlArchived!==undefined ? urlArchived==="1" : false);
 
     useEffect(() => {
         if(defaultArchived===undefined) return
@@ -152,32 +151,29 @@ function SearchableDataTable<T extends BaseRecord>({
         tableQueryResult.refetch()
     }
 
-
     return (
-        <Stack spacing={elementSpacing} style={{ height: "100%", width:"100%", ...style}}>
+        <Stack gap={elementSpacing} style={{ height: "100%", width:"100%", ...style}}>
             {(withAddIcon || withReloadIcon || extraButtons || !withoutSearch) && (
                 <Group
-                    spacing="xs"
-                    position={searchBarPosition}
+                    gap="xs"
+                    justify={searchBarPosition}
                     style={{justifyContent: withoutSearch? "end":undefined, ...styles?.searchBar}}
                 >
                     {/* Ajout du champ de recherche si withoutSearch n'est pas défini*/}
                     {!withoutSearch && (
-                        <Group style={{flex: "auto", maxWidth:"40em",}} spacing="xs">
+                        <Group style={{flex: "1 2 auto", maxWidth:"40em"}} gap="xs">
                             <TextInput
                                 placeholder={searchPlaceHolder}
-                                icon={<IconSearch size={14} stroke={1.5} />}
+                                leftSection={<IconSearch size={14} stroke={1.5} />}
                                 style={{flex: "auto", maxWidth:"35em", ...styles?.input}}
                                 value={search}
                                 onChange={(event) => setSearch(event.currentTarget.value)}
                             />
 
                             {searchInfoTooltip && (
-                                <MediaQuery smallerThan="md" styles={{display:"none"}}>
-                                    <Tooltip label={searchInfoTooltip}>
-                                        <IconInfoCircle color={theme.colors.blue[6]} />
-                                    </Tooltip>
-                                </MediaQuery>
+                                <Tooltip label={searchInfoTooltip} position="bottom">
+                                    <IconInfoCircle className={"mantine-visible-from-md"} color={theme.colors.blue[6]} />
+                                </Tooltip>
                             )}
                         </Group>
                     )}
@@ -191,6 +187,7 @@ function SearchableDataTable<T extends BaseRecord>({
                             {extraButtons}
                             {withArchivedSwitch && (
                                 <Switch
+                                    visibleFrom="md"
                                     label="Archives"
                                     checked={showArchived}
                                     onChange={(event) => setShowArchived(!showArchived)}
@@ -199,7 +196,7 @@ function SearchableDataTable<T extends BaseRecord>({
 
                             {withAddIcon && (
                                 <Tooltip label={"Nouveau"} position={"bottom"} openDelay={200} >
-                                    <ActionIcon  style={{flex:"initial"}} size={33} color = "green" onClick={()=>addCallback ? addCallback() : ""}>
+                                    <ActionIcon  style={{flex:"initial"}} size={35} variant="subtle" radius="lg" color = "green" onClick={()=>addCallback ? addCallback() : ""}>
                                         <IconCirclePlus size={33}/>
                                     </ActionIcon>
                                 </Tooltip>
@@ -207,7 +204,7 @@ function SearchableDataTable<T extends BaseRecord>({
 
                             {withReloadIcon && (
                                 <Tooltip label={"Rafraichir"} position={"bottom"} openDelay={200} >
-                                    <ActionIcon style={{flex:"initial"}} size={33} color = "blue" onClick={()=>reloadCallback()}>
+                                    <ActionIcon style={{flex:"initial"}} size={35} variant="subtle" radius="lg" color = "blue" onClick={()=>reloadCallback()}>
                                         <IconRefresh size={33}/>
                                     </ActionIcon>
                                 </Tooltip>
@@ -239,6 +236,9 @@ function SearchableDataTable<T extends BaseRecord>({
                     page={currentPage}
                     onPageChange={setCurrentPage}
                     recordsPerPage={apiPageSize}
+
+                    paginationText={smallerThanMd ? ({from, to, totalRecords}) => <></> : undefined}
+                    paginationSize={smallerThanMd ? "xs" : undefined}
 
                     style = {styles?.datatable}
 

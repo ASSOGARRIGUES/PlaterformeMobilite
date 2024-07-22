@@ -31,7 +31,7 @@ const VehicleModal: React.FC<
 
     return (
         <Modal opened={visible} onClose={close} title={title} size="lg">
-            <LoadingOverlay visible={refineCore.formLoading} overlayBlur={2} />
+            <LoadingOverlay visible={refineCore.formLoading} overlayProps={{blur:2}} />
 
             {/*<FileInput label="Photo" {...getInputProps("photo")} error={errors.photo} />*/}
             <AvatarUpload {...getInputProps("photo")}/>
@@ -59,7 +59,7 @@ const VehicleModal: React.FC<
             </Group>
 
             <NumberInput label="Kilometrage" {...getInputProps("kilometer")} error={errors.kilometer} />
-            <Box mt={8} sx={{ display: "flex", justifyContent: "flex-end" }}>
+            <Box mt={8} style={{ display: "flex", justifyContent: "flex-end" }}>
                 <SaveButton {...saveButtonProps} />
             </Box>
         </Modal>

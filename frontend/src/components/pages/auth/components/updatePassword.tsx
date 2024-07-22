@@ -23,7 +23,7 @@ import {
   Button,
   BoxProps,
   CardProps,
-  useMantineTheme,
+  useMantineTheme, useMantineColorScheme,
 } from "@mantine/core";
 
 type UpdatePassworProps = UpdatePasswordPageProps<
@@ -44,6 +44,7 @@ export const UpdatePasswordPage: React.FC<UpdatePassworProps> = ({
   title,
 }) => {
   const theme = useMantineTheme();
+  const {colorScheme} = useMantineColorScheme();
   const { useForm, FormProvider } = FormContext;
   const { onSubmit: onSubmitProp, ...useFormProps } = formProps || {};
   const translate = useTranslate();
@@ -84,7 +85,7 @@ export const UpdatePasswordPage: React.FC<UpdatePassworProps> = ({
     <Card style={cardStyles} {...(contentProps ?? {})}>
       <Title
         style={titleStyles}
-        color={theme.colorScheme === "dark" ? "brand.5" : "brand.8"}
+        c={colorScheme === "dark" ? "brand.5" : "brand.8"}
       >
         {translate("pages.updatePassword.title", "Set New Password")}
       </Title>

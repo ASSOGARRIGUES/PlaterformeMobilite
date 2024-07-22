@@ -1,32 +1,29 @@
-import {CompleteContract, ContractWritableFields} from "../../types/contract";
-import {BlankEnum, ContractStatusEnum, PaymentModeEnum, ReasonEnum} from "../../types/schema.d";
-import {FormErrors, FormValidateInput} from "@mantine/form/lib/types";
-import {Create, useSelect, useStepsForm} from "@refinedev/mantine";
+import {ContractWritableFields} from "../../types/contract";
+import {BlankEnum, PaymentModeEnum, ReasonEnum} from "../../types/schema.d";
+import {FormErrors} from "@mantine/form/lib/types";
+import {Create, useStepsForm} from "@refinedev/mantine";
 import {
     Button, Center, Flex,
     Group,
-    Loader,
     NumberInput,
     Paper,
     Select,
     SimpleGrid,
     Stack,
     Stepper,
-    Text,
+    Text, TextInput,
     Title
 } from "@mantine/core";
 import {SaveButton} from "../../components/SaveButton";
 import React, {useEffect, useState} from "react";
-import {CrudFilters, useGetIdentity} from "@refinedev/core";
+import { useGetIdentity} from "@refinedev/core";
 import {
     contractReasonLabelMap,
-    DEBOUNCE_TIME,
     humanizeDate,
     humanizeFirstName,
     humanizeNumber,
     paymentModeLabelMap
 } from "../../constants";
-import {DateRangePicker, DateRangePickerValue} from "@mantine/dates";
 import dayjs from "dayjs";
 import BeneficiarySelect from "../../components/beneficiary/BeneficiarySelect";
 import VehicleSelect from "../../components/Vehicle/VehicleSelect";
@@ -36,10 +33,9 @@ import {Vehicle} from "../../types/vehicle";
 import {User} from "../../types/auth";
 import BeneficiaryCard from "../../components/beneficiary/BeneficiaryCard";
 import VehicleCard from "../../components/Vehicle/VehicleCard";
-import ContractCard from "../../components/contract/ContractCard";
-import vehicleSelect from "../../components/Vehicle/VehicleSelect";
-import ContractStatusBadge from "../../components/contract/ContractStatusBadge";
 import {IconAlertTriangle} from "@tabler/icons-react";
+import {DatePickerInput} from "@mantine/dates";
+import {DatesRangeValue} from "@mantine/dates/lib/types/DatePickerValue";
 
 const ContractCreate = () => {
 
@@ -128,12 +124,15 @@ const ContractCreate = () => {
     const endDateInputProps = getInputProps("end_date");
 
 
-    const [dateValue, setDateValue] = React.useState<DateRangePickerValue>([new Date(startDateInputProps.value), new Date(endDateInputProps.value)]);
+    const [dateValue, setDateValue] = React.useState<DatesRangeValue>([new Date(startDateInputProps.value), new Date(endDateInputProps.value)]);
 
-    function handleDateChange(value: DateRangePickerValue) {
+    function handleDateChange(value: DatesRangeValue) {
         setDateValue(value);
-        startDateInputProps.onChange(dayjs(value[0]).format("YYYY-MM-DD"));
-        endDateInputProps.onChange(dayjs(value[1]).format("YYYY-MM-DD"));
+        const startDate = value[0] ? dayjs(value[0]).format("YYYY-MM-DD") : null;
+        const endDate = value[1] ? dayjs(value[1]).format("YYYY-MM-DD") : null;
+
+        startDateInputProps.onChange(startDate);
+        endDateInputProps.onChange(endDate);
     }
 
     const {value: beneficiaryObj, ...beneficiaryInputProps} = getInputProps("beneficiary");
@@ -179,7 +178,7 @@ const ContractCreate = () => {
         <Create
             title={<Title order={3}>Créer un contrat</Title>}
             footerButtons={
-                <Group position="right" mt="xl">
+                <Group gap="right" mt="xl">
                     {currentStep !== 0 && (
                         <Button variant="default" onClick={() => gotoStep(currentStep - 1)}>
                             Retour
@@ -194,7 +193,7 @@ const ContractCreate = () => {
             //wrapperProps={{style:{minHeight: "50vh"}, children:undefined}}
         >
 
-            <Stepper active={currentStep} onStepClick={gotoStep} breakpoint="xs" styles={{content: {maxWidth: currentStep !== 3 ? 800 : undefined, margin:"auto"}}}>
+            <Stepper active={currentStep} onStepClick={gotoStep}  styles={{content: {maxWidth: currentStep !== 3 ? 800 : undefined, margin:"auto"}}}>
                 <Stepper.Step
                     label="Cibles"
                     description="Bénéficiaire et véhicule"
@@ -215,7 +214,8 @@ const ContractCreate = () => {
                     description="Informations générales"
                     allowStepSelect={currentStep > 1}
                 >
-                    <DateRangePicker locale="fr" label="Période du contrat" inputFormat="DD MMMM YYYY" labelFormat="DD-MM-YYYY" value={dateValue} onChange={handleDateChange} error={errors.start_date} placeholder="Début" />
+                    {/*inputFormat="DD MMMM YYYY"*/}
+                    <DatePickerInput type="range" locale="fr" label="Période du contrat"  valueFormat="DD/MM/YYYY" value={dateValue} onChange={handleDateChange} error={errors.start_date} placeholder="Début" />
 
                     <NumberInput label="Prix du contrat" {...getInputProps("price")} error={errors.price} />
                     <NumberInput label="Remise" {...getInputProps("discount")} error={errors.discount} />
@@ -235,7 +235,7 @@ const ContractCreate = () => {
                     <NumberInput label="Caution" {...getInputProps("deposit")} error={errors.deposit} />
                     <Select label="Mode de paiement" {...getInputProps("depositPaymentMode")} error={errors.depositPaymentMode} data={paymentModeOptions} withAsterisk/>
                     {values.depositPaymentMode === PaymentModeEnum.check && (
-                        <NumberInput label="Numéro de chèque" {...getInputProps("deposit_check_number")} error={errors.deposit_check_number} />
+                        <TextInput label="Numéro de chèque" {...getInputProps("deposit_check_number")} error={errors.deposit_check_number} />
                     )}
 
                 </Stepper.Step>
