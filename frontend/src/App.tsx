@@ -46,6 +46,7 @@ import '@mantine/dates/styles.css';
 import {BugReporterProvider} from "./context/BugReporterProvider";
 import logSaver from "./logSaver";
 import BugList from "./pages/bugtracker/BugList";
+import ViewBroadcastModal from "./components/inappcom/ViewBroadcastModal";
 
 function App() {
 
@@ -204,6 +205,7 @@ function App() {
                                 </Route>
                             </Routes>
 
+                            <ViewBroadcastModal/>
                             {/*<UnsavedChangesNotifier />*/}
                             {/*<DocumentTitleHandler />*/}
                         </BugReporterProvider>
