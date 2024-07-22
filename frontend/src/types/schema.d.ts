@@ -104,6 +104,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/bugtracker/bug/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_bugtracker_bug_list"];
+        put?: never;
+        post: operations["api_bugtracker_bug_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bugtracker/bug/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_bugtracker_bug_retrieve"];
+        put: operations["api_bugtracker_bug_update"];
+        post?: never;
+        delete: operations["api_bugtracker_bug_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["api_bugtracker_bug_partial_update"];
+        trace?: never;
+    };
     "/api/contract/": {
         parameters: {
             query?: never;
@@ -514,6 +546,43 @@ export interface components {
         };
         /** @enum {unknown} */
         BlankEnum: BlankEnum;
+        Bug: {
+            readonly id: number;
+            /** Format: uri */
+            logfile?: string;
+            readonly reporter: components["schemas"]["User"];
+            description: string;
+            reproduction_steps?: string | null;
+            targeted_version: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            severity?: components["schemas"]["BugSeverityEnum"];
+            type?: components["schemas"]["BugTypeEnum"];
+            status?: components["schemas"]["BugStatusEnum"];
+            resolve_version?: string | null;
+        };
+        /**
+         * @description * `low` - Low
+         *     * `medium` - Medium
+         *     * `high` - High
+         *     * `critical` - Critical
+         * @enum {string}
+         */
+        BugSeverityEnum: BugSeverityEnum;
+        /**
+         * @description * `open` - Open
+         *     * `closed` - Closed
+         *     * `pending` - Pending
+         * @enum {string}
+         */
+        BugStatusEnum: BugStatusEnum;
+        /**
+         * @description * `bug` - Bug
+         *     * `feature` - Feature
+         *     * `suggestion` - Suggestions
+         * @enum {string}
+         */
+        BugTypeEnum: BugTypeEnum;
         Contract: {
             readonly id: number;
             start_kilometer?: number;
@@ -613,7 +682,7 @@ export interface components {
             /** Format: uri */
             photo?: string;
             parking?: number;
-            type?: components["schemas"]["TypeEnum"];
+            type?: components["schemas"]["VehicleTypeEnum"];
             transmission?: components["schemas"]["TransmissionEnum"];
             fuel_type?: components["schemas"]["FuelTypeEnum"];
             brand: string;
@@ -647,6 +716,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Beneficiary"][];
+        };
+        PaginatedBugList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["Bug"][];
         };
         PaginatedContractList: {
             /** @example 123 */
@@ -743,6 +827,21 @@ export interface components {
             postal_code?: string;
             archived?: boolean;
         };
+        PatchedBug: {
+            readonly id?: number;
+            /** Format: uri */
+            logfile?: string;
+            readonly reporter?: components["schemas"]["User"];
+            description?: string;
+            reproduction_steps?: string | null;
+            targeted_version?: string;
+            /** Format: date-time */
+            readonly created_at?: string;
+            severity?: components["schemas"]["BugSeverityEnum"];
+            type?: components["schemas"]["BugTypeEnum"];
+            status?: components["schemas"]["BugStatusEnum"];
+            resolve_version?: string | null;
+        };
         PatchedContract: {
             readonly id?: number;
             start_kilometer?: number;
@@ -819,7 +918,7 @@ export interface components {
             /** Format: uri */
             photo?: string;
             parking?: number;
-            type?: components["schemas"]["TypeEnum"];
+            type?: components["schemas"]["VehicleTypeEnum"];
             transmission?: components["schemas"]["TransmissionEnum"];
             fuel_type?: components["schemas"]["FuelTypeEnum"];
             brand?: string;
@@ -876,7 +975,7 @@ export interface components {
             /** Format: uri */
             photo?: string;
             readonly parking?: components["schemas"]["Parking"];
-            type?: components["schemas"]["TypeEnum"];
+            type?: components["schemas"]["VehicleTypeEnum"];
             transmission?: components["schemas"]["TransmissionEnum"];
             fuel_type?: components["schemas"]["FuelTypeEnum"];
             brand?: string;
@@ -941,12 +1040,6 @@ export interface components {
          * @enum {string}
          */
         TransmissionEnum: TransmissionEnum;
-        /**
-         * @description * `voiture` - Voiture
-         *     * `scouter` - Scooter
-         * @enum {string}
-         */
-        TypeEnum: TypeEnum;
         User: {
             readonly id: number;
             /**
@@ -969,7 +1062,7 @@ export interface components {
             /** Format: uri */
             photo?: string;
             readonly parking: components["schemas"]["Parking"];
-            type?: components["schemas"]["TypeEnum"];
+            type?: components["schemas"]["VehicleTypeEnum"];
             transmission?: components["schemas"]["TransmissionEnum"];
             fuel_type?: components["schemas"]["FuelTypeEnum"];
             brand: string;
@@ -994,6 +1087,12 @@ export interface components {
          * @enum {string}
          */
         VehicleStatusEnum: VehicleStatusEnum;
+        /**
+         * @description * `voiture` - Voiture
+         *     * `scouter` - Scooter
+         * @enum {string}
+         */
+        VehicleTypeEnum: VehicleTypeEnum;
     };
     responses: never;
     parameters: never;
@@ -1305,6 +1404,186 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Beneficiary"];
+                };
+            };
+        };
+    };
+    api_bugtracker_bug_list: {
+        parameters: {
+            query?: {
+                id?: number;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                id__in?: number[];
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                resolve_version?: string;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                resolve_version__in?: string[];
+                /** @description A search term. */
+                search?: string;
+                /** @description * `low` - Low
+                 *     * `medium` - Medium
+                 *     * `high` - High
+                 *     * `critical` - Critical */
+                severity?: PathsApiBugtrackerBugGetParametersQuerySeverity;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                severity__in?: string[];
+                /** @description * `open` - Open
+                 *     * `closed` - Closed
+                 *     * `pending` - Pending */
+                status?: PathsApiBugtrackerBugGetParametersQueryStatus;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                status__in?: string[];
+                targeted_version?: string;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                targeted_version__in?: string[];
+                /** @description * `bug` - Bug
+                 *     * `feature` - Feature
+                 *     * `suggestion` - Suggestions */
+                type?: PathsApiBugtrackerBugGetParametersQueryType;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                type__in?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedBugList"];
+                };
+            };
+        };
+    };
+    api_bugtracker_bug_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Bug"];
+                "application/x-www-form-urlencoded": components["schemas"]["Bug"];
+                "multipart/form-data": components["schemas"]["Bug"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Bug"];
+                };
+            };
+        };
+    };
+    api_bugtracker_bug_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this bug. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Bug"];
+                };
+            };
+        };
+    };
+    api_bugtracker_bug_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this bug. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Bug"];
+                "application/x-www-form-urlencoded": components["schemas"]["Bug"];
+                "multipart/form-data": components["schemas"]["Bug"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Bug"];
+                };
+            };
+        };
+    };
+    api_bugtracker_bug_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this bug. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_bugtracker_bug_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this bug. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedBug"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedBug"];
+                "multipart/form-data": components["schemas"]["PatchedBug"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Bug"];
                 };
             };
         };
@@ -2622,6 +2901,22 @@ export enum PathsApiSchemaGetParametersQueryLang {
     zh_hans = "zh-hans",
     zh_hant = "zh-hant"
 }
+export enum PathsApiBugtrackerBugGetParametersQuerySeverity {
+    critical = "critical",
+    high = "high",
+    low = "low",
+    medium = "medium"
+}
+export enum PathsApiBugtrackerBugGetParametersQueryStatus {
+    closed = "closed",
+    open = "open",
+    pending = "pending"
+}
+export enum PathsApiBugtrackerBugGetParametersQueryType {
+    bug = "bug",
+    feature = "feature",
+    suggestion = "suggestion"
+}
 export enum PathsApiContractGetParametersQueryStatus {
     over = "over",
     payed = "payed",
@@ -2640,6 +2935,22 @@ export enum PathsApiVehicleGetParametersQueryStatus__or {
 }
 export enum BlankEnum {
      ""
+}
+export enum BugSeverityEnum {
+    low = "low",
+    medium = "medium",
+    high = "high",
+    critical = "critical"
+}
+export enum BugStatusEnum {
+    open = "open",
+    closed = "closed",
+    pending = "pending"
+}
+export enum BugTypeEnum {
+    bug = "bug",
+    feature = "feature",
+    suggestion = "suggestion"
 }
 export enum ContractStatusEnum {
     waiting = "waiting",
@@ -2670,12 +2981,12 @@ export enum TransmissionEnum {
     manuelle = "manuelle",
     automatique = "automatique"
 }
-export enum TypeEnum {
-    voiture = "voiture",
-    scouter = "scouter"
-}
 export enum VehicleStatusEnum {
     available = "available",
     rented = "rented",
     maintenance = "maintenance"
+}
+export enum VehicleTypeEnum {
+    voiture = "voiture",
+    scouter = "scouter"
 }

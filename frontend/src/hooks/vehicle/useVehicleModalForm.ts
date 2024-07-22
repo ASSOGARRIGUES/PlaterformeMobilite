@@ -1,6 +1,6 @@
 import {BaseKey, FormAction, HttpError, RedirectAction, useList} from "@refinedev/core";
 import {Vehicle, VehicleTransformedFields, VehicleWritableFields} from "../../types/vehicle";
-import {FuelTypeEnum, TransmissionEnum, TypeEnum} from "../../types/schema.d";
+import {FuelTypeEnum, TransmissionEnum, VehicleTypeEnum} from "../../types/schema.d";
 import {useModalForm} from "@refinedev/mantine";
 import {FormValidateInput} from "@mantine/form/lib/types";
 import {BeneficiaryWritableFields} from "../../types/beneficiary";
@@ -12,7 +12,7 @@ const useVehicleModalForm = ({action, redirect=false}: {action: FormAction | und
 
     const initialValues: VehicleWritableFields = {
         photo: undefined,
-        type: TypeEnum.voiture,
+        type: VehicleTypeEnum.voiture,
         brand: "",
         color:"",
         modele: "",
@@ -86,7 +86,7 @@ const useVehicleModalForm = ({action, redirect=false}: {action: FormAction | und
         type: (value) => {
             if (!value) {
                 return "Le type est requis";
-            }else if(!Object.values(TypeEnum).includes(value)) {
+            }else if(!Object.values(VehicleTypeEnum).includes(value)) {
                 return "Le type n'est pas valide";
             }
         },

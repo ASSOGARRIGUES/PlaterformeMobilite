@@ -6,6 +6,8 @@ import type { RefineThemedLayoutV2Props } from "@refinedev/mantine";
 import NavBar from "./sider";
 import {useThemedLayoutContext} from "@refinedev/mantine";
 import {useHeadroom, useWindowScroll} from "@mantine/hooks";
+import {ErrorBoundary} from "react-error-boundary";
+import ErrorFallback from "../ErrorFallback";
 
 export const Layout: React.FC<RefineThemedLayoutV2Props> = ({
                                                                 Title,
@@ -50,9 +52,11 @@ export const Layout: React.FC<RefineThemedLayoutV2Props> = ({
                 pt = {`calc(${rem(headerHeight)} + var(--mantine-spacing-md))`}
                 style={{backgroundColor: "var(--mantine-color-scheme-dark)", height: "100vh"}}
             >
-                <div style={{paddingRight: 8, paddingLeft: 8, height:"100%"}}>
-                    {children}
-                </div>
+                <ErrorBoundary FallbackComponent={ErrorFallback}>
+                    <div style={{paddingRight: 8, paddingLeft: 8, height:"100%"}}>
+                        {children}
+                    </div>
+                </ErrorBoundary>
 
             </AppShell.Main>
 
