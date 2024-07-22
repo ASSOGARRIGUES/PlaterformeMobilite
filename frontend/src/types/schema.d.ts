@@ -24,6 +24,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/appcom/broadcast/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_appcom_broadcast_list"];
+        put?: never;
+        post: operations["api_appcom_broadcast_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/appcom/broadcast/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_appcom_broadcast_retrieve"];
+        put: operations["api_appcom_broadcast_update"];
+        post?: never;
+        delete: operations["api_appcom_broadcast_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["api_appcom_broadcast_partial_update"];
+        trace?: never;
+    };
     "/api/beneficiary/": {
         parameters: {
             query?: never;
@@ -546,6 +578,9 @@ export interface components {
         };
         /** @enum {unknown} */
         BlankEnum: BlankEnum;
+        BroadcastViewed: {
+            broadcast_id: number;
+        };
         Bug: {
             readonly id: number;
             /** Format: uri */
@@ -560,6 +595,7 @@ export interface components {
             type?: components["schemas"]["BugTypeEnum"];
             status?: components["schemas"]["BugStatusEnum"];
             resolve_version?: string | null;
+            reporter_have_been_notified?: boolean;
         };
         /**
          * @description * `low` - Low
@@ -646,6 +682,17 @@ export interface components {
          * @enum {string}
          */
         FuelTypeEnum: FuelTypeEnum;
+        InAppBroadcast: {
+            readonly id: number;
+            title: string;
+            body: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+            active?: boolean;
+            viewedBy?: number[];
+        };
         MutationContract: {
             readonly id: number;
             start_kilometer?: number;
@@ -747,6 +794,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["Contract"][];
         };
+        PaginatedInAppBroadcastList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["InAppBroadcast"][];
+        };
         PaginatedParkingList: {
             /** @example 123 */
             count: number;
@@ -827,6 +889,9 @@ export interface components {
             postal_code?: string;
             archived?: boolean;
         };
+        PatchedBroadcastViewed: {
+            broadcast_id?: number;
+        };
         PatchedBug: {
             readonly id?: number;
             /** Format: uri */
@@ -841,6 +906,7 @@ export interface components {
             type?: components["schemas"]["BugTypeEnum"];
             status?: components["schemas"]["BugStatusEnum"];
             resolve_version?: string | null;
+            reporter_have_been_notified?: boolean;
         };
         PatchedContract: {
             readonly id?: number;
@@ -1131,6 +1197,154 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    api_appcom_broadcast_list: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedInAppBroadcastList"];
+                };
+            };
+        };
+    };
+    api_appcom_broadcast_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastViewed"];
+                "application/x-www-form-urlencoded": components["schemas"]["BroadcastViewed"];
+                "multipart/form-data": components["schemas"]["BroadcastViewed"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastViewed"];
+                };
+            };
+        };
+    };
+    api_appcom_broadcast_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this in app broadcast. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastViewed"];
+                };
+            };
+        };
+    };
+    api_appcom_broadcast_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this in app broadcast. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastViewed"];
+                "application/x-www-form-urlencoded": components["schemas"]["BroadcastViewed"];
+                "multipart/form-data": components["schemas"]["BroadcastViewed"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastViewed"];
+                };
+            };
+        };
+    };
+    api_appcom_broadcast_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this in app broadcast. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_appcom_broadcast_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this in app broadcast. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedBroadcastViewed"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedBroadcastViewed"];
+                "multipart/form-data": components["schemas"]["PatchedBroadcastViewed"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadcastViewed"];
                 };
             };
         };

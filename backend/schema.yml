@@ -149,6 +149,164 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/appcom/broadcast/:
+    get:
+      operationId: api_appcom_broadcast_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInAppBroadcastList'
+          description: ''
+    post:
+      operationId: api_appcom_broadcast_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BroadcastViewed'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BroadcastViewed'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BroadcastViewed'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcastViewed'
+          description: ''
+  /api/appcom/broadcast/{id}/:
+    get:
+      operationId: api_appcom_broadcast_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this in app broadcast.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcastViewed'
+          description: ''
+    put:
+      operationId: api_appcom_broadcast_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this in app broadcast.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BroadcastViewed'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BroadcastViewed'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BroadcastViewed'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcastViewed'
+          description: ''
+    patch:
+      operationId: api_appcom_broadcast_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this in app broadcast.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBroadcastViewed'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBroadcastViewed'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBroadcastViewed'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcastViewed'
+          description: ''
+    delete:
+      operationId: api_appcom_broadcast_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this in app broadcast.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/beneficiary/:
     get:
       operationId: api_beneficiary_list
@@ -2317,6 +2475,13 @@ components:
     BlankEnum:
       enum:
       - ''
+    BroadcastViewed:
+      type: object
+      properties:
+        broadcast_id:
+          type: integer
+      required:
+      - broadcast_id
     Bug:
       type: object
       properties:
@@ -2352,6 +2517,8 @@ components:
           type: string
           nullable: true
           maxLength: 200
+        reporter_have_been_notified:
+          type: boolean
       required:
       - created_at
       - description
@@ -2555,6 +2722,38 @@ components:
         * `essence` - Essence
         * `diesel` - Diesel
         * `electrique` - Electrique
+    InAppBroadcast:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 100
+        body:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        active:
+          type: boolean
+        viewedBy:
+          type: array
+          items:
+            type: integer
+            title: ViewedBy
+      required:
+      - body
+      - created_at
+      - id
+      - title
+      - updated_at
     MutationContract:
       type: object
       properties:
@@ -2776,6 +2975,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Contract'
+    PaginatedInAppBroadcastList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/InAppBroadcast'
     PaginatedParkingList:
       type: object
       required:
@@ -2922,6 +3144,11 @@ components:
           maxLength: 100
         archived:
           type: boolean
+    PatchedBroadcastViewed:
+      type: object
+      properties:
+        broadcast_id:
+          type: integer
     PatchedBug:
       type: object
       properties:
@@ -2957,6 +3184,8 @@ components:
           type: string
           nullable: true
           maxLength: 200
+        reporter_have_been_notified:
+          type: boolean
     PatchedContract:
       type: object
       properties:
