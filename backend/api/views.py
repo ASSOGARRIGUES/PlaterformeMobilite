@@ -29,9 +29,7 @@ class ArchivableModelViewSet(viewsets.ModelViewSet):
                 return self.queryset.filter(archived=True)
             elif self.request.query_params.get('archived__in'):
                 query = self.request.query_params.get('archived__in')
-                print("archived__in", query)
                 if '0' in query and '1' in query:
-                    print("both")
                     return self.queryset
 
             return self.queryset.filter(archived=False)
@@ -216,7 +214,6 @@ class ContractViewSet(ArchivableModelViewSet):
         contract = self.get_object()
         if request.method == 'GET':
             serializer = EndContractSerializer(contract)
-            print(serializer.data)
             return Response(serializer.data)
         elif request.method == 'PATCH':
             serializer = EndContractSerializer(contract, data=request.data)
