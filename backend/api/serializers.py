@@ -112,7 +112,6 @@ class ContractPaymentSummarySerializer(serializers.ModelSerializer):
         return obj.getPaymentsSum()
 
     def get_total_due(self, obj) -> int:
-        print("price ", obj.price, "discount ", obj.discount, "payments ", obj.getPaymentsSum())
         return obj.price - obj.discount
 
     def get_nb_payments(self, obj) -> int:
@@ -137,7 +136,6 @@ class ContractSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
-        print("create contract serializer")
         validated_data['created_by'] = self.context['request'].user
         if not 'start_kilometer' in validated_data:
             validated_data['start_kilometer'] = validated_data['vehicle'].kilometer

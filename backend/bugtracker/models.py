@@ -77,7 +77,6 @@ class Bug(models.Model):
     def save(self, *args, **kwargs):
         #Send a bug report to the admins if this is a new bug
         if not self.pk:
-            print('New bug')
             self.email_admins()
 
         #Send an email to the reporter if the bug is marked as closed

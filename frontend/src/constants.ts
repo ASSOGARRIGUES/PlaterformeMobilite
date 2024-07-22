@@ -18,7 +18,7 @@ export const API_URL = process.env["BASE_URL"] ?  process.env["BASE_URL"]+"/api"
 
 export const VERSION = process.env["VERSION"] || '0.0.0';
 
-export const PAGE_SIZE = 10;
+export const PAGE_SIZE = 15;
 
 export const DEBOUNCE_TIME = 300;
 

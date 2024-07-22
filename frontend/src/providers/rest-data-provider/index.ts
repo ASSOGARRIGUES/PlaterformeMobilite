@@ -33,7 +33,7 @@ export const dataProvider = (
       } = {};
 
       if (mode === "server") {
-        query.limit = current * pageSize;
+        query.limit = pageSize;
         query.offset = (current - 1) * pageSize;
       }
 

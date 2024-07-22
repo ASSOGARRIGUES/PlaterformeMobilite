@@ -22,7 +22,6 @@ class OrFilterSet(FilterSet):
         if not hasattr(self, "groups"):
             return base_queryset
 
-        print(self.groups)
         query = Q()
         for key, value in self.groups.items():
             query |= Q(**{key: value})

@@ -21,9 +21,7 @@ const ViewBroadcastModal = () => {
     });
 
     useEffect(() => {
-
         if (!data || data.data.length === 0){
-            console.log("No data")
             setOpened(false);
             return;
         }

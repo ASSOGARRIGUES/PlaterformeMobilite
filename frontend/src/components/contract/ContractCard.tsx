@@ -4,7 +4,7 @@ import {CompleteContract} from "../../types/contract";
 import useContractModalForm from "../../hooks/contract/useContractModalForm";
 import ContractStatusBadge from "./ContractStatusBadge";
 import ContractModal from "./ContractModal";
-import {humanizeDate, humanizeFirstName, humanizeLastName, humanizeNumber} from "../../constants";
+import {humanizeDate, humanizeFirstName, humanizeNumber} from "../../constants";
 import {CSSProperties} from "react";
 import ContractEditButton from "./ContractEditButton";
 
@@ -28,7 +28,9 @@ const ContractCard = ({contract, withEdit=false, style}: {contract: CompleteCont
 
     const remainingDays = (contract: CompleteContract) => {
         const end = new Date(contract.end_date);
-        const today = new Date();
+
+        const today = contract.ended_at ? new Date(contract.ended_at) : new Date();
+
         const diff = end.getTime() - today.getTime();
         const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
         return days;
