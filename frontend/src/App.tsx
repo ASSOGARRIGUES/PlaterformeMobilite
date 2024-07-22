@@ -1,28 +1,21 @@
 import {  Refine } from "@refinedev/core";
-
 import {
     ErrorComponent,
-    RefineThemes,
-    useNotificationProvider, ThemedTitleV2, ThemedLayoutContextProvider
+    ThemedTitleV2, ThemedLayoutContextProvider
 } from "@refinedev/mantine";
 
 import routerBindings, {
-    CatchAllNavigate,
-    DocumentTitleHandler,
+    CatchAllNavigate, DocumentTitleHandler,
     NavigateToResource,
-    UnsavedChangesNotifier,
 } from "@refinedev/react-router-v6";
-
 
 import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { authProvider } from "./providers/auth-provider";
-// import { Header } from "./components/header";
 import { Login } from "./pages/login";
 import {API_URL, APP_TITLE} from "./constants";
 import BeneficiaryList from "./pages/beneficiary/BeneficiaryList";
 import {dataProvider} from "./providers/rest-data-provider";
 import {createTheme, MantineProvider, Title} from "@mantine/core";
-import { MantineInferencer } from "@refinedev/inferencer/mantine";
 import VehicleList from "./pages/vehicle/VehicleList";
 import ContractList from "./pages/contract/ContractList";
 import BeneficiaryShow from "./pages/beneficiary/BeneficiaryShow";
@@ -43,6 +36,8 @@ import './style/global.css'
 import 'mantine-datatable/styles.css';
 import {Layout} from "./components/layout";
 import '@mantine/dates/styles.css';
+import '@mantine/notifications/styles.css';
+import {useNotificationProvider} from "./providers/notificationProvider";
 import {BugReporterProvider} from "./context/BugReporterProvider";
 import logSaver from "./logSaver";
 import BugList from "./pages/bugtracker/BugList";
@@ -83,8 +78,7 @@ function App() {
                 theme={theme}
             >
                 <ModalsProvider>
-
-                    <Notifications position="bottom-right"/>
+                    <Notifications position="bottom-right" zIndex={9999}/>
                     <Refine
                         dataProvider={dataProvider(API_URL)}
                         routerProvider={routerBindings}
