@@ -184,9 +184,13 @@ class EndContractSerializer(serializers.ModelSerializer):
         return value
 
 
-
 # WhoAmISerializer is used to get the current user information in the frontend --> it should return {'id', 'username', 'email', 'first_name', 'last_name'}
 class WhoAmISerializer(serializers.ModelSerializer):
+    permissions = serializers.SerializerMethodField()
+
+    def get_permissions(self, obj):
+        return obj.get_all_permissions()
+
     class Meta:
         model = get_user_model()
-        fields = ['id', 'username', 'email', 'first_name', 'last_name']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_superuser', 'permissions']

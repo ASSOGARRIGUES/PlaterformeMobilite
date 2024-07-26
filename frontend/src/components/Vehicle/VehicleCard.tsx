@@ -22,7 +22,7 @@ const VehicleCard = ({vehicle, withEdit=false, title=(<>Informations</>), style}
     const {modal: { show: showEditModal},  getInputProps} = editModalForm;
 
 
-    const edit = withEdit && vehicle ? <EditButton showEditModal={showEditModal} record={vehicle} disabled={vehicle.archived}/> : ""
+    const edit = withEdit && vehicle ? <EditButton showEditModal={showEditModal} record={vehicle} disabled={vehicle.archived} permKey='api.change_vehicle'/> : ""
 
     const skeleton = (
         <>

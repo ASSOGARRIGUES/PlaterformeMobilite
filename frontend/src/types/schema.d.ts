@@ -1159,6 +1159,29 @@ export interface components {
          * @enum {string}
          */
         VehicleTypeEnum: VehicleTypeEnum;
+        WhoAmI: {
+            readonly id: number;
+            /**
+             * Nom d’utilisateur
+             * @description Requis. 150 caractères maximum. Uniquement des lettres, nombres et les caractères « @ », « . », « + », « - » et « _ ».
+             */
+            username: string;
+            /**
+             * Adresse électronique
+             * Format: email
+             */
+            email: string;
+            /** Prénom */
+            first_name?: string;
+            /** Nom */
+            last_name?: string;
+            /**
+             * Statut super-utilisateur
+             * @description Précise que l’utilisateur possède toutes les permissions sans les assigner explicitement.
+             */
+            is_superuser?: boolean;
+            readonly permissions: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -3004,7 +3027,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["User"][];
+                    "application/json": components["schemas"]["WhoAmI"][];
                 };
             };
         };
