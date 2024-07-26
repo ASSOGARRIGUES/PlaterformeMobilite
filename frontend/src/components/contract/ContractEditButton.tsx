@@ -4,7 +4,7 @@ import {CompleteContract, Contract} from "../../types/contract";
 
 const ContractEditButton = ({contract, ...editProps}: {contract: Contract | CompleteContract} & Omit<EditButtonProps, "record">) => {
     return (
-        <EditButton record={contract} {...editProps} disabled={contract.status === ContractStatusEnum.over || contract.status === ContractStatusEnum.payed} />
+        <EditButton record={contract} {...editProps} disabled={contract.status === ContractStatusEnum.over || contract.status === ContractStatusEnum.payed} permKey={'api.change_contract'} />
     )
 }
 

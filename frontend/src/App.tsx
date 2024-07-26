@@ -42,6 +42,7 @@ import {BugReporterProvider} from "./context/BugReporterProvider";
 import logSaver from "./logSaver";
 import BugList from "./pages/bugtracker/BugList";
 import ViewBroadcastModal from "./components/inappcom/ViewBroadcastModal";
+import useAccessControl from "./providers/accessControlProvider";
 
 function App() {
 
@@ -92,6 +93,7 @@ function App() {
                                 meta: {
                                     label: "Tableau de bord",
                                     icon: <IconDashboard/>,
+                                    permKey: true,
                                 },
                             },
                             {
@@ -100,7 +102,8 @@ function App() {
                                 show: "beneficiary/:id",
                                 meta: {
                                     label: "Bénéficiaires",
-                                    icon: <IconAddressBook/>
+                                    icon: <IconAddressBook/>,
+                                    permissionGroup: 'api',
                                 },
                             },
                             {
@@ -109,7 +112,8 @@ function App() {
                                 show: "vehicle/:id",
                                 meta: {
                                     label: "Véhicules",
-                                    icon: <IconCar/>
+                                    icon: <IconCar/>,
+                                    permissionGroup: 'api',
                                 },
                             },
                             {
@@ -120,6 +124,7 @@ function App() {
                                 meta: {
                                     label: "Contrats",
                                     icon: <img src = {ContractIcon} width="20px" style={{marginRight: 5}}/>,
+                                    permissionGroup: 'api',
                                 },
                             }
                         ]}

@@ -2417,7 +2417,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/User'
+                  $ref: '#/components/schemas/WhoAmI'
           description: ''
 components:
   schemas:
@@ -3752,6 +3752,45 @@ components:
       description: |-
         * `voiture` - Voiture
         * `scouter` - Scooter
+    WhoAmI:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          title: Nom d’utilisateur
+          description: Requis. 150 caractères maximum. Uniquement des lettres, nombres
+            et les caractères « @ », « . », « + », « - » et « _ ».
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Adresse électronique
+          maxLength: 254
+        first_name:
+          type: string
+          title: Prénom
+          maxLength: 150
+        last_name:
+          type: string
+          title: Nom
+          maxLength: 150
+        is_superuser:
+          type: boolean
+          title: Statut super-utilisateur
+          description: Précise que l’utilisateur possède toutes les permissions sans
+            les assigner explicitement.
+        permissions:
+          type: string
+          readOnly: true
+      required:
+      - email
+      - id
+      - permissions
+      - username
   securitySchemes:
     cookieAuth:
       type: apiKey

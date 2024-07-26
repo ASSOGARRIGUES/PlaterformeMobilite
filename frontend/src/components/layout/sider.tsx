@@ -1,7 +1,6 @@
 import {IconList, IconPower, IconDashboard, IconBug} from "@tabler/icons-react";
 import React, { CSSProperties } from "react";
 import {
-    CanAccess,
     ITreeMenu,
     useIsExistAuthentication,
     useLink,
@@ -9,7 +8,6 @@ import {
     useMenu,
     useActiveAuthProvider,
     useRefineContext,
-    useTitle,
     useTranslate,
     useWarnAboutChange,
 } from "@refinedev/core";
@@ -27,6 +25,8 @@ import {
 } from "@mantine/core";
 import type { RefineThemedLayoutV2SiderProps } from "@refinedev/mantine";
 import {APP_TITLE, VERSION} from "../../constants";
+import CanAccess from "../CanAccess";
+import {PermissionType} from "../../types/PermissionType";
 
 const defaultNavIcon = <IconList size={20} />;
 
@@ -101,11 +101,7 @@ const NavBar: React.FC<RefineThemedLayoutV2SiderProps> = ({
             return (
                 <CanAccess
                     key={item.key}
-                    resource={name.toLowerCase()}
-                    action="list"
-                    params={{
-                        resource: item,
-                    }}
+                    permKey={item.meta?.permKey ?? item.meta?.permissionGroup+".view_"+item.name as PermissionType}
                 >
                     <Tooltip label={label} {...commonTooltipProps}>
                         <NavLink
@@ -132,7 +128,7 @@ const NavBar: React.FC<RefineThemedLayoutV2SiderProps> = ({
     const items = renderTreeView(menuItems, selectedKey);
 
     const dashboard = hasDashboard ? (
-        <CanAccess resource="dashboard" action="list">
+        <CanAccess permKey={true}>
             <Tooltip
                 label={t("dashboard.title", "Dashboard")}
                 {...commonTooltipProps}
@@ -155,7 +151,7 @@ const NavBar: React.FC<RefineThemedLayoutV2SiderProps> = ({
     ) : null;
 
     const bugList = (
-        <CanAccess resource="bug" action="list">
+        <CanAccess permKey={'bugtracker.view_bug'}>
             <Tooltip
                 label="Liste des bugs"
                 {...commonTooltipProps}

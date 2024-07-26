@@ -32,6 +32,7 @@ import PaymentTable from "../../components/contract/PaymentTable";
 import PaymentSummary from "../../components/contract/PaymentSummary";
 import ContractNewPaymentButton from "../../components/contract/ContractNewPaymentButton";
 import {Show} from "../../components/forkedFromRefine/Show";
+import CanAccess from "../../components/CanAccess";
 
 const ContractShow = () => {
 
@@ -95,7 +96,7 @@ const ContractShow = () => {
         >
             <Tabs.List>
                 <Tabs.Tab leftSection={<IconMessageCircle size={18} />} value={"comment"}>Commentaire d'équipe</Tabs.Tab>
-                <Tabs.Tab leftSection={<IconReceiptEuro size={18}/>} value={"payments"}>Paiements</Tabs.Tab>
+                <CanAccess permKey={'api.view_payment'}><Tabs.Tab leftSection={<IconReceiptEuro size={18}/>} value={"payments"}>Paiements</Tabs.Tab></CanAccess>
             </Tabs.List>
 
             <Tabs.Panel style={{flex: "1 1 auto"}} value={"comment"}>
@@ -105,12 +106,14 @@ const ContractShow = () => {
                 </Stack>
             </Tabs.Panel>
 
-            <Tabs.Panel value="payments" style={{flex: "1 1 auto"}}>
-                <Stack style={{height: "100%", margin:"0.2em 0.6em"}}>
-                    <PaymentTable contract={contractResponse}/>
-                    <PaymentSummary contract={contractResponse}/>
-                </Stack>
-            </Tabs.Panel>
+            <CanAccess permKey={'api.view_payment'}>
+                <Tabs.Panel value="payments" style={{flex: "1 1 auto"}}>
+                    <Stack style={{height: "100%", margin:"0.2em 0.6em"}}>
+                        <PaymentTable contract={contractResponse}/>
+                        <PaymentSummary contract={contractResponse}/>
+                    </Stack>
+                </Tabs.Panel>
+            </CanAccess>
         </Tabs>
     ) : skeleton(2);
 

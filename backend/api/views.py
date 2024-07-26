@@ -2,8 +2,7 @@ from datetime import datetime
 
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
-from django.shortcuts import render, get_object_or_404
-from django.views import View
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
@@ -14,7 +13,7 @@ from .filters import VehicleFilter
 from .models import Vehicle, Beneficiary, Contract, Parking, Payment
 from .serializers import VehicleSerializer, BeneficiarySerializer, ContractSerializer, UserSerializer, \
     EndContractSerializer, ParkingSerializer, MutationContractSerializer, MutationVehicleSerializer, PaymentSerializer, \
-    ContractPaymentSummarySerializer
+    ContractPaymentSummarySerializer, WhoAmISerializer
 
 MUTATION_ACTION = ['create', 'update', 'partial_update']
 RETRIEVE_ACTION = ['retrieve', 'list']
@@ -285,9 +284,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class WhoAmIViewSet(viewsets.ViewSet):
     permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = UserSerializer
+    serializer_class = WhoAmISerializer
     def list(self, request):
-        serializer = UserSerializer(request.user)
+        serializer = WhoAmISerializer(request.user)
         return Response(serializer.data)
 
 
@@ -295,5 +294,6 @@ class ParkingViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.DjangoModelPermissions,)
     serializer_class = ParkingSerializer
     queryset = Parking.objects.all()
+
 
 

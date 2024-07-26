@@ -126,6 +126,8 @@ const ContractList = () => {
 
                     withAddIcon={true}
                     addCallback={() => {go({to:{resource:"contract", action:"create"}})}}
+                    addPermKey={'api.add_contract'}
+
                     withReloadIcon
 
                     /*@ts-ignore*/
