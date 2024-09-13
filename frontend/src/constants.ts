@@ -4,7 +4,7 @@ import {
     ContractStatusEnum,
     FuelTypeEnum,
     PaymentModeEnum,
-    ReasonEnum,
+    ReasonEnum, VehicleStatusEnum,
     VehicleTypeEnum,
 } from "./types/schema.d";
 import {axiosInstance} from "./providers/rest-data-provider/utils";
@@ -34,9 +34,22 @@ export const contractReasonLabelMap: Record<string,string> = {
     [ReasonEnum.part_time]: "Alternance",
 }
 
+export const contractStatusLabelMap: Record<string, string> = {
+    [ContractStatusEnum.waiting]: "En attente d'EDL",
+    [ContractStatusEnum.pending]: "En cours",
+    [ContractStatusEnum.over]: "Clôturer",
+    [ContractStatusEnum.payed]: "Payé",
+}
+
 export const vehicleTypeLabelMap: Record<string,string> = {
     [VehicleTypeEnum.voiture]: "Voiture",
     [VehicleTypeEnum.scouter]: "Scooter",
+}
+
+export const vehicleStatusLabelMap: Record<string,string> = {
+    [VehicleStatusEnum.available]: "Disponible",
+    [VehicleStatusEnum.rented]: "A disposition",
+    [VehicleStatusEnum.maintenance]: "Maintenance",
 }
 
 export const fuelTypeLabelMap: Record<string,string> = {

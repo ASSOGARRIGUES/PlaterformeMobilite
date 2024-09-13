@@ -1,5 +1,5 @@
 import {Contract, Payment} from "../../types/contract";
-import SearchableDataTable from "../SearchableDataTable";
+import SearchableDataTable, {SearchableDataTableColumn} from "../SearchableDataTable";
 import {useMemo} from "react";
 import {humanizeDate, humanizeNumber, paymentModeLabelMap} from "../../constants";
 import {Group, Stack} from "@mantine/core";
@@ -49,7 +49,7 @@ const PaymentTable = ({contract}: {contract: Contract}) => {
         )
     }
 
-    const columns = useMemo<DataTableColumn<Payment>[]>(
+    const columns = useMemo<SearchableDataTableColumn<Payment>[]>(
         () => [
             {
                 accessor: 'mode',

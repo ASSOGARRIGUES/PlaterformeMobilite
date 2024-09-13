@@ -1,14 +1,12 @@
 import {Beneficiary} from "../../types/beneficiary";
-import {useMemo, useState} from "react";
-import {List, useModalForm} from "@refinedev/mantine";
-import SearchableDataTable from "../../components/SearchableDataTable";
+import {useMemo} from "react";
+import {List} from "@refinedev/mantine";
+import SearchableDataTable, {SearchableDataTableColumn} from "../../components/SearchableDataTable";
 import BeneficiaryModal from "../../components/beneficiary/BeneficiaryModal";
-import {ActionIcon, Center} from "@mantine/core";
-import {IconEdit} from "@tabler/icons-react";
 import {useGetToPath, useGo} from "@refinedev/core";
 import useBeneficiaryModalForm from "../../hooks/beneficiary/useBeneficiaryModalForm";
 import BeneficiarySearchTooltip from "../../components/beneficiary/BeneficiarySearchTooltip";
-import {DataTableColumn, DataTableRowClickHandler} from "mantine-datatable";
+import {DataTableRowClickHandler} from "mantine-datatable";
 import EditButton from "../../components/EditButton";
 
 
@@ -24,7 +22,7 @@ function BeneficiaryList() {
     const editModalForm = useBeneficiaryModalForm({action: "edit"});
     const {modal: { show: showEditModal },  } = editModalForm;
 
-    const columns = useMemo<DataTableColumn<Beneficiary>[]>(
+    const columns = useMemo<SearchableDataTableColumn<Beneficiary>[]>(
         () => [
             {
                 accessor: 'first_name', //access nested data with dot notation

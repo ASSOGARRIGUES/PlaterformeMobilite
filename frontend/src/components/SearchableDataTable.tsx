@@ -10,14 +10,17 @@ import {
 import {IconCirclePlus, IconInfoCircle, IconRefresh, IconSearch} from "@tabler/icons-react";
 import {DataTable, DataTableColumn, DataTableProps, DataTableSortStatus} from "mantine-datatable";
 import React, {CSSProperties, useEffect, useState} from "react";
-import {BaseRecord, CrudFilters, HttpError, useParsed, useTable} from "@refinedev/core";
+import {BaseRecord, CrudFilters, HttpError, LogicalFilter, useParsed, useTable} from "@refinedev/core";
 import {PAGE_SIZE} from "../constants";
-import {useDebouncedValue, useMediaQuery, useToggle} from "@mantine/hooks";
+import {useDebouncedValue, useMediaQuery} from "@mantine/hooks";
 import {MantineSpacing} from "@mantine/core/lib/core";
 import {GroupProps} from "@mantine/core/lib/components/Group/Group";
 import {PermissionType} from "../types/PermissionType";
 import CanAccess from "./CanAccess";
 
+export type ColumnFilter<T> = (accessor: keyof T, value: LogicalFilter[] | undefined, setValue: (filter: LogicalFilter[] | undefined) => void) => React.ReactNode
+
+export type SearchableDataTableColumn<T>  = Omit<DataTableColumn<T>, "filter"> & {filter?: ColumnFilter<T>, filtering?: boolean, filteredKeys?: string[]}
 
 /*
 Ce composant donne une datable triable avec un champ de recherche et la logique de tri intégré.
@@ -40,7 +43,7 @@ secondBarNodes: Liste de Nodes qui seront ajouter sous la barre principale (cham
 
 type SearchableDataTableProps<T> = {
     searchPlaceHolder?: string,
-    columns: DataTableColumn<T>[],
+    columns: SearchableDataTableColumn<T>[],
     defaultSortedColumn?: keyof T,
     defaultSortedDirection?: "asc" | "desc";
     styles?: any,
@@ -54,14 +57,15 @@ type SearchableDataTableProps<T> = {
     categoriesSelector?: any,
     secondBarNodes?: any,
     style?: CSSProperties;
-    defaultFilters?: CrudFilters;
+    permanentFilters?: CrudFilters;
     withoutSearch?: boolean;
     pageSize?: number;
     searchInfoTooltip?: React.ReactNode
     resource?: string;
     defaultArchived?: boolean;
     withArchivedSwitch?: boolean;
-} & DataTableProps<T>
+    withTableBorder?: boolean;
+} & Omit<DataTableProps<T>, "columns" | "groups" | "withTableBorder" | "customLoader">
 
 function SearchableDataTable<T extends BaseRecord>({
                                                        searchPlaceHolder,
@@ -77,7 +81,7 @@ function SearchableDataTable<T extends BaseRecord>({
                                                        categoriesSelector,
                                                        secondBarNodes,
                                                        style,
-                                                       defaultFilters,
+                                                       permanentFilters,
                                                        withoutSearch,
                                                        pageSize = PAGE_SIZE,
                                                        defaultSortedDirection = "asc",
@@ -85,10 +89,18 @@ function SearchableDataTable<T extends BaseRecord>({
                                                        resource,
                                                        defaultArchived,
                                                        withArchivedSwitch = true,
+                                                       withTableBorder = false,
                                                        addPermKey,
                                                        ...othersProps
                                                    }: SearchableDataTableProps<T>)
 {
+
+    //On vérifie que les paramètes passés sont consistant:
+    //Vérification de la présence des callbacks si add
+    if(withAddIcon && !addCallback){
+        throw "withAddIcon option require addCallback. \n addCallback should be a function that handle add logic"
+    }
+
     const [sortStatus, setSortStatus] = useState({
         columnAccessor: (defaultSortedColumn ? defaultSortedColumn : columns[0].accessor as keyof T),
         direction: defaultSortedDirection
@@ -99,7 +111,7 @@ function SearchableDataTable<T extends BaseRecord>({
 
 
     const {params: urlParams} = useParsed()
-    const urlSearch = urlParams?.filters?.find((filter: any) => filter.field === "search")?.value
+    const urlSearch = urlParams?.filters?.find((filter: any) => filter.field === "search")?.value // Retrieve search filter from url
 
     const [search, setSearch] = useState(urlSearch || "");
     const [debouncedSearch] = useDebouncedValue(search, 200, { leading: true });
@@ -127,7 +139,7 @@ function SearchableDataTable<T extends BaseRecord>({
         sorters: {initial: [{field: String(sortStatus.columnAccessor), order: sortStatus.direction}]},
         filters: {
             initial: [{ field: "search", operator: "eq", value: search }, {field:"archived", operator:"eq", value: showArchived?1:0}],
-            permanent: defaultFilters ? defaultFilters : []
+            permanent: permanentFilters ? permanentFilters : []
         }
     });
 
@@ -137,23 +149,86 @@ function SearchableDataTable<T extends BaseRecord>({
 
     const data = tableQueryResult?.data?.data ?? [];
 
+    // #################################
+    // #### Handle column filtering ####
+    // #################################
+
+    //Retrieve all the accessor of the columns
+    const accessorList = columns.map((column) => column.accessor)
+
+    //Retrieve the filtered keys for each column
+    const filteredKeysGroupedByAccessor = columns.filter((column) => column.filter && column.filteredKeys).map((column) => ({accessor: column.accessor, filteredAccessors: column.filteredKeys})).reduce((acc, column) => {
+        if(column.filteredAccessors === undefined) return acc // If the column has no filtered keys, we don't add it to the accumulator
+        acc[column.accessor.toString()] = column.filteredAccessors
+        return acc
+    }, {} as {[key: string]: string[]})
+
+    //Retrieve the filters from the url and associate them with the accessor
+    //Sometimes we need to filter multiple field of the Model with the same Column (i.e same accessor) so we need to associate
+    // the url filters (that are designated by the model field they are filtering) with the correct accessor.
+    const urlFiltersValues = accessorList.map((accessor) => {
+        const urlFilter = urlParams?.filters?.filter((filter) => filter.hasOwnProperty('field') && (filter as LogicalFilter).field === accessor) as LogicalFilter[] ?? [] // Retrieve filter that filters a model field with the same name as the accessor
+
+        const associatedFilteredKeys = filteredKeysGroupedByAccessor[accessor as keyof typeof filteredKeysGroupedByAccessor] // Retrieve the filtered keys of the model fields associated with the accessor
+
+        let associatedFilters: LogicalFilter[] = []
+        if (associatedFilteredKeys) {
+            associatedFilters = urlParams?.filters?.filter((filter) => filter.hasOwnProperty('field') && associatedFilteredKeys.includes((filter as LogicalFilter).field)) as LogicalFilter[] ?? [] // Retrieve filters that filters the associated model fields
+        }
+
+        return {
+            accessor: accessor,
+            filter: [...urlFilter, ...associatedFilters].filter((filter) => filter !== undefined)
+        }
+    })
+
+    // @ts-ignore
+    // const urlFilters: LogicalFilter[] | undefined = urlParams?.filters?.filter((filter) => filter.hasOwnProperty('field') && accessorList.includes(filter.field)) // Retrieve filters from url
+    // const urlFiltersValue = urlFilters?.map((filter) => ({accessor: filter.field, filter: [filter]})) // Convert filters to the format used by the state
+    const [filtersValues, setFiltersValues] = useState<{accessor: string, filter:LogicalFilter[] | undefined}[]>(urlFiltersValues ?? []); //This state will contain the CrudFilters for all the columns filter. it serve to send the filters to the backend and to store the state of the inputs of the filters
 
 
-    //On vérifie que les paramètes passés sont consistant:
-
-    //Vérification de la présence des callbacks si add
-    if(withAddIcon && !addCallback){
-        throw "withAddIcon option require addCallback. \n addCallback should be a function that handle add logic"
+    /**
+     * Get the value of the filter for a specific column from the global state filtersValues
+     * @param accessor
+     */
+    const getFilterValue = (accessor: keyof T) => {
+        return filtersValues?.find((filter) => filter.accessor === accessor)?.filter
     }
 
+    /**
+     * Get a function to set the value of the filter for a specific column
+     * @param accessor
+     */
+    const setFilterValue = (accessor: keyof T) => {
+        return (value: LogicalFilter[] | undefined) => {
+            const newFilters = filtersValues?.filter((filter) => filter.accessor !== accessor) || []
+            newFilters.push({accessor: accessor.toString(), filter: value})
+            setFiltersValues(newFilters)
+        }
+    }
+
+
+    // Build the column object with the filters functions
+    const columnsWithFilter: DataTableColumn<T>[] = columns.map(({filter, ...others}) => ({
+        ...others,
+        filter: filter ? filter(others.accessor, getFilterValue(others.accessor), setFilterValue(others.accessor))  : undefined,
+        filtering: getFilterValue(others.accessor)?.find((filter) => filter.value?.length > 0),
+    }) as DataTableColumn<T>)
+
+
+
+    // Update filters when search or showArchived change
     useEffect(() => {
-        setFilters([{ field: "search", operator: "eq", value: debouncedSearch }, {field:"archived", operator:"eq", value: showArchived?1:0}]);
-    }, [debouncedSearch, showArchived]);
+        const userFilters : LogicalFilter[] = filtersValues.filter((filter) => filter.filter !== undefined).map((filter) => filter.filter as LogicalFilter[]).flat(1);
+        setFilters([{ field: "search", operator: "eq", value: debouncedSearch }, {field:"archived", operator:"eq", value: showArchived?1:0}, ...userFilters]);
+    }, [debouncedSearch, showArchived, filtersValues]);
 
 
     const reloadCallback = () => {
         tableQueryResult.refetch()
     }
+
 
     return (
         <Stack gap={elementSpacing} style={{ height: "100%", width:"100%", ...style}}>
@@ -228,12 +303,13 @@ function SearchableDataTable<T extends BaseRecord>({
                 flex: "1 1 auto",
                 overflow: "hidden"
             }}>
-                <DataTable<T>
+                {/* @ts-ignore */}
+                <DataTable
                     minHeight={150}
                     striped
                     highlightOnHover
                     records={data}
-                    columns={columns}
+                    columns={columnsWithFilter}
                     fetching={tableQueryResult.isFetching}
                     sortStatus={sortStatus as DataTableSortStatus}
                     onSortStatusChange={setSortStatus}
@@ -248,6 +324,7 @@ function SearchableDataTable<T extends BaseRecord>({
 
                     style = {styles?.datatable}
 
+                    withTableBorder={withTableBorder}
                     {...othersProps}
                 />
 

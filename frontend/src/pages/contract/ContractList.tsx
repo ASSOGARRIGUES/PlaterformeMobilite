@@ -22,6 +22,9 @@ import ContractNewPaymentButton from "../../components/contract/ContractNewPayme
 import {useGo} from "@refinedev/core";
 import {DataTableColumn} from "mantine-datatable";
 import {useMediaQuery} from "@mantine/hooks";
+import SearchableDataTable, {SearchableDataTableColumn} from "../../components/SearchableDataTable";
+import ContractStatusFilter from "../../components/contract/filters/ContractStatusFilter";
+import ContractDateFilter from "../../components/contract/filters/ContractDateFilter";
 
 const ContractList = () => {
 
@@ -36,7 +39,7 @@ const ContractList = () => {
     const endModalForm = useEndContractForm();
     const {modal: { show: showEndModal}} = endModalForm;
 
-    const columns = useMemo<DataTableColumn<CompleteContract>[]>(
+    const columns = useMemo<SearchableDataTableColumn<CompleteContract>[]>(
         () => [
             {
                 accessor:"id",
@@ -69,14 +72,16 @@ const ContractList = () => {
                 title: 'Début',
                 sortable: true,
                 render: (contract) => (humanizeDate(contract.start_date)),
-                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`,
+                filter: ContractDateFilter,
             },
             {
                 accessor: 'end_date',
                 title: 'Fin',
                 sortable: true,
                 render: (contract) => (humanizeDate(contract.end_date)),
-                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`,
+                filter: ContractDateFilter,
             },
             {
                 accessor: "status",
@@ -84,6 +89,7 @@ const ContractList = () => {
                 textAlignment:"center",
                 sortable: true,
                 render: (contract) => (<ContractStatusBadge contract={contract}/>),
+                filter: ContractStatusFilter,
             },
             {
                 accessor: 'referent',
@@ -120,7 +126,8 @@ const ContractList = () => {
             <EndContractModal {...endModalForm}/>
 
             <List title="" wrapperProps={{children: undefined, style:{height:(smallerThanMd ? "100vh" : "100%"), display:"flex", flexDirection:"column"}}} contentProps={{style:{flex:"auto", minHeight:0}}} canCreate={false}>
-                <ContractTable
+                <SearchableDataTable
+                    resource="contract"
                     searchPlaceHolder={"Rechercher un contrat"}
                     columns={columns}
 
