@@ -41,6 +41,9 @@ class VehicleFilter(OrFilterSet):
             'fleet_id': ["in", "exact"],
             'status': ["in", "exact"],
             'contracts': ["in", "exact"],
+            'fuel_type': ["in", "exact"],
+            'transmission': ["in", "exact"],
+            'type': ["in", "exact"],
         }
 
 
