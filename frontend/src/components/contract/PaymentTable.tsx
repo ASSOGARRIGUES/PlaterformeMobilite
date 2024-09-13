@@ -10,6 +10,8 @@ import PaymentModal from "./PaymentModal";
 import EditButton from "../EditButton";
 import DeleteButton from "../DeleteButton";
 import {useQueryClient} from "@tanstack/react-query";
+import {DataTableColumn} from "mantine-datatable";
+import CanAccess from "../CanAccess";
 
 const PaymentTable = ({contract}: {contract: Contract}) => {
 
@@ -40,8 +42,8 @@ const PaymentTable = ({contract}: {contract: Contract}) => {
         return (
             <Group gap={3}>
                 <PaymentPDFButton contract={contract} payment={payment}/>
-                {payment.editable && <EditButton record={payment} showEditModal={showEditModal}/>}
-                {payment.editable && <DeleteButton resource={`contract/${contract.id}/payment`} id={payment.id} onDelete={invalidateSummary}/>}
+                {payment.editable && <EditButton record={payment} showEditModal={showEditModal} permKey='api.change_payment'/>}
+                {payment.editable && <DeleteButton resource={`contract/${contract.id}/payment`} id={payment.id} onDelete={invalidateSummary} permKey='api.delete_payment'/>}
             </Group>
 
         )
@@ -79,20 +81,24 @@ const PaymentTable = ({contract}: {contract: Contract}) => {
 
     return (
         <>
-            <PaymentModal {...createModalForm} />
-            <PaymentModal {...editModalForm} />
+            <CanAccess permKey={'api.view_payment'}>
+                <PaymentModal {...createModalForm} />
+                <PaymentModal {...editModalForm} />
 
-            <SearchableDataTable
-                withReloadIcon
-                withoutSearch
-                withArchivedSwitch={false}
-                withAddIcon = {contract.status !== "payed" && !contract.archived}
-                addCallback={() => {showCreateModal()}}
-                columns={columns}
-                resource={`contract/${contract.id}/payment`}
-                pageSize={4}
+                <SearchableDataTable
+                    withReloadIcon
+                    withoutSearch
+                    withArchivedSwitch={false}
+                    withAddIcon = {contract.status !== "payed" && !contract.archived}
+                    addPermKey={'api.add_payment'}
 
-            />
+                    addCallback={() => {showCreateModal()}}
+                    columns={columns}
+                    resource={`contract/${contract.id}/payment`}
+                    pageSize={4}
+
+                />
+            </CanAccess>
         </>
     )
 }

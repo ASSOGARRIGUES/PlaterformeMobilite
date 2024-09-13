@@ -102,7 +102,7 @@ const VehicleList = () => {
                 accessor: "actions",
                 title:"Actions",
                 textAlign: "center",
-                render: (car) => (<EditButton record={car} showEditModal={showEditModal}/>),
+                render: (car) => (<EditButton record={car} showEditModal={showEditModal} permKey={'api.change_vehicle'}/>),
                 visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
             }
         ],
@@ -135,6 +135,8 @@ const VehicleList = () => {
 
                     withAddIcon={true}
                     addCallback={() => {showCreateModal()}}
+                    addPermKey={'api.add_vehicle'}
+
                     withReloadIcon
                     /*@ts-ignore*/
                     verticalSpacing="md"

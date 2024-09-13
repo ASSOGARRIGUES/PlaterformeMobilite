@@ -2,8 +2,10 @@ import {BaseKey, useDelete} from "@refinedev/core";
 import {ActionIcon, Tooltip} from "@mantine/core";
 import {IconTrash} from "@tabler/icons-react";
 import {openConfirmModal} from "@mantine/modals";
+import {PermissionType} from "../types/PermissionType";
+import CanAccess from "./CanAccess";
 
-const DeleteButton = ({ resource, id, onDelete}: { resource: string, id:BaseKey, onDelete?: ()=>any }) => {
+const DeleteButton = ({ resource, id, onDelete, permKey}: { resource: string, id:BaseKey, onDelete?: ()=>any, permKey: PermissionType}) => {
     const { mutate } = useDelete();
 
     const openDeleteModal = () => {
@@ -23,18 +25,20 @@ const DeleteButton = ({ resource, id, onDelete}: { resource: string, id:BaseKey,
 
 
     return (
-        <Tooltip label={"Supprimer"} position="bottom" openDelay={300}>
-            <ActionIcon
-                color="red"
-                radius="md"
-                variant="subtle"
-                onClick={() => {
-                    openDeleteModal()
-                }}
-            >
-                <IconTrash size={25} />
-            </ActionIcon>
-        </Tooltip>
+        <CanAccess permKey={permKey}>
+            <Tooltip label={"Supprimer"} position="bottom" openDelay={300}>
+                <ActionIcon
+                    color="red"
+                    radius="md"
+                    variant="subtle"
+                    onClick={() => {
+                        openDeleteModal()
+                    }}
+                >
+                    <IconTrash size={25} />
+                </ActionIcon>
+            </Tooltip>
+        </CanAccess>
     )
 
 }

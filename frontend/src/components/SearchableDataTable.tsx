@@ -15,6 +15,8 @@ import {PAGE_SIZE} from "../constants";
 import {useDebouncedValue, useMediaQuery} from "@mantine/hooks";
 import {MantineSpacing} from "@mantine/core/lib/core";
 import {GroupProps} from "@mantine/core/lib/components/Group/Group";
+import {PermissionType} from "../types/PermissionType";
+import CanAccess from "./CanAccess";
 
 export type ColumnFilter<T> = (accessor: keyof T, value: LogicalFilter[] | undefined, setValue: (filter: LogicalFilter[] | undefined) => void) => React.ReactNode
 
@@ -49,6 +51,7 @@ type SearchableDataTableProps<T> = {
     searchBarPosition?: GroupProps["justify"];
     withAddIcon?: boolean,
     withReloadIcon?: boolean,
+    addPermKey?: PermissionType,
     addCallback?: ()=>void,
     extraButtons?: any,
     categoriesSelector?: any,
@@ -87,6 +90,7 @@ function SearchableDataTable<T extends BaseRecord>({
                                                        defaultArchived,
                                                        withArchivedSwitch = true,
                                                        withTableBorder = false,
+                                                       addPermKey,
                                                        ...othersProps
                                                    }: SearchableDataTableProps<T>)
 {
@@ -270,11 +274,13 @@ function SearchableDataTable<T extends BaseRecord>({
                             )}
 
                             {withAddIcon && (
-                                <Tooltip label={"Nouveau"} position={"bottom"} openDelay={200} >
-                                    <ActionIcon  style={{flex:"initial"}} size={35} variant="subtle" radius="lg" color = "green" onClick={()=>addCallback ? addCallback() : ""}>
-                                        <IconCirclePlus size={33}/>
-                                    </ActionIcon>
-                                </Tooltip>
+                                <CanAccess permKey={addPermKey ?? true}>
+                                    <Tooltip label={"Nouveau"} position={"bottom"} openDelay={200} >
+                                        <ActionIcon  style={{flex:"initial"}} size={35} variant="subtle" radius="lg" color = "green" onClick={()=>addCallback ? addCallback() : ""}>
+                                            <IconCirclePlus size={33}/>
+                                        </ActionIcon>
+                                    </Tooltip>
+                                </CanAccess>
                             )}
 
                             {withReloadIcon && (

@@ -11,7 +11,7 @@ const BeneficiaryCard = ({beneficiary, withEdit = false, withName = false, title
     const editModalForm = useBeneficiaryModalForm({action: "edit"});
     const {modal: { show: showEditModal },  } = editModalForm;
 
-    const edit = withEdit && beneficiary ? <EditButton record={beneficiary} showEditModal={showEditModal} disabled={beneficiary.archived}/> : ""
+    const edit = withEdit && beneficiary ? <EditButton record={beneficiary} showEditModal={showEditModal} disabled={beneficiary.archived} permKey='api.change_beneficiary'/> : ""
 
     const skeleton = (
         <>

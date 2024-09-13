@@ -50,7 +50,7 @@ function BeneficiaryList() {
                 accessor: "actions",
                 title:"Actions",
                 textAlignment:"center",
-                render: (beneficiary) => (<EditButton record={beneficiary} showEditModal={showEditModal}/>),
+                render: (beneficiary) => (<EditButton record={beneficiary} showEditModal={showEditModal} permKey={'api.change_beneficiary'}/>),
             }
         ],
         [],
@@ -81,6 +81,8 @@ function BeneficiaryList() {
 
                     withAddIcon={true}
                     addCallback={() => {showCreateModal()}}
+                    addPermKey={'api.add_beneficiary'}
+
                     withReloadIcon
                     /*@ts-ignore*/
                     verticalSpacing="md"
