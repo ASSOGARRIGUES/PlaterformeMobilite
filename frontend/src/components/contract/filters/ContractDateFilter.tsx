@@ -1,4 +1,4 @@
-import {ColumnFilter} from "../../SearchableDataTable";
+import type {ColumnFilter} from "../../SearchableDataTable";
 import {Contract} from "../../../types/contract";
 import {Button, Stack} from "@mantine/core";
 import {DatePicker, DateValue} from "@mantine/dates";

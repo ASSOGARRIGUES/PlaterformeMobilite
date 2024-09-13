@@ -1,10 +1,7 @@
 import {MultiSelect} from "@mantine/core";
-import {IconSearch} from "@tabler/icons-react";
-import {useState} from "react";
 import {VehicleStatusEnum} from "../../../types/schema.d";
-import {vehicleStatusLabelMap} from "../../../constants";
-import {CrudFilter} from "@refinedev/core";
-import {ColumnFilter} from "../../SearchableDataTable";
+import  {vehicleStatusLabelMap} from "../../../constants";
+import type {ColumnFilter} from "../../SearchableDataTable";
 import {Vehicle} from "../../../types/vehicle";
 
 

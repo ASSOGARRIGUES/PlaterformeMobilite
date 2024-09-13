@@ -1,4 +1,4 @@
-import {ColumnFilter} from "../../SearchableDataTable";
+import type {ColumnFilter} from "../../SearchableDataTable";
 import {Vehicle} from "../../../types/vehicle";
 import {Stack, MultiSelect} from "@mantine/core";
 import {IconSearch} from "@tabler/icons-react";

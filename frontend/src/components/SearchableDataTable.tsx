@@ -10,15 +10,15 @@ import {
 import {IconCirclePlus, IconInfoCircle, IconRefresh, IconSearch} from "@tabler/icons-react";
 import {DataTable, DataTableColumn, DataTableProps, DataTableSortStatus} from "mantine-datatable";
 import React, {CSSProperties, useEffect, useState} from "react";
-import {BaseRecord, CrudFilter, CrudFilters, HttpError, LogicalFilter, useParsed, useTable} from "@refinedev/core";
+import {BaseRecord, CrudFilters, HttpError, LogicalFilter, useParsed, useTable} from "@refinedev/core";
 import {PAGE_SIZE} from "../constants";
-import {useDebouncedValue, useMediaQuery, useToggle} from "@mantine/hooks";
+import {useDebouncedValue, useMediaQuery} from "@mantine/hooks";
 import {MantineSpacing} from "@mantine/core/lib/core";
 import {GroupProps} from "@mantine/core/lib/components/Group/Group";
 
 export type ColumnFilter<T> = (accessor: keyof T, value: LogicalFilter[] | undefined, setValue: (filter: LogicalFilter[] | undefined) => void) => React.ReactNode
 
-export type SearchableDataTableColumn<T> = Omit<DataTableColumn<T>, "filter"> & {filter?: ColumnFilter<T>, filtering?: boolean, filteredKeys?: string[]}
+export type SearchableDataTableColumn<T>  = Omit<DataTableColumn<T>, "filter"> & {filter?: ColumnFilter<T>, filtering?: boolean, filteredKeys?: string[]}
 
 /*
 Ce composant donne une datable triable avec un champ de recherche et la logique de tri intégré.
@@ -61,7 +61,8 @@ type SearchableDataTableProps<T> = {
     resource?: string;
     defaultArchived?: boolean;
     withArchivedSwitch?: boolean;
-} & Omit<DataTableProps<T>, "columns">
+    withTableBorder?: boolean;
+} & Omit<DataTableProps<T>, "columns" | "groups" | "withTableBorder" | "customLoader">
 
 function SearchableDataTable<T extends BaseRecord>({
                                                        searchPlaceHolder,
@@ -85,6 +86,7 @@ function SearchableDataTable<T extends BaseRecord>({
                                                        resource,
                                                        defaultArchived,
                                                        withArchivedSwitch = true,
+                                                       withTableBorder = false,
                                                        ...othersProps
                                                    }: SearchableDataTableProps<T>)
 {
@@ -152,21 +154,22 @@ function SearchableDataTable<T extends BaseRecord>({
 
     //Retrieve the filtered keys for each column
     const filteredKeysGroupedByAccessor = columns.filter((column) => column.filter && column.filteredKeys).map((column) => ({accessor: column.accessor, filteredAccessors: column.filteredKeys})).reduce((acc, column) => {
-        acc[column.accessor] = column.filteredAccessors
+        if(column.filteredAccessors === undefined) return acc // If the column has no filtered keys, we don't add it to the accumulator
+        acc[column.accessor.toString()] = column.filteredAccessors
         return acc
-    }, {} as {[key: string]: string})
+    }, {} as {[key: string]: string[]})
 
     //Retrieve the filters from the url and associate them with the accessor
     //Sometimes we need to filter multiple field of the Model with the same Column (i.e same accessor) so we need to associate
     // the url filters (that are designated by the model field they are filtering) with the correct accessor.
     const urlFiltersValues = accessorList.map((accessor) => {
-        const urlFilter = urlParams?.filters?.filter((filter) => filter.field === accessor) ?? [] // Retrieve filter that filters a model field with the same name as the accessor
+        const urlFilter = urlParams?.filters?.filter((filter) => filter.hasOwnProperty('field') && (filter as LogicalFilter).field === accessor) as LogicalFilter[] ?? [] // Retrieve filter that filters a model field with the same name as the accessor
 
-        const associatedFilteredKeys = filteredKeysGroupedByAccessor[accessor] // Retrieve the filtered keys of the model fields associated with the accessor
+        const associatedFilteredKeys = filteredKeysGroupedByAccessor[accessor as keyof typeof filteredKeysGroupedByAccessor] // Retrieve the filtered keys of the model fields associated with the accessor
 
         let associatedFilters: LogicalFilter[] = []
         if (associatedFilteredKeys) {
-            associatedFilters = urlParams?.filters?.filter((filter) => associatedFilteredKeys.includes(filter.field)) ?? [] // Retrieve filters that filters the associated model fields
+            associatedFilters = urlParams?.filters?.filter((filter) => filter.hasOwnProperty('field') && associatedFilteredKeys.includes((filter as LogicalFilter).field)) as LogicalFilter[] ?? [] // Retrieve filters that filters the associated model fields
         }
 
         return {
@@ -294,6 +297,7 @@ function SearchableDataTable<T extends BaseRecord>({
                 flex: "1 1 auto",
                 overflow: "hidden"
             }}>
+                {/* @ts-ignore */}
                 <DataTable
                     minHeight={150}
                     striped
@@ -314,6 +318,7 @@ function SearchableDataTable<T extends BaseRecord>({
 
                     style = {styles?.datatable}
 
+                    withTableBorder={withTableBorder}
                     {...othersProps}
                 />
 
