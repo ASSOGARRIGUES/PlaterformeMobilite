@@ -103,10 +103,11 @@ class VehicleViewSet(ArchivableModelViewSet):
     filterset_class = VehicleFilter
 
     def get_queryset(self):
+        queryset = super().get_queryset()
         user_currect_action = self.request.user.current_action
         if user_currect_action:
-            return self.queryset.filter(action=user_currect_action)
-        return self.queryset.none()
+            return queryset.filter(action=user_currect_action)
+        return queryset.none()
 
     def get_serializer_class(self):
         if self.action in MUTATION_ACTION:
@@ -191,10 +192,11 @@ class BeneficiaryViewSet(ArchivableModelViewSet):
     }
 
     def get_queryset(self):
+        queryset = super().get_queryset()
         user_currect_action = self.request.user.current_action
         if user_currect_action:
-            return self.queryset.filter(action=user_currect_action)
-        return self.queryset.none()
+            return queryset.filter(action=user_currect_action)
+        return queryset.none()
 
     def validate_archived(self, instance):
         super_validate = super().validate_archived(instance)
@@ -233,10 +235,11 @@ class ContractViewSet(ArchivableModelViewSet):
     }
 
     def get_queryset(self):
+        queryset = super().get_queryset()
         user_currect_action = self.request.user.current_action
         if user_currect_action:
-            return self.queryset.filter(action=user_currect_action)
-        return self.queryset.none()
+            return queryset.filter(action=user_currect_action)
+        return queryset.none()
 
     def get_serializer_class(self):
         if self.action in MUTATION_ACTION:
