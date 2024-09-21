@@ -33,6 +33,7 @@ import PaymentSummary from "../../components/contract/PaymentSummary";
 import ContractNewPaymentButton from "../../components/contract/ContractNewPaymentButton";
 import {Show} from "../../components/forkedFromRefine/Show";
 import CanAccess from "../../components/CanAccess";
+import ContractDeleteButton from "../../components/contract/ContractDeleteButton";
 
 const ContractShow = () => {
 
@@ -155,7 +156,7 @@ const ContractShow = () => {
 
                             <Stack style={{padding:"0 1.5em"}}>
                                 <Center><Title order={3}>Actions</Title></Center>
-                                <Group grow>
+                                <Group>
                                     <Tooltip label="Ce contrat ne peut être clôturé car il n'est pas actuellement en cours." disabled={contractResponse?.status==ContractStatusEnum.pending}>
                                         <span style={{flex:"auto"}}>
                                             <Button style={{width:"100%"}} color="red" variant="outline" onClick={()=>showEndModal(contractResponse?.id)} disabled={contractResponse?.status!=ContractStatusEnum.pending}>
@@ -169,6 +170,7 @@ const ContractShow = () => {
                                     ): skeleton(1)}
 
                                     <ContractArchiveButton contract={contractResponse}/>
+                                    <ContractDeleteButton contract={contractResponse}/>
                                 </Group>
                             </Stack>
 
