@@ -1,20 +1,53 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
 
 from utils import render_to_pdf
+
+from core.models import Action
+
+
 class Parking(models.Model):
     name = models.CharField(max_length=100)
+    actions = models.ManyToManyField(Action, related_name='parkings', blank=True)
 
     @classmethod
     def get_default_parking_pk(cls):
         #get first parking or create a default one if none exists
         parking = cls.objects.first()
         if not parking:
+            #Create default parking with all actions
             parking = cls.objects.create(name='Défaut')
+            parking.actions.set(Action.objects.all())
+            parking.save()
         return parking.pk
 
     def __str__(self):
         return self.name
+
+
+# Signal handler to handle changes to the ManyToMany field
+@receiver(m2m_changed, sender=Parking.actions.through)
+def handle_actions_changed(sender, instance, action, **kwargs):
+    # Only handle 'post_remove' and 'post_clear' actions (after changes are made)
+    if action == 'post_remove' or action == 'post_clear':
+        for vehicle in instance.vehicles.all():
+            # Check if vehicle's action is no longer in the parking's actions
+            if vehicle.action not in instance.actions.all():
+                print('Vehicle action:', vehicle.action)
+                print('Parking actions:', instance.actions.all())
+                print('Vehicle moved to default parking')
+
+                # Get or create the default parking for the vehicle's action
+                default_parking = Parking.objects.filter(actions=vehicle.action).first()
+                if not default_parking:
+                    default_parking = Parking.objects.get_default_parking_pk()
+
+                # Move vehicle to default parking
+                vehicle.parking = default_parking
+                vehicle.save()
+
 
 
 class Vehicle(models.Model):
@@ -59,9 +92,16 @@ class Vehicle(models.Model):
 
     parking = models.ForeignKey(Parking, on_delete=models.SET_DEFAULT, related_name='vehicles', default=Parking.get_default_parking_pk)
 
+    action = models.ForeignKey(Action, on_delete=models.SET_DEFAULT, related_name='vehicles', default=Action.get_default_action_pk)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     archived = models.BooleanField(default=False)
+
+    class Meta:
+        permissions = [
+            ('can_transfer_vehicle', 'Can transfer vehicle'),
+        ]
 
     def __str__(self):
         return self.brand.capitalize()+' '+self.modele.capitalize()
@@ -78,6 +118,9 @@ class Beneficiary(models.Model):
     license_delivery_date = models.DateField(blank=True, null=True)
     city = models.CharField(max_length=100)
     postal_code = models.CharField(max_length=100)
+
+    action = models.ForeignKey(Action, on_delete=models.SET_DEFAULT, related_name='beneficiaries',
+                               default=Action.get_default_action_pk)
 
     archived = models.BooleanField(default=False)
 
@@ -144,6 +187,8 @@ class Contract(models.Model):
 
 
     referent = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='contracts_referent')
+    action = models.ForeignKey(Action, on_delete=models.SET_DEFAULT, related_name='contracts',
+                               default=Action.get_default_action_pk)
 
     archived = models.BooleanField(default=False)
 
@@ -221,3 +266,4 @@ class Payment(models.Model):
         }
         pdf = render_to_pdf('invoices/participation.html', context)
         return pdf
+

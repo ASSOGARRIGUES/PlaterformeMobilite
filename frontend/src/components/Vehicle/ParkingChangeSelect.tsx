@@ -30,7 +30,14 @@ const ParkingChangeSelect = ({ vehicle, disabled, ...otherProps }:{vehicle: Vehi
 
     return (
         <CanAccess permKey={['api.view_parking', 'api.change_vehicle']}>
-            <ParkingSelect {...otherProps} disabled={disabled || vehicle?.status === VehicleStatusEnum.rented} withLabel onChange={handleChange} value={vehicle?.parking} rightSection={isLoading? (<Loader size="xs"/>) : undefined}/>
+            <ParkingSelect
+                {...otherProps}
+                disabled={disabled || vehicle?.status === VehicleStatusEnum.rented}
+                withLabel
+                onChange={handleChange} value={vehicle?.parking}
+                rightSection={isLoading? (<Loader size="xs"/>) : undefined}
+                filters={[{field: "actions", operator: "eq", value: vehicle?.action.id}]}
+            />
         </CanAccess>
     )
 }

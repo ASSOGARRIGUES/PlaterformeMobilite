@@ -16,9 +16,9 @@ const VehicleStatusBadge = ({vehicle}: {vehicle: Vehicle}) => {
     }
 
     const tooltipTextMap: Record<string, string> = {
-        [VehicleStatusEnum.available]: "Véhicule disponible",
-        [VehicleStatusEnum.rented]: "Véhicule à disposition",
-        [VehicleStatusEnum.maintenance]: "Véhicule en maintenance",
+        [VehicleStatusEnum.available]: "Véhicule disponible.",
+        [VehicleStatusEnum.rented]: "Véhicule à disposition.",
+        [VehicleStatusEnum.maintenance]: "Véhicule en maintenance.",
     }
 
     return <Tooltip label={tooltipTextMap[status]}><Badge color={statusColorMap[status]}>{vehicleStatusLabelMap[status]}</Badge></Tooltip>

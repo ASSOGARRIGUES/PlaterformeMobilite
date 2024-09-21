@@ -22,6 +22,7 @@ import VehicleActions from "../../components/Vehicle/VehicleActions";
 import {DataTableColumn} from "mantine-datatable";
 import {Show} from "../../components/forkedFromRefine/Show";
 import {useMediaQuery} from "@mantine/hooks";
+import {ErrorComponent} from "../../components/ErrorComponent";
 
 const VehicleShow = (props: any) => {
 
@@ -86,6 +87,9 @@ const VehicleShow = (props: any) => {
         ],
         [],
     );
+
+    // If the vehicle is not found, show an error
+    if(showResponse.error?.statusCode === 404) return <ErrorComponent errorMessage={"Le vehicule n'existe pas ou n'est pas accessible"}/>;
 
     return (
         <>

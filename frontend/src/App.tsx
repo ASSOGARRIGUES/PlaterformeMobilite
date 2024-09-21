@@ -1,6 +1,5 @@
 import {  Refine } from "@refinedev/core";
 import {
-    ErrorComponent,
     ThemedTitleV2, ThemedLayoutContextProvider
 } from "@refinedev/mantine";
 
@@ -43,6 +42,9 @@ import logSaver from "./logSaver";
 import BugList from "./pages/bugtracker/BugList";
 import ViewBroadcastModal from "./components/inappcom/ViewBroadcastModal";
 import useAccessControl from "./providers/accessControlProvider";
+import {UserActionsProvider} from "./context/UserActionsProvider";
+import VehicleTransfer from "./pages/vehicle/VehicleTransfer";
+import {ErrorComponent} from "./components/ErrorComponent";
 
 function App() {
 
@@ -136,7 +138,7 @@ function App() {
                             projectId: "CqrvHj-EYqRMF-oCbV7s",
                             reactQuery:{clientConfig:{defaultOptions:{queries:{
                                             retry:(failureCount, error: any)=> {
-                                                if(error.statusCode === 401) {
+                                                if(error.statusCode === 401 || error.statusCode === 404){
                                                     return failureCount < 1
                                                 }else {
                                                     return failureCount < 3
@@ -155,17 +157,19 @@ function App() {
                                             key="authenticated-inner"
                                             fallback={<CatchAllNavigate to="/login" />}
                                         >
-                                            <ThemedLayoutContextProvider>
-                                                <Layout Title={({ collapsed }) => (
-                                                    <ThemedTitleV2
-                                                        // collapsed is a boolean value that indicates whether the <Sidebar> is collapsed or not
-                                                        collapsed={collapsed}
-                                                        text={APP_TITLE}
-                                                    />
-                                                )}>
-                                                    <Outlet />
-                                                </Layout>
-                                            </ThemedLayoutContextProvider>
+                                            <UserActionsProvider>
+                                                <ThemedLayoutContextProvider>
+                                                    <Layout Title={({ collapsed }) => (
+                                                        <ThemedTitleV2
+                                                            // collapsed is a boolean value that indicates whether the <Sidebar> is collapsed or not
+                                                            collapsed={collapsed}
+                                                            text={APP_TITLE}
+                                                        />
+                                                    )}>
+                                                        <Outlet />
+                                                    </Layout>
+                                                </ThemedLayoutContextProvider>
+                                            </UserActionsProvider>
                                         </Authenticated>
                                     }
                                 >
@@ -180,6 +184,7 @@ function App() {
                                     <Route path="/vehicle">
                                         <Route index element={<VehicleList />} />
                                         <Route path=":id" element={<VehicleShow />} />
+                                        <Route path=":id/transfer" element={<VehicleTransfer />} />
                                     </Route>
                                     <Route path="/contract">
                                         <Route index element={<ContractList />} />
@@ -207,6 +212,7 @@ function App() {
                             <ViewBroadcastModal/>
                             {/*<UnsavedChangesNotifier />*/}
                             {/*<DocumentTitleHandler />*/}
+
                         </BugReporterProvider>
                     </Refine>
                 </ModalsProvider>

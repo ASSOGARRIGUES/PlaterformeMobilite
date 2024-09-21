@@ -16,6 +16,7 @@ import type { RefineThemedLayoutV2HeaderProps } from "@refinedev/mantine";
 import {WhoAmI} from "../../types/auth";
 import {IconBug} from "@tabler/icons-react";
 import OpenBugReportButton from "../bugreporter/OpenBugReportButton";
+import ActionSelector from "../actions/ActionSelector";
 
 const Header: React.FC<RefineThemedLayoutV2HeaderProps> = ({
   isSticky,
@@ -70,6 +71,8 @@ const Header: React.FC<RefineThemedLayoutV2HeaderProps> = ({
           {user?.avatar && (
             <Avatar src={user?.avatar} alt={user?.name} radius="xl" />
           )}
+
+          <ActionSelector/>
 
           <OpenBugReportButton/>
 
