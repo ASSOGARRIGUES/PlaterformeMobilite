@@ -5,12 +5,15 @@ import React, {useState} from "react";
 import {useDebouncedValue} from "@mantine/hooks";
 import {User} from "../../types/auth";
 import {ComboboxItem} from "@mantine/core/lib/components/Combobox";
+import {useUserActions} from "../../context/UserActionsProvider";
 
 
 const ReferentSelect = ({ value, onChange, filters, onChangeCompleteReferent, ...otherProps }: Omit<SelectProps, "data"> & {filters?:CrudFilters, onChangeCompleteReferent?:(referent: User)=>any}) => {
 
     const [search, setSearch] = useState("")
     const [searchDebounced] = useDebouncedValue(search, 300)
+
+    const useUserAction = useUserActions()
 
 
 
@@ -22,6 +25,11 @@ const ReferentSelect = ({ value, onChange, filters, onChangeCompleteReferent, ..
                 field: "search",
                 operator: "eq",
                 value:searchDebounced,
+            },
+            {
+                field: "actions",
+                operator: "eq",
+                value: useUserAction?.current_action?.id
             },
             ...(filters || [])
         ]

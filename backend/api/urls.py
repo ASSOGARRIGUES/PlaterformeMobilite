@@ -12,6 +12,7 @@ router.register('contract', views.ContractViewSet)
 router.register('referent', views.UserViewSet)
 router.register('whoami', views.WhoAmIViewSet, basename='whoami')
 router.register('parking', views.ParkingViewSet)
+router.register('user-actions', views.UserActionViewSet, basename='user_actions')
 
 contract_router = NestedSimpleRouter(router, r'contract', lookup='contract')
 contract_router.register(r'payment', views.PaymentViewSet, basename='contract-payment')

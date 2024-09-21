@@ -44,6 +44,7 @@ const BeneficiaryCard = ({beneficiary, withEdit = false, withName = false, title
                 <div><span style={{fontWeight: "bold"}}>Email:</span> <a href={`mailto:${beneficiary?.email}`}>{beneficiary?.email}</a></div>
                 <div><span style={{fontWeight: "bold"}}>Téléphone:</span> <a href={`tel:${beneficiary?.phone}`}>{beneficiary?.phone}</a></div>
                 <div><span style={{fontWeight: "bold"}}>Numéro de permis:</span> {beneficiary?.license_number!=="" ? beneficiary?.license_number : "pas de permis"}</div>
+
             </Stack>
         </Group>
     )

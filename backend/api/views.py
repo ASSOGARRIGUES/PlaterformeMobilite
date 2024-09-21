@@ -4,7 +4,8 @@ from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, permissions
+from drf_spectacular.utils import extend_schema_field
+from rest_framework import viewsets, permissions, serializers
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.response import Response
@@ -13,7 +14,9 @@ from .filters import VehicleFilter
 from .models import Vehicle, Beneficiary, Contract, Parking, Payment
 from .serializers import VehicleSerializer, BeneficiarySerializer, ContractSerializer, UserSerializer, \
     EndContractSerializer, ParkingSerializer, MutationContractSerializer, MutationVehicleSerializer, PaymentSerializer, \
-    ContractPaymentSummarySerializer, WhoAmISerializer
+    ContractPaymentSummarySerializer, WhoAmISerializer, UserActionSerializer, UserActionUpdateSerializer, \
+    ShortVehicleSerializer, VehicleActionTransferSerializer
+from core.models import Action
 
 MUTATION_ACTION = ['create', 'update', 'partial_update']
 RETRIEVE_ACTION = ['retrieve', 'list']
@@ -99,9 +102,19 @@ class VehicleViewSet(ArchivableModelViewSet):
     search_fields = ['brand', 'fleet_id', 'fuel_type', 'imat', 'kilometer', 'modele', 'status', 'transmission', 'type', 'year', 'color']
     filterset_class = VehicleFilter
 
+    def get_queryset(self):
+        user_currect_action = self.request.user.current_action
+        if user_currect_action:
+            return self.queryset.filter(action=user_currect_action)
+        return self.queryset.none()
+
     def get_serializer_class(self):
         if self.action in MUTATION_ACTION:
             return MutationVehicleSerializer
+        elif self.action == "get_all_ids":
+            return ShortVehicleSerializer
+        elif self.action == "action_transfer":
+            return VehicleActionTransferSerializer
 
         return super().get_serializer_class()
 
@@ -125,6 +138,39 @@ class VehicleViewSet(ArchivableModelViewSet):
 
         return True, {}
 
+    @action(detail=False, methods=['get'])
+    def get_all_ids(self, request):
+        queryset = Vehicle.objects.all()
+        # Apply filtering
+        queryset = self.filter_queryset(queryset)
+
+        # Apply pagination
+        page = self.paginate_queryset(queryset)
+        serializer = ShortVehicleSerializer(page, many=True)
+        return self.get_paginated_response(serializer.data)  # Ensure paginated response structure
+
+    @action(detail=True, methods=['post'])
+    def action_transfer(self, request, pk=None):
+
+        #Check if user has the permission can_transfer_vehicle
+        if not request.user.has_perm('api.can_transfer_vehicle'):
+            return Response({"error": "no_permission", "message": "Vous n'avez pas la permission de transférer le véhicule."}, status=403)
+
+        vehicle = self.get_object()
+
+        target_action = get_object_or_404(Action, pk=request.data['action'])
+
+        #Check if user has the right to transfer the vehicle
+        if not request.user.actions.filter(pk=target_action.pk).exists() and not request.user.is_superuser:
+            return Response({"error": "no_permission", "message": "Vous n'avez pas accès à cette action."}, status=403)
+
+        serializer = VehicleActionTransferSerializer(vehicle, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+
 
 class BeneficiaryViewSet(ArchivableModelViewSet):
     queryset = Beneficiary.objects.all()
@@ -143,6 +189,12 @@ class BeneficiaryViewSet(ArchivableModelViewSet):
         'city': ['in', 'exact'],
         'postal_code': ['in', 'exact'],
     }
+
+    def get_queryset(self):
+        user_currect_action = self.request.user.current_action
+        if user_currect_action:
+            return self.queryset.filter(action=user_currect_action)
+        return self.queryset.none()
 
     def validate_archived(self, instance):
         super_validate = super().validate_archived(instance)
@@ -179,6 +231,12 @@ class ContractViewSet(ArchivableModelViewSet):
         'start_date': ['gte', 'lte', 'gt', 'lt'],
         'end_date': ['gte', 'lte', 'gt', 'lt']
     }
+
+    def get_queryset(self):
+        user_currect_action = self.request.user.current_action
+        if user_currect_action:
+            return self.queryset.filter(action=user_currect_action)
+        return self.queryset.none()
 
     def get_serializer_class(self):
         if self.action in MUTATION_ACTION:
@@ -276,8 +334,11 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = (permissions.DjangoModelPermissions,)
 
-    filter_backends = [SearchFilter, OrderingFilter]
-    search_fields = ['username', 'email', 'first_name', 'last_name']
+    filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]
+    search_fields = ['username', 'email', 'first_name', 'last_name', 'actions__name']
+    filterset_fields = {
+        'actions': ['in', 'exact'],
+    }
 
 
 #WhoAmIViewSet is a viewset that returns the current user information using the WhoAmISerializer
@@ -289,11 +350,40 @@ class WhoAmIViewSet(viewsets.ViewSet):
         serializer = WhoAmISerializer(request.user)
         return Response(serializer.data)
 
+#UserAction viewset is a viewset that returns the actions of the current user and the currenlty selected action
+class UserActionViewSet(viewsets.ViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = UserActionSerializer
+
+    def get_serializer_class(self):
+        if self.action in MUTATION_ACTION:
+            return UserActionUpdateSerializer
+        return UserActionSerializer
+
+    def list(self, request):
+        user = request.user
+        serializer = UserActionSerializer(user)
+        return Response(serializer.data)
+
+    def create(self, request):
+        #Use the UserActionUpdateSerializer
+        serializer = UserActionUpdateSerializer(request.user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+
 
 class ParkingViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.DjangoModelPermissions,)
     serializer_class = ParkingSerializer
     queryset = Parking.objects.all()
+
+    filter_backends = [OrderingFilter, DjangoFilterBackend]
+    filterset_fields = {
+        'actions': ['in', 'exact'],
+    }
 
 
 

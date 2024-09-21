@@ -50,6 +50,7 @@ const VehicleCard = ({vehicle, withEdit=false, title=(<>Informations</>), style}
                 <Text><span style={{fontWeight: "bold"}}>Kilométrage: </span> {humanizeNumber(vehicle?.kilometer)}km</Text>
                 <Text><span style={{fontWeight: "bold"}}>Transmission: </span> {vehicle?.transmission}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Carburant: </span> {vehicle?.fuel_type}</Text>
+                <Text><span style={{fontWeight: "bold"}}>Action: </span>{vehicle?.action.name}</Text>
 
             </SimpleGrid>
         </Group>

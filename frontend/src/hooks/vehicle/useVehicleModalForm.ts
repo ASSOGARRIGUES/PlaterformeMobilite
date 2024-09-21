@@ -1,5 +1,5 @@
 import {BaseKey, FormAction, HttpError, RedirectAction, useList} from "@refinedev/core";
-import {Vehicle, VehicleTransformedFields, VehicleWritableFields} from "../../types/vehicle";
+import {ShortVehicle, Vehicle, VehicleTransformedFields, VehicleWritableFields} from "../../types/vehicle";
 import {FuelTypeEnum, TransmissionEnum, VehicleTypeEnum} from "../../types/schema.d";
 import {useModalForm} from "@refinedev/mantine";
 import {FormValidateInput} from "@mantine/form/lib/types";
@@ -24,7 +24,7 @@ const useVehicleModalForm = ({action, redirect=false}: {action: FormAction | und
         transmission: TransmissionEnum.manuelle,
     };
 
-    const [similarFleetIds, setSimilarFleetIds] = useState<number[]>([]);
+    const [similarFleetIds, setSimilarFleetIds] = useState<{fleet_id: number, action_name:string}[]>([]);
 
     const imatRegExp = new RegExp("^[A-Za-z]{2}-?[0-9]{3}-?[A-Za-z]{2}$");
 
@@ -40,8 +40,10 @@ const useVehicleModalForm = ({action, redirect=false}: {action: FormAction | und
             if (!value) {
                 return "Le numéro de flotte est requis";
             }else{
-                if(similarFleetIds.includes(value)) {
-                    return "Ce numéro de flotte est déjà utilisée par un autre véhicule";
+                const similarVehicle = similarFleetIds.find(obj => obj.fleet_id === value);
+                // console.log(similarVehicle)
+                if(similarVehicle) {
+                    return "Ce numéro de flotte est déjà utilisée par un autre véhicule dans l'action "+similarVehicle.action_name;
                 }
             }
         },
@@ -106,15 +108,15 @@ const useVehicleModalForm = ({action, redirect=false}: {action: FormAction | und
         })
     });
 
-    const { data, isLoading } = useList<Vehicle, HttpError>({
-        resource: "vehicle",
+    const { data, isLoading } = useList<ShortVehicle, HttpError>({
+        resource: "vehicle/get_all_ids",
         filters: [{field: "fleet_id", operator: "eq", value: modalForm.getInputProps("fleet_id").value}]
     });
 
     useEffect(() => {
         const selfId = modalForm.refineCore.id;
 
-        const similarFleetIds = data?.data?.filter(vehicle => vehicle.id!==selfId).map(vehicle => vehicle.fleet_id) || [];
+        const similarFleetIds = data?.data?.filter(vehicle => vehicle.fleet_id!==selfId).map(vehicle => ({fleet_id:vehicle.fleet_id, action_name: vehicle.action.name})) || [];
         setSimilarFleetIds(similarFleetIds);
 
     }, [modalForm.refineCore.id, data?.data]);

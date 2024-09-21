@@ -14,7 +14,7 @@ class Command(BaseCommand):
 
         # Generate a type script Type definition file
         with open(options['output'], 'w') as f:
-            f.write('export type Permission = ')
+            f.write('export type PermissionType = true | ')
             f.write('|'.join([f"'{p}'" for p in permissions]))
             f.write(';\n')
 
