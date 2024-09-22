@@ -1125,6 +1125,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/MutationContract'
           description: ''
+  /api/contract-stats/:
+    get:
+      operationId: api_contract_stats_list
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: {}
+                  description: Unspecified response body
+          description: ''
+  /api/contract-stats/ongoing_grouped/:
+    post:
+      operationId: api_contract_stats_ongoing_grouped_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReferentGroup'
+          application/x-www-form-urlencoded:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReferentGroup'
+          multipart/form-data:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReferentGroup'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
   /api/contract/{contract_pk}/payment/:
     get:
       operationId: api_contract_payment_list
@@ -3849,6 +3905,18 @@ components:
         * `aided_contract` - Contrat aidé
         * `job_seeking` - Recherche d’emploi
         * `part_time` - Alternance
+    ReferentGroup:
+      type: object
+      properties:
+        referents:
+          type: array
+          items:
+            type: integer
+        id:
+          type: integer
+      required:
+      - id
+      - referents
     ShortVehicle:
       type: object
       properties:

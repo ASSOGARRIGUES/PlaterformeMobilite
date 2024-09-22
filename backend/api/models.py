@@ -101,6 +101,7 @@ class Vehicle(models.Model):
     class Meta:
         permissions = [
             ('can_transfer_vehicle', 'Can transfer vehicle'),
+            ('review_vehicle', 'Can access to the vehicle review'),
         ]
 
     def __str__(self):

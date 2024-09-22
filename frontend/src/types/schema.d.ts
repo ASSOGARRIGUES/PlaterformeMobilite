@@ -184,6 +184,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/contract-stats/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_contract_stats_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/contract-stats/ongoing_grouped/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_contract_stats_ongoing_grouped_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/contract/{contract_pk}/payment/": {
         parameters: {
             query?: never;
@@ -1153,6 +1185,10 @@ export interface components {
          * @enum {string}
          */
         ReasonEnum: ReasonEnum;
+        ReferentGroup: {
+            referents: number[];
+            id: number;
+        };
         ShortVehicle: {
             readonly id: number;
             /** Format: int64 */
@@ -1981,6 +2017,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MutationContract"];
+                };
+            };
+        };
+    };
+    api_contract_stats_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+        };
+    };
+    api_contract_stats_ongoing_grouped_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReferentGroup"][];
+                "application/x-www-form-urlencoded": components["schemas"]["ReferentGroup"][];
+                "multipart/form-data": components["schemas"]["ReferentGroup"][];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };
