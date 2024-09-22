@@ -2,9 +2,8 @@ import {List} from "@refinedev/mantine";
 import {Group, useMantineTheme} from "@mantine/core";
 import {useMemo} from "react";
 import ContractModal from "../../components/contract/ContractModal";
-import {CompleteContract} from "../../types/contract";
+import {CompleteContract, Contract} from "../../types/contract";
 import {Vehicle} from "../../types/vehicle";
-import ContractTable from "../../components/contract/ContractTable";
 import {Beneficiary} from "../../types/beneficiary";
 import {ContractStatusEnum} from "../../types/schema.d";
 import useEndContractForm from "../../hooks/useEndContractForm";
@@ -19,15 +18,19 @@ import ContractEditButton from "../../components/contract/ContractEditButton";
 import {humanizeDate, humanizeFirstName} from "../../constants";
 import ContractSearchTooltip from "../../components/contract/ContractSearchTooltip";
 import ContractNewPaymentButton from "../../components/contract/ContractNewPaymentButton";
-import {useGo} from "@refinedev/core";
-import {DataTableColumn} from "mantine-datatable";
+import {useGo, useGetToPath} from "@refinedev/core";
+import {DataTableColumn, DataTableRowClickHandler} from "mantine-datatable";
 import {useMediaQuery} from "@mantine/hooks";
+import SearchableDataTable, {SearchableDataTableColumn} from "../../components/SearchableDataTable";
+import ContractStatusFilter from "../../components/contract/filters/ContractStatusFilter";
+import ContractDateFilter from "../../components/contract/filters/ContractDateFilter";
 
 const ContractList = () => {
 
     const theme = useMantineTheme();
     const smallerThanMd = useMediaQuery(`(max-width: ${theme.breakpoints.md})`);
 
+    const getToPath = useGetToPath();
     const go = useGo();
 
     const editModalForm = useContractModalForm({action: "edit"});
@@ -36,7 +39,7 @@ const ContractList = () => {
     const endModalForm = useEndContractForm();
     const {modal: { show: showEndModal}} = endModalForm;
 
-    const columns = useMemo<DataTableColumn<CompleteContract>[]>(
+    const columns = useMemo<SearchableDataTableColumn<CompleteContract>[]>(
         () => [
             {
                 accessor:"id",
@@ -69,14 +72,16 @@ const ContractList = () => {
                 title: 'Début',
                 sortable: true,
                 render: (contract) => (humanizeDate(contract.start_date)),
-                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`,
+                filter: ContractDateFilter,
             },
             {
                 accessor: 'end_date',
                 title: 'Fin',
                 sortable: true,
                 render: (contract) => (humanizeDate(contract.end_date)),
-                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`,
+                filter: ContractDateFilter,
             },
             {
                 accessor: "status",
@@ -84,6 +89,7 @@ const ContractList = () => {
                 textAlignment:"center",
                 sortable: true,
                 render: (contract) => (<ContractStatusBadge contract={contract}/>),
+                filter: ContractStatusFilter,
             },
             {
                 accessor: 'referent',
@@ -113,6 +119,19 @@ const ContractList = () => {
         [],
     );
 
+    const rowClickHandler: DataTableRowClickHandler<Contract> = ({record : contract, index, event}) => {
+        const path = getToPath({
+            action: "show",
+            meta: {
+                id: contract.id
+            }
+        });
+
+        go({
+            to: path
+        });
+    }
+
 
     return (
         <>
@@ -120,12 +139,15 @@ const ContractList = () => {
             <EndContractModal {...endModalForm}/>
 
             <List title="" wrapperProps={{children: undefined, style:{height:(smallerThanMd ? "100vh" : "100%"), display:"flex", flexDirection:"column"}}} contentProps={{style:{flex:"auto", minHeight:0}}} canCreate={false}>
-                <ContractTable
+                <SearchableDataTable
+                    resource="contract"
                     searchPlaceHolder={"Rechercher un contrat"}
                     columns={columns}
 
                     withAddIcon={true}
                     addCallback={() => {go({to:{resource:"contract", action:"create"}})}}
+                    addPermKey={'api.add_contract'}
+
                     withReloadIcon
 
                     /*@ts-ignore*/
@@ -133,6 +155,8 @@ const ContractList = () => {
                     defaultSortedColumn="start_date"
                     defaultSortedDirection="desc"
                     searchInfoTooltip={ContractSearchTooltip}
+
+                    onRowClick={rowClickHandler}
                 />
             </List>
         </>

@@ -1,6 +1,5 @@
 import {  Refine } from "@refinedev/core";
 import {
-    ErrorComponent,
     ThemedTitleV2, ThemedLayoutContextProvider
 } from "@refinedev/mantine";
 
@@ -42,6 +41,11 @@ import {BugReporterProvider} from "./context/BugReporterProvider";
 import logSaver from "./logSaver";
 import BugList from "./pages/bugtracker/BugList";
 import ViewBroadcastModal from "./components/inappcom/ViewBroadcastModal";
+import useAccessControl from "./providers/accessControlProvider";
+import {UserActionsProvider} from "./context/UserActionsProvider";
+import VehicleTransfer from "./pages/vehicle/VehicleTransfer";
+import {ErrorComponent} from "./components/ErrorComponent";
+import VehicleReview from "./pages/VehicleReview";
 
 function App() {
 
@@ -92,6 +96,7 @@ function App() {
                                 meta: {
                                     label: "Tableau de bord",
                                     icon: <IconDashboard/>,
+                                    permKey: true,
                                 },
                             },
                             {
@@ -100,7 +105,8 @@ function App() {
                                 show: "beneficiary/:id",
                                 meta: {
                                     label: "Bénéficiaires",
-                                    icon: <IconAddressBook/>
+                                    icon: <IconAddressBook/>,
+                                    permissionGroup: 'api',
                                 },
                             },
                             {
@@ -109,7 +115,8 @@ function App() {
                                 show: "vehicle/:id",
                                 meta: {
                                     label: "Véhicules",
-                                    icon: <IconCar/>
+                                    icon: <IconCar/>,
+                                    permissionGroup: 'api',
                                 },
                             },
                             {
@@ -120,6 +127,15 @@ function App() {
                                 meta: {
                                     label: "Contrats",
                                     icon: <img src = {ContractIcon} width="20px" style={{marginRight: 5}}/>,
+                                    permissionGroup: 'api',
+                                },
+                            },
+                            {
+                                name: "vehicle_review",
+                                list: "vehicle_review/",
+                                meta: {
+                                    label: "Revue véhicules",
+                                    permKey: 'api.review_vehicle',
                                 },
                             }
                         ]}
@@ -131,7 +147,7 @@ function App() {
                             projectId: "CqrvHj-EYqRMF-oCbV7s",
                             reactQuery:{clientConfig:{defaultOptions:{queries:{
                                             retry:(failureCount, error: any)=> {
-                                                if(error.statusCode === 401) {
+                                                if(error.statusCode === 401 || error.statusCode === 404){
                                                     return failureCount < 1
                                                 }else {
                                                     return failureCount < 3
@@ -150,17 +166,19 @@ function App() {
                                             key="authenticated-inner"
                                             fallback={<CatchAllNavigate to="/login" />}
                                         >
-                                            <ThemedLayoutContextProvider>
-                                                <Layout Title={({ collapsed }) => (
-                                                    <ThemedTitleV2
-                                                        // collapsed is a boolean value that indicates whether the <Sidebar> is collapsed or not
-                                                        collapsed={collapsed}
-                                                        text={APP_TITLE}
-                                                    />
-                                                )}>
-                                                    <Outlet />
-                                                </Layout>
-                                            </ThemedLayoutContextProvider>
+                                            <UserActionsProvider>
+                                                <ThemedLayoutContextProvider>
+                                                    <Layout Title={({ collapsed }) => (
+                                                        <ThemedTitleV2
+                                                            // collapsed is a boolean value that indicates whether the <Sidebar> is collapsed or not
+                                                            collapsed={collapsed}
+                                                            text={APP_TITLE}
+                                                        />
+                                                    )}>
+                                                        <Outlet />
+                                                    </Layout>
+                                                </ThemedLayoutContextProvider>
+                                            </UserActionsProvider>
                                         </Authenticated>
                                     }
                                 >
@@ -175,11 +193,15 @@ function App() {
                                     <Route path="/vehicle">
                                         <Route index element={<VehicleList />} />
                                         <Route path=":id" element={<VehicleShow />} />
+                                        <Route path=":id/transfer" element={<VehicleTransfer />} />
                                     </Route>
                                     <Route path="/contract">
                                         <Route index element={<ContractList />} />
                                         <Route path=":id" element={<ContractShow />} />
                                         <Route path="create" element={<ContractCreate />} />
+                                    </Route>
+                                    <Route path="/vehicle_review">
+                                        <Route index element={<VehicleReview />} />
                                     </Route>
                                     <Route path={"/buglist"} element={<BugList/>} />
                                     <Route path="*" element={<ErrorComponent />} />
@@ -202,6 +224,7 @@ function App() {
                             <ViewBroadcastModal/>
                             {/*<UnsavedChangesNotifier />*/}
                             {/*<DocumentTitleHandler />*/}
+
                         </BugReporterProvider>
                     </Refine>
                 </ModalsProvider>

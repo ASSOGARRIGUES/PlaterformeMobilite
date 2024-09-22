@@ -11,12 +11,31 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
+
+class Action(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+    @classmethod
+    def get_default_action_pk(cls):
+        action = cls.objects.first()
+        if not action:
+            action = cls.objects.create(name='Default')
+        return action.pk
+
+
 class User(AbstractUser):
     phone = models.CharField(max_length=100)
     email = models.EmailField(_("email address"), unique=True,
         error_messages={
             "unique": _("A user with that email already exists."),
         },)
+
+    actions = models.ManyToManyField(Action, blank=True, related_name='users')
+
+    current_action = models.ForeignKey(Action, on_delete=models.SET_NULL, related_name='currently_connected_users', null=True)
 
     REQUIRED_FIELDS = ['phone', "first_name", "last_name", "username"]
     USERNAME_FIELD = "email"
@@ -67,5 +86,13 @@ class User(AbstractUser):
             return e
         except Exception as e:
             return e
+
+
+    #Override actions getter because if the user is superuser, he has all actions
+    def get_actions(self):
+        if self.is_superuser:
+            return Action.objects.all()
+        return self.actions.all()
+
 
 

@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.sites.shortcuts import get_current_site
 from django.utils.translation import gettext_lazy as _
 
-from .models import User
+from .models import User, Action
 
 
 # Register your models here.
@@ -15,11 +15,15 @@ class MyUserAdmin(UserAdmin):
     # Detach the actual fields and add them to the new field
     fieldsets = []
     for fieldset in UserAdmin.fieldsets:
+        current_fields = fieldset[1]['fields']
         if(fieldset[0] == _('Personal info')):
-            current_fields = fieldset[1]['fields']
             fieldsets.append((_('Personal info'), {'fields': current_fields + ('phone',)}))
         else:
             fieldsets.append(fieldset)
+
+    fieldsets.append((_('Actions'), {'fields': ('actions', 'current_action')}))
+
+    filter_horizontal = UserAdmin.filter_horizontal+('actions',)
 
     @admin.action(description='Envoi mail reset mdp')
     def reset_password(self, request, queryset):
@@ -45,3 +49,4 @@ class MyUserAdmin(UserAdmin):
             self.message_user(request, "Erreurs: " + error_text, level='ERROR')
 
 admin.site.register(User, MyUserAdmin)
+admin.site.register(Action)

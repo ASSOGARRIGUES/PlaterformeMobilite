@@ -184,6 +184,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/contract-stats/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_contract_stats_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/contract-stats/ongoing_grouped/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_contract_stats_ongoing_grouped_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/contract/{contract_pk}/payment/": {
         parameters: {
             query?: never;
@@ -460,6 +492,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/user-actions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_user_actions_list"];
+        put?: never;
+        post: operations["api_user_actions_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/vehicle/": {
         parameters: {
             query?: never;
@@ -492,6 +540,22 @@ export interface paths {
         patch: operations["api_vehicle_partial_update"];
         trace?: never;
     };
+    "/api/vehicle/{id}/action_transfer/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_vehicle_action_transfer_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/vehicle/{id}/archive/": {
         parameters: {
             query?: never;
@@ -522,6 +586,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["api_vehicle_unarchive_partial_update"];
+        trace?: never;
+    };
+    "/api/vehicle/get_all_ids/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_vehicle_get_all_ids_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/vehicle/get_archived/": {
@@ -560,8 +640,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Action: {
+            readonly id: number;
+            name: string;
+        };
         Beneficiary: {
             readonly id: number;
+            readonly action: components["schemas"]["Action"];
             first_name: string;
             last_name: string;
             phone: string;
@@ -627,6 +712,7 @@ export interface components {
             readonly created_at: string;
             readonly created_by: components["schemas"]["User"];
             referent: components["schemas"]["User"];
+            readonly action: components["schemas"]["Action"];
             vehicle: components["schemas"]["Vehicle"];
             beneficiary: components["schemas"]["Beneficiary"];
             /** Format: date */
@@ -701,6 +787,7 @@ export interface components {
             readonly created_at: string;
             readonly created_by: components["schemas"]["User"];
             referent: number;
+            readonly action: components["schemas"]["Action"];
             vehicle: number;
             beneficiary: number;
             /** Format: date */
@@ -729,6 +816,7 @@ export interface components {
             /** Format: uri */
             photo?: string;
             parking?: number;
+            readonly action: components["schemas"]["Action"];
             type?: components["schemas"]["VehicleTypeEnum"];
             transmission?: components["schemas"]["TransmissionEnum"];
             fuel_type?: components["schemas"]["FuelTypeEnum"];
@@ -872,9 +960,11 @@ export interface components {
         Parking: {
             readonly id: number;
             name: string;
+            actions?: number[];
         };
         PatchedBeneficiary: {
             readonly id?: number;
+            readonly action?: components["schemas"]["Action"];
             first_name?: string;
             last_name?: string;
             phone?: string;
@@ -916,6 +1006,7 @@ export interface components {
             readonly created_at?: string;
             readonly created_by?: components["schemas"]["User"];
             referent?: components["schemas"]["User"];
+            readonly action?: components["schemas"]["Action"];
             vehicle?: components["schemas"]["Vehicle"];
             beneficiary?: components["schemas"]["Beneficiary"];
             /** Format: date */
@@ -956,6 +1047,7 @@ export interface components {
             readonly created_at?: string;
             readonly created_by?: components["schemas"]["User"];
             referent?: number;
+            readonly action?: components["schemas"]["Action"];
             vehicle?: number;
             beneficiary?: number;
             /** Format: date */
@@ -984,6 +1076,7 @@ export interface components {
             /** Format: uri */
             photo?: string;
             parking?: number;
+            readonly action?: components["schemas"]["Action"];
             type?: components["schemas"]["VehicleTypeEnum"];
             transmission?: components["schemas"]["TransmissionEnum"];
             fuel_type?: components["schemas"]["FuelTypeEnum"];
@@ -1005,6 +1098,7 @@ export interface components {
         PatchedParking: {
             readonly id?: number;
             name?: string;
+            actions?: number[];
         };
         PatchedPayment: {
             readonly id?: number;
@@ -1041,6 +1135,7 @@ export interface components {
             /** Format: uri */
             photo?: string;
             readonly parking?: components["schemas"]["Parking"];
+            readonly action?: components["schemas"]["Action"];
             type?: components["schemas"]["VehicleTypeEnum"];
             transmission?: components["schemas"]["TransmissionEnum"];
             fuel_type?: components["schemas"]["FuelTypeEnum"];
@@ -1090,6 +1185,16 @@ export interface components {
          * @enum {string}
          */
         ReasonEnum: ReasonEnum;
+        ReferentGroup: {
+            referents: number[];
+            id: number;
+        };
+        ShortVehicle: {
+            readonly id: number;
+            /** Format: int64 */
+            fleet_id: number;
+            readonly action: components["schemas"]["Action"];
+        };
         TokenObtainPair: {
             email: string;
             password: string;
@@ -1123,11 +1228,19 @@ export interface components {
             /** Nom */
             last_name?: string;
         };
+        UserAction: {
+            readonly actions: components["schemas"]["Action"][];
+            current_action: components["schemas"]["Action"];
+        };
+        UserActionUpdate: {
+            current_action?: number;
+        };
         Vehicle: {
             readonly id: number;
             /** Format: uri */
             photo?: string;
             readonly parking: components["schemas"]["Parking"];
+            readonly action: components["schemas"]["Action"];
             type?: components["schemas"]["VehicleTypeEnum"];
             transmission?: components["schemas"]["TransmissionEnum"];
             fuel_type?: components["schemas"]["FuelTypeEnum"];
@@ -1146,6 +1259,10 @@ export interface components {
             readonly created_at: string;
             archived?: boolean;
         };
+        VehicleActionTransfer: {
+            parking?: number;
+            action: number;
+        };
         /**
          * @description * `available` - Disponible
          *     * `rented` - A dispo
@@ -1159,6 +1276,31 @@ export interface components {
          * @enum {string}
          */
         VehicleTypeEnum: VehicleTypeEnum;
+        WhoAmI: {
+            readonly id: number;
+            /**
+             * Nom d’utilisateur
+             * @description Requis. 150 caractères maximum. Uniquement des lettres, nombres et les caractères « @ », « . », « + », « - » et « _ ».
+             */
+            username: string;
+            /**
+             * Adresse électronique
+             * Format: email
+             */
+            email: string;
+            /** Prénom */
+            first_name?: string;
+            /** Nom */
+            last_name?: string;
+            /**
+             * Statut super-utilisateur
+             * @description Précise que l’utilisateur possède toutes les permissions sans les assigner explicitement.
+             */
+            is_superuser?: boolean;
+            readonly permissions: unknown[];
+            actions?: number[];
+            current_action?: number | null;
+        };
     };
     responses: never;
     parameters: never;
@@ -1879,6 +2021,54 @@ export interface operations {
             };
         };
     };
+    api_contract_stats_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+        };
+    };
+    api_contract_stats_ongoing_grouped_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReferentGroup"][];
+                "application/x-www-form-urlencoded": components["schemas"]["ReferentGroup"][];
+                "multipart/form-data": components["schemas"]["ReferentGroup"][];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
     api_contract_payment_list: {
         parameters: {
             query?: {
@@ -2372,10 +2562,15 @@ export interface operations {
     api_parking_list: {
         parameters: {
             query?: {
+                actions?: number[];
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                actions__in?: number[];
                 /** @description Number of results to return per page. */
                 limit?: number;
                 /** @description The initial index from which to return the results. */
                 offset?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
             };
             header?: never;
             path?: never;
@@ -2520,6 +2715,9 @@ export interface operations {
     api_referent_list: {
         parameters: {
             query?: {
+                actions?: number[];
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                actions__in?: number[];
                 /** @description Number of results to return per page. */
                 limit?: number;
                 /** @description The initial index from which to return the results. */
@@ -2719,6 +2917,50 @@ export interface operations {
             };
         };
     };
+    api_user_actions_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserAction"][];
+                };
+            };
+        };
+    };
+    api_user_actions_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["UserActionUpdate"];
+                "application/x-www-form-urlencoded": components["schemas"]["UserActionUpdate"];
+                "multipart/form-data": components["schemas"]["UserActionUpdate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserActionUpdate"];
+                };
+            };
+        };
+    };
     api_vehicle_list: {
         parameters: {
             query?: {
@@ -2729,6 +2971,12 @@ export interface operations {
                 fleet_id?: number;
                 /** @description Les valeurs multiples doivent être séparées par des virgules. */
                 fleet_id__in?: number[];
+                /** @description * `essence` - Essence
+                 *     * `diesel` - Diesel
+                 *     * `electrique` - Electrique */
+                fuel_type?: PathsApiVehicleGetParametersQueryFuel_type;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                fuel_type__in?: string[];
                 id?: number;
                 /** @description Les valeurs multiples doivent être séparées par des virgules. */
                 id__in?: number[];
@@ -2752,6 +3000,16 @@ export interface operations {
                  *     * `rented` - A dispo
                  *     * `maintenance` - En maintenance */
                 status__or?: PathsApiVehicleGetParametersQueryStatus__or;
+                /** @description * `manuelle` - Manuelle
+                 *     * `automatique` - Automatique */
+                transmission?: PathsApiVehicleGetParametersQueryTransmission;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                transmission__in?: string[];
+                /** @description * `voiture` - Voiture
+                 *     * `scouter` - Scooter */
+                type?: PathsApiVehicleGetParametersQueryType;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                type__in?: string[];
             };
             header?: never;
             path?: never;
@@ -2893,6 +3151,34 @@ export interface operations {
             };
         };
     };
+    api_vehicle_action_transfer_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this vehicle. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VehicleActionTransfer"];
+                "application/x-www-form-urlencoded": components["schemas"]["VehicleActionTransfer"];
+                "multipart/form-data": components["schemas"]["VehicleActionTransfer"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VehicleActionTransfer"];
+                };
+            };
+        };
+    };
     api_vehicle_archive_retrieve: {
         parameters: {
             query?: never;
@@ -2971,6 +3257,25 @@ export interface operations {
             };
         };
     };
+    api_vehicle_get_all_ids_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShortVehicle"];
+                };
+            };
+        };
+    };
     api_vehicle_get_archived_retrieve: {
         parameters: {
             query?: never;
@@ -3004,7 +3309,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["User"][];
+                    "application/json": components["schemas"]["WhoAmI"][];
                 };
             };
         };
@@ -3137,6 +3442,11 @@ export enum PathsApiContractGetParametersQueryStatus {
     pending = "pending",
     waiting = "waiting"
 }
+export enum PathsApiVehicleGetParametersQueryFuel_type {
+    diesel = "diesel",
+    electrique = "electrique",
+    essence = "essence"
+}
 export enum PathsApiVehicleGetParametersQueryStatus {
     available = "available",
     maintenance = "maintenance",
@@ -3146,6 +3456,14 @@ export enum PathsApiVehicleGetParametersQueryStatus__or {
     available = "available",
     maintenance = "maintenance",
     rented = "rented"
+}
+export enum PathsApiVehicleGetParametersQueryTransmission {
+    automatique = "automatique",
+    manuelle = "manuelle"
+}
+export enum PathsApiVehicleGetParametersQueryType {
+    scouter = "scouter",
+    voiture = "voiture"
 }
 export enum BlankEnum {
      ""

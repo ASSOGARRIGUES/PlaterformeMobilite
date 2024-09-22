@@ -1,6 +1,7 @@
 import {Badge, Tooltip} from "@mantine/core";
 import {VehicleStatusEnum} from "../../types/schema.d";
 import {Vehicle} from "../../types/vehicle";
+import {vehicleStatusLabelMap} from "../../constants";
 
 const VehicleStatusBadge = ({vehicle}: {vehicle: Vehicle}) => {
 
@@ -14,19 +15,13 @@ const VehicleStatusBadge = ({vehicle}: {vehicle: Vehicle}) => {
         [VehicleStatusEnum.maintenance]: "orange",
     }
 
-    const statusTextMap: Record<string,string> = {
-        [VehicleStatusEnum.available]: "Disponible",
-        [VehicleStatusEnum.rented]: "A disposition",
-        [VehicleStatusEnum.maintenance]: "Maintenance",
-    }
-
     const tooltipTextMap: Record<string, string> = {
-        [VehicleStatusEnum.available]: "Véhicule disponible",
-        [VehicleStatusEnum.rented]: "Véhicule à disposition",
-        [VehicleStatusEnum.maintenance]: "Véhicule en maintenance",
+        [VehicleStatusEnum.available]: "Véhicule disponible.",
+        [VehicleStatusEnum.rented]: "Véhicule à disposition.",
+        [VehicleStatusEnum.maintenance]: "Véhicule en maintenance.",
     }
 
-    return <Tooltip label={tooltipTextMap[status]}><Badge color={statusColorMap[status]}>{statusTextMap[status]}</Badge></Tooltip>
+    return <Tooltip label={tooltipTextMap[status]}><Badge color={statusColorMap[status]}>{vehicleStatusLabelMap[status]}</Badge></Tooltip>
 }
 
 export default VehicleStatusBadge;

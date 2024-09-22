@@ -22,7 +22,7 @@ const VehicleCard = ({vehicle, withEdit=false, title=(<>Informations</>), style}
     const {modal: { show: showEditModal},  getInputProps} = editModalForm;
 
 
-    const edit = withEdit && vehicle ? <EditButton showEditModal={showEditModal} record={vehicle} disabled={vehicle.archived}/> : ""
+    const edit = withEdit && vehicle ? <EditButton showEditModal={showEditModal} record={vehicle} disabled={vehicle.archived} permKey='api.change_vehicle'/> : ""
 
     const skeleton = (
         <>
@@ -50,6 +50,7 @@ const VehicleCard = ({vehicle, withEdit=false, title=(<>Informations</>), style}
                 <Text><span style={{fontWeight: "bold"}}>Kilométrage: </span> {humanizeNumber(vehicle?.kilometer)}km</Text>
                 <Text><span style={{fontWeight: "bold"}}>Transmission: </span> {vehicle?.transmission}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Carburant: </span> {vehicle?.fuel_type}</Text>
+                <Text><span style={{fontWeight: "bold"}}>Action: </span>{vehicle?.action.name}</Text>
 
             </SimpleGrid>
         </Group>

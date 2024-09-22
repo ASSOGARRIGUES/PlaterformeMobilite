@@ -4,8 +4,9 @@ import {ComponentProps} from "react";
 import {useUpdate} from "@refinedev/core";
 import {Loader} from "@mantine/core";
 import {VehicleStatusEnum} from "../../types/schema.d";
+import CanAccess from "../CanAccess";
 
-const ParkingChangeSelect = ({ vehicle, disabled, ...otherProps }:{vehicle: Vehicle | undefined} & Omit<ComponentProps<typeof ParkingSelect>, "onChange">) => {
+const ParkingChangeSelect = ({ vehicle, disabled, withLabel=true, ...otherProps }:{vehicle: Vehicle | undefined} & Omit<ComponentProps<typeof ParkingSelect>, "onChange">) => {
 
     const { mutate, isLoading } = useUpdate();
 
@@ -28,7 +29,16 @@ const ParkingChangeSelect = ({ vehicle, disabled, ...otherProps }:{vehicle: Vehi
     }
 
     return (
-        <ParkingSelect {...otherProps} disabled={disabled || vehicle?.status === VehicleStatusEnum.rented} withLabel onChange={handleChange} value={vehicle?.parking} rightSection={isLoading? (<Loader size="xs"/>) : undefined}/>
+        <CanAccess permKey={['api.view_parking', 'api.change_vehicle']}>
+            <ParkingSelect
+                {...otherProps}
+                disabled={disabled || vehicle?.status === VehicleStatusEnum.rented}
+                onChange={handleChange} value={vehicle?.parking}
+                rightSection={isLoading? (<Loader size="xs"/>) : undefined}
+                filters={[{field: "actions", operator: "eq", value: vehicle?.action.id}]}
+                
+            />
+        </CanAccess>
     )
 }
 

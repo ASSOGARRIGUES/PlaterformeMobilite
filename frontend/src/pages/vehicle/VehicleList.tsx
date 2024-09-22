@@ -1,23 +1,24 @@
 import {List} from "@refinedev/mantine";
 import { Group} from "@mantine/core";
 import {useMemo} from "react";
-import SearchableDataTable from "../../components/SearchableDataTable";
+import SearchableDataTable, {SearchableDataTableColumn} from "../../components/SearchableDataTable";
 import {Vehicle} from "../../types/vehicle";
 import {FuelTypeEnum, TransmissionEnum} from "../../types/schema.d";
 import VehicleModal from "../../components/Vehicle/VehicleModal";
 import TransmissionIcon from "../../components/Vehicle/TransmissionIcon";
 import FuelIcon from "../../components/Vehicle/FuelIcon";
-import {Beneficiary} from "../../types/beneficiary";
 import {useGetToPath, useGo} from "@refinedev/core";
 import useVehicleModalForm from "../../hooks/vehicle/useVehicleModalForm";
 import EditButton from "../../components/EditButton";
 import VehicleStatusBadge from "../../components/Vehicle/VehicleStatusBadge";
 import VehicleSearchTooltip from "../../components/Vehicle/VehicleSearchTooltip";
 import VehicleAvatar from "../../components/Vehicle/VehicleAvatar";
-import {DataTableColumn, DataTableRowClickHandler} from "mantine-datatable";
+import {DataTableRowClickHandler} from "mantine-datatable";
 import VehicleBadge from "../../components/Vehicle/VehicleBadge";
 import {useMantineTheme} from "@mantine/core";
 import {useMediaQuery} from "@mantine/hooks";
+import VehicleStatusFilter from "../../components/Vehicle/filters/VehicleStatusFilter";
+import VehicleTypeFilter from "../../components/Vehicle/filters/VehicleTypeFilter";
 
 
 const VehicleList = () => {
@@ -43,7 +44,7 @@ const VehicleList = () => {
         )
     }
 
-    const columns = useMemo<DataTableColumn<Vehicle>[]>(
+    const columns = useMemo<SearchableDataTableColumn<Vehicle>[]>(
         () => [
             {
                 accessor: 'fleet_id', //access nested data with dot notation
@@ -69,6 +70,8 @@ const VehicleList = () => {
                 accessor: 'type-icon',
                 title: 'Type',
                 render: (car) => (<VehicleCaracteristics car={car}/>),
+                filter: VehicleTypeFilter,
+                filteredKeys: ["fuel_type", "transmission"],
             },
             {
                 accessor: 'brand',
@@ -92,13 +95,14 @@ const VehicleList = () => {
                 accessor: 'status',
                 title: 'Statut',
                 sortable: true,
-                render:(vehicle) => (<VehicleStatusBadge vehicle={vehicle}/>)
+                render:(vehicle) => (<VehicleStatusBadge vehicle={vehicle}/>),
+                filter: VehicleStatusFilter
             },
             {
                 accessor: "actions",
                 title:"Actions",
                 textAlign: "center",
-                render: (car) => (<EditButton record={car} showEditModal={showEditModal}/>),
+                render: (car) => (<EditButton record={car} showEditModal={showEditModal} permKey={'api.change_vehicle'}/>),
                 visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
             }
         ],
@@ -131,6 +135,8 @@ const VehicleList = () => {
 
                     withAddIcon={true}
                     addCallback={() => {showCreateModal()}}
+                    addPermKey={'api.add_vehicle'}
+
                     withReloadIcon
                     /*@ts-ignore*/
                     verticalSpacing="md"

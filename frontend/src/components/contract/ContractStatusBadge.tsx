@@ -1,6 +1,7 @@
 import {CompleteContract} from "../../types/contract";
 import {Badge, Tooltip} from "@mantine/core";
 import {ContractStatusEnum} from "../../types/schema.d";
+import {contractStatusLabelMap} from "../../constants";
 
 const ContractStatusBadge = ({contract}: {contract: CompleteContract}) => {
 
@@ -15,13 +16,6 @@ const ContractStatusBadge = ({contract}: {contract: CompleteContract}) => {
         [ContractStatusEnum.payed]: "gray",
     }
 
-    const statusTextMap: Record<string, string> = {
-        [ContractStatusEnum.waiting]: "En attente d'EDL",
-        [ContractStatusEnum.pending]: "En cours",
-        [ContractStatusEnum.over]: "Clôturer",
-        [ContractStatusEnum.payed]: "Payé",
-    }
-
     const tooltipTextMap: Record<string, string> = {
         [ContractStatusEnum.waiting]: "En attente d'Etat des lieux",
         [ContractStatusEnum.pending]: "En cours: véhicule à disposition",
@@ -29,7 +23,7 @@ const ContractStatusBadge = ({contract}: {contract: CompleteContract}) => {
         [ContractStatusEnum.payed]: "Payé: contrat terminé",
     }
 
-    return <Tooltip label={tooltipTextMap[status]}><Badge color={statusColorMap[status]}>{statusTextMap[status]}</Badge></Tooltip>
+    return <Tooltip label={tooltipTextMap[status]}><Badge color={statusColorMap[status]}>{contractStatusLabelMap[status]}</Badge></Tooltip>
 }
 
 export default ContractStatusBadge;

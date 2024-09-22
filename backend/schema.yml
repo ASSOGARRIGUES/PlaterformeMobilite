@@ -1125,6 +1125,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/MutationContract'
           description: ''
+  /api/contract-stats/:
+    get:
+      operationId: api_contract_stats_list
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: {}
+                  description: Unspecified response body
+          description: ''
+  /api/contract-stats/ongoing_grouped/:
+    post:
+      operationId: api_contract_stats_ongoing_grouped_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReferentGroup'
+          application/x-www-form-urlencoded:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReferentGroup'
+          multipart/form-data:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReferentGroup'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
   /api/contract/{contract_pk}/payment/:
     get:
       operationId: api_contract_payment_list
@@ -1670,6 +1726,23 @@ paths:
     get:
       operationId: api_parking_list
       parameters:
+      - in: query
+        name: actions
+        schema:
+          type: array
+          items:
+            type: integer
+        explode: true
+        style: form
+      - in: query
+        name: actions__in
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
       - name: limit
         required: false
         in: query
@@ -1682,6 +1755,12 @@ paths:
         description: The initial index from which to return the results.
         schema:
           type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
       tags:
       - api
       security:
@@ -1828,6 +1907,23 @@ paths:
     get:
       operationId: api_referent_list
       parameters:
+      - in: query
+        name: actions
+        schema:
+          type: array
+          items:
+            type: integer
+        explode: true
+        style: form
+      - in: query
+        name: actions__in
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
       - name: limit
         required: false
         in: query
@@ -2048,6 +2144,48 @@ paths:
               schema:
                 $ref: '#/components/schemas/TokenRefresh'
           description: ''
+  /api/user-actions/:
+    get:
+      operationId: api_user_actions_list
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserAction'
+          description: ''
+    post:
+      operationId: api_user_actions_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserActionUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserActionUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserActionUpdate'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserActionUpdate'
+          description: ''
   /api/vehicle/:
     get:
       operationId: api_vehicle_list
@@ -2083,6 +2221,27 @@ paths:
           type: array
           items:
             type: integer
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: fuel_type
+        schema:
+          type: string
+          enum:
+          - diesel
+          - electrique
+          - essence
+        description: |-
+          * `essence` - Essence
+          * `diesel` - Diesel
+          * `electrique` - Electrique
+      - in: query
+        name: fuel_type__in
+        schema:
+          type: array
+          items:
+            type: string
         description: Les valeurs multiples doivent être séparées par des virgules.
         explode: false
         style: form
@@ -2158,6 +2317,44 @@ paths:
           * `available` - Disponible
           * `rented` - A dispo
           * `maintenance` - En maintenance
+      - in: query
+        name: transmission
+        schema:
+          type: string
+          enum:
+          - automatique
+          - manuelle
+        description: |-
+          * `manuelle` - Manuelle
+          * `automatique` - Automatique
+      - in: query
+        name: transmission__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: type
+        schema:
+          type: string
+          enum:
+          - scouter
+          - voiture
+        description: |-
+          * `voiture` - Voiture
+          * `scouter` - Scooter
+      - in: query
+        name: type__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
       tags:
       - api
       security:
@@ -2300,6 +2497,40 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/vehicle/{id}/action_transfer/:
+    post:
+      operationId: api_vehicle_action_transfer_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this vehicle.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleActionTransfer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VehicleActionTransfer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VehicleActionTransfer'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleActionTransfer'
+          description: ''
   /api/vehicle/{id}/archive/:
     get:
       operationId: api_vehicle_archive_retrieve
@@ -2387,6 +2618,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/Vehicle'
           description: ''
+  /api/vehicle/get_all_ids/:
+    get:
+      operationId: api_vehicle_get_all_ids_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShortVehicle'
+          description: ''
   /api/vehicle/get_archived/:
     get:
       operationId: api_vehicle_get_archived_retrieve
@@ -2417,15 +2663,31 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/User'
+                  $ref: '#/components/schemas/WhoAmI'
           description: ''
 components:
   schemas:
+    Action:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+      required:
+      - id
+      - name
     Beneficiary:
       type: object
       properties:
         id:
           type: integer
+          readOnly: true
+        action:
+          allOf:
+          - $ref: '#/components/schemas/Action'
           readOnly: true
         first_name:
           type: string
@@ -2464,6 +2726,7 @@ components:
         archived:
           type: boolean
       required:
+      - action
       - address
       - city
       - email
@@ -2578,6 +2841,10 @@ components:
           readOnly: true
         referent:
           $ref: '#/components/schemas/User'
+        action:
+          allOf:
+          - $ref: '#/components/schemas/Action'
+          readOnly: true
         vehicle:
           $ref: '#/components/schemas/Vehicle'
         beneficiary:
@@ -2633,6 +2900,7 @@ components:
         archived:
           type: boolean
       required:
+      - action
       - beneficiary
       - created_at
       - created_by
@@ -2775,6 +3043,10 @@ components:
           readOnly: true
         referent:
           type: integer
+        action:
+          allOf:
+          - $ref: '#/components/schemas/Action'
+          readOnly: true
         vehicle:
           type: integer
         beneficiary:
@@ -2830,6 +3102,7 @@ components:
         archived:
           type: boolean
       required:
+      - action
       - beneficiary
       - created_at
       - created_by
@@ -2852,6 +3125,10 @@ components:
           format: uri
         parking:
           type: integer
+        action:
+          allOf:
+          - $ref: '#/components/schemas/Action'
+          readOnly: true
         type:
           $ref: '#/components/schemas/VehicleTypeEnum'
         transmission:
@@ -2895,6 +3172,7 @@ components:
         archived:
           type: boolean
       required:
+      - action
       - brand
       - created_at
       - fleet_id
@@ -3099,6 +3377,10 @@ components:
         name:
           type: string
           maxLength: 100
+        actions:
+          type: array
+          items:
+            type: integer
       required:
       - id
       - name
@@ -3107,6 +3389,10 @@ components:
       properties:
         id:
           type: integer
+          readOnly: true
+        action:
+          allOf:
+          - $ref: '#/components/schemas/Action'
           readOnly: true
         first_name:
           type: string
@@ -3207,6 +3493,10 @@ components:
           readOnly: true
         referent:
           $ref: '#/components/schemas/User'
+        action:
+          allOf:
+          - $ref: '#/components/schemas/Action'
+          readOnly: true
         vehicle:
           $ref: '#/components/schemas/Vehicle'
         beneficiary:
@@ -3302,6 +3592,10 @@ components:
           readOnly: true
         referent:
           type: integer
+        action:
+          allOf:
+          - $ref: '#/components/schemas/Action'
+          readOnly: true
         vehicle:
           type: integer
         beneficiary:
@@ -3367,6 +3661,10 @@ components:
           format: uri
         parking:
           type: integer
+        action:
+          allOf:
+          - $ref: '#/components/schemas/Action'
+          readOnly: true
         type:
           $ref: '#/components/schemas/VehicleTypeEnum'
         transmission:
@@ -3418,6 +3716,10 @@ components:
         name:
           type: string
           maxLength: 100
+        actions:
+          type: array
+          items:
+            type: integer
     PatchedPayment:
       type: object
       properties:
@@ -3488,6 +3790,10 @@ components:
         parking:
           allOf:
           - $ref: '#/components/schemas/Parking'
+          readOnly: true
+        action:
+          allOf:
+          - $ref: '#/components/schemas/Action'
           readOnly: true
         type:
           $ref: '#/components/schemas/VehicleTypeEnum'
@@ -3599,6 +3905,37 @@ components:
         * `aided_contract` - Contrat aidé
         * `job_seeking` - Recherche d’emploi
         * `part_time` - Alternance
+    ReferentGroup:
+      type: object
+      properties:
+        referents:
+          type: array
+          items:
+            type: integer
+        id:
+          type: integer
+      required:
+      - id
+      - referents
+    ShortVehicle:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        fleet_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        action:
+          allOf:
+          - $ref: '#/components/schemas/Action'
+          readOnly: true
+      required:
+      - action
+      - fleet_id
+      - id
     TokenObtainPair:
       type: object
       properties:
@@ -3669,6 +4006,24 @@ components:
       - email
       - id
       - username
+    UserAction:
+      type: object
+      properties:
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Action'
+          readOnly: true
+        current_action:
+          $ref: '#/components/schemas/Action'
+      required:
+      - actions
+      - current_action
+    UserActionUpdate:
+      type: object
+      properties:
+        current_action:
+          type: integer
     Vehicle:
       type: object
       properties:
@@ -3681,6 +4036,10 @@ components:
         parking:
           allOf:
           - $ref: '#/components/schemas/Parking'
+          readOnly: true
+        action:
+          allOf:
+          - $ref: '#/components/schemas/Action'
           readOnly: true
         type:
           $ref: '#/components/schemas/VehicleTypeEnum'
@@ -3725,6 +4084,7 @@ components:
         archived:
           type: boolean
       required:
+      - action
       - brand
       - created_at
       - fleet_id
@@ -3734,6 +4094,15 @@ components:
       - modele
       - parking
       - year
+    VehicleActionTransfer:
+      type: object
+      properties:
+        parking:
+          type: integer
+        action:
+          type: integer
+      required:
+      - action
     VehicleStatusEnum:
       enum:
       - available
@@ -3752,6 +4121,53 @@ components:
       description: |-
         * `voiture` - Voiture
         * `scouter` - Scooter
+    WhoAmI:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          title: Nom d’utilisateur
+          description: Requis. 150 caractères maximum. Uniquement des lettres, nombres
+            et les caractères « @ », « . », « + », « - » et « _ ».
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Adresse électronique
+          maxLength: 254
+        first_name:
+          type: string
+          title: Prénom
+          maxLength: 150
+        last_name:
+          type: string
+          title: Nom
+          maxLength: 150
+        is_superuser:
+          type: boolean
+          title: Statut super-utilisateur
+          description: Précise que l’utilisateur possède toutes les permissions sans
+            les assigner explicitement.
+        permissions:
+          type: array
+          items: {}
+          readOnly: true
+        actions:
+          type: array
+          items:
+            type: integer
+        current_action:
+          type: integer
+          nullable: true
+      required:
+      - email
+      - id
+      - permissions
+      - username
   securitySchemes:
     cookieAuth:
       type: apiKey

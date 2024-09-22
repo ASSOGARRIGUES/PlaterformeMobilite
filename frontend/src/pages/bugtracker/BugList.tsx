@@ -1,14 +1,11 @@
 import {useMemo} from "react";
-import {DataTableColumn} from "mantine-datatable";
-import EditButton from "../../components/EditButton";
 import {Bug} from "../../types/bugtracker";
 import {humanizeDate, humanizeFirstName} from "../../constants";
-import BeneficiarySearchTooltip from "../../components/beneficiary/BeneficiarySearchTooltip";
-import SearchableDataTable from "../../components/SearchableDataTable";
+import SearchableDataTable, {SearchableDataTableColumn} from "../../components/SearchableDataTable";
 
 const BugList = () => {
 
-    const columns = useMemo<DataTableColumn<Bug>[]>(
+    const columns = useMemo<SearchableDataTableColumn<Bug>[]>(
         () => [
             {
                 accessor: 'id', //access nested data with dot notation

@@ -1,10 +1,10 @@
 import {Loader, Select, SelectProps} from "@mantine/core";
 import {Parking} from "../../types/vehicle";
-import { useList, HttpError } from "@refinedev/core";
+import {useList, HttpError, CrudFilters} from "@refinedev/core";
 import React, {useEffect} from "react";
 
-type ParkingSelectProps = Omit<SelectProps, "onChange" | "data" | "value"> & {onChange: (value: Parking | undefined) => void, value?: Parking, withLabel?: boolean};
-const ParkingSelect = ({onChange, value, withLabel, ...otherProps}:ParkingSelectProps) => {
+type ParkingSelectProps = Omit<SelectProps, "onChange" | "data" | "value"> & {onChange: (value: Parking | undefined) => void, value?: Parking, withLabel?: boolean, filters?: CrudFilters};
+const ParkingSelect = ({onChange, value, withLabel, filters, ...otherProps}:ParkingSelectProps) => {
 
     const [selectValue, setSelectValue] = React.useState<string | undefined>(value?.id.toString());
 
@@ -14,9 +14,17 @@ const ParkingSelect = ({onChange, value, withLabel, ...otherProps}:ParkingSelect
 
     const { data, isLoading, isError } = useList<Parking, HttpError>({
         resource: "parking",
+        filters: filters || [],
     });
 
     const parkings = data?.data || [];
+
+    useEffect(() => {
+        //Check if the value is still in the parkings list
+        if(value && !parkings.find((parking) => parking.id.toString() === selectValue)){
+            handleChange(null);
+        }
+    }, [parkings]);
 
     //Map parkings to options for select component: {value: parking, label: parking}
     const options = parkings.map((parking) => ({key: parking.id, value:parking.id.toString(), label: parking.name}));
@@ -30,7 +38,6 @@ const ParkingSelect = ({onChange, value, withLabel, ...otherProps}:ParkingSelect
         //Get the parking object from the options
         const parking = parkings.find((parking) => parking.id.toString() === value);
         if(!parking){
-            console.error("Parking not found");
             return
         }
         onChange(parking);

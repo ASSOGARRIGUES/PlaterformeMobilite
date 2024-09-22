@@ -6,6 +6,7 @@ import ParkingChangeSelect from "./ParkingChangeSelect";
 import QuickStatusButton from "./QuickStatusButton";
 import ArchiveButton from "../ArchiveButton";
 import VehicleArchiveButton from "./VehicleArchiveButton";
+import VehicleTransferButton from "./VehicleTransferButton";
 
 const VehicleActions = ({ vehicle, style}: { vehicle: Vehicle  | undefined, style?:CSSProperties}) => {
 
@@ -15,6 +16,7 @@ const VehicleActions = ({ vehicle, style}: { vehicle: Vehicle  | undefined, styl
                 <QuickStatusButton vehicle={vehicle} disabled={vehicle?.archived}/>
                 <ParkingChangeSelect vehicle={vehicle} disabled={vehicle?.archived}/>
                 <VehicleArchiveButton vehicle={vehicle}/>
+                <VehicleTransferButton vehicle={vehicle}/>
             </Stack>
         </Paper>
     )

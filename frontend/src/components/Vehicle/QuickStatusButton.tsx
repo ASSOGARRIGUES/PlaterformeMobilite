@@ -1,5 +1,5 @@
 import {Vehicle} from "../../types/vehicle";
-import {useEffect, useState} from "react";
+import {MouseEventHandler, useEffect, useState} from "react";
 import {Button, ButtonProps, Loader, useMantineTheme} from "@mantine/core";
 import {VehicleStatusEnum} from "../../types/schema.d";
 import {useUpdate} from "@refinedev/core";
@@ -32,7 +32,8 @@ const QuickStatusButton = ({ vehicle, disabled: disabledProps, ...otherProps}: {
 
     const textColor = theme.colors.dark[5];
 
-    const handleClick = () => {
+    const handleClick: MouseEventHandler<HTMLButtonElement> = (e) => {
+        e.stopPropagation();
         if(!vehicle) return;
         mutate({
             resource: "vehicle",
