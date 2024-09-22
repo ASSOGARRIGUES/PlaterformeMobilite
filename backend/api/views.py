@@ -1,12 +1,14 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import viewsets, permissions, serializers
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.response import Response
 
@@ -246,6 +248,20 @@ class ContractViewSet(ArchivableModelViewSet):
             return MutationContractSerializer
 
         return super().get_serializer_class()
+
+    # Override the destroy method to add a time limit
+    def destroy(self, request, *args, **kwargs):
+        # Get the object
+        instance = self.get_object()
+
+        # Check if the object was created more than 15 minutes ago
+        time_diff = timezone.now() - instance.created_at
+        if time_diff > timedelta(minutes=15):
+            # If it was created more than 15 minutes ago, deny deletion
+            raise PermissionDenied("Vous ne pouvez pas supprimer un contrat créé il y a plus de 15 minutes")
+
+        # If within the time limit, proceed with deletion
+        return super().destroy(request, *args, **kwargs)
 
     def validate_archived(self, instance):
         super_validate = super().validate_archived(instance)
