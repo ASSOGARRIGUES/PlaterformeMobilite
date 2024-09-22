@@ -45,6 +45,7 @@ import useAccessControl from "./providers/accessControlProvider";
 import {UserActionsProvider} from "./context/UserActionsProvider";
 import VehicleTransfer from "./pages/vehicle/VehicleTransfer";
 import {ErrorComponent} from "./components/ErrorComponent";
+import VehicleReview from "./pages/VehicleReview";
 
 function App() {
 
@@ -128,6 +129,14 @@ function App() {
                                     icon: <img src = {ContractIcon} width="20px" style={{marginRight: 5}}/>,
                                     permissionGroup: 'api',
                                 },
+                            },
+                            {
+                                name: "vehicle_review",
+                                list: "vehicle_review/",
+                                meta: {
+                                    label: "Revue véhicules",
+                                    permKey: 'api.review_vehicle',
+                                },
                             }
                         ]}
                         options={{
@@ -190,6 +199,9 @@ function App() {
                                         <Route index element={<ContractList />} />
                                         <Route path=":id" element={<ContractShow />} />
                                         <Route path="create" element={<ContractCreate />} />
+                                    </Route>
+                                    <Route path="/vehicle_review">
+                                        <Route index element={<VehicleReview />} />
                                     </Route>
                                     <Route path={"/buglist"} element={<BugList/>} />
                                     <Route path="*" element={<ErrorComponent />} />

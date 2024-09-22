@@ -1,10 +1,11 @@
 from datetime import datetime
 
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.utils import extend_schema_field, extend_schema
 from rest_framework import viewsets, permissions, serializers
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
@@ -15,7 +16,7 @@ from .models import Vehicle, Beneficiary, Contract, Parking, Payment
 from .serializers import VehicleSerializer, BeneficiarySerializer, ContractSerializer, UserSerializer, \
     EndContractSerializer, ParkingSerializer, MutationContractSerializer, MutationVehicleSerializer, PaymentSerializer, \
     ContractPaymentSummarySerializer, WhoAmISerializer, UserActionSerializer, UserActionUpdateSerializer, \
-    ShortVehicleSerializer, VehicleActionTransferSerializer
+    ShortVehicleSerializer, VehicleActionTransferSerializer, ContractGroupByRefStatsSerializer, ReferentGroupSerializer
 from core.models import Action
 
 MUTATION_ACTION = ['create', 'update', 'partial_update']
@@ -389,4 +390,75 @@ class ParkingViewSet(viewsets.ModelViewSet):
     }
 
 
+
+###################
+### Stats views ###
+###################
+
+class VehicleStatsViewSet(viewsets.ViewSet):
+    @extend_schema(
+    responses={200: serializers.DictField()}
+    )
+    def list(self, request):
+        queryset = Vehicle.objects.all()
+        current_action = self.request.user.current_action
+        if current_action:
+            queryset = queryset.filter(action=current_action)
+
+        total = queryset.count()
+        available = queryset.filter(status='available').count()
+        rented = queryset.filter(status='rented').count()
+        maintenance = queryset.filter(status='maintenance').count()
+
+        return Response({"total": total, "available": available, "rented": rented, "maintenance": maintenance})
+
+
+class ContractStatsViewSet(viewsets.ViewSet):
+    @extend_schema(
+    responses={200: serializers.DictField()}
+    )
+    def list(self, request):
+        base_qs = Contract.objects.all()
+        current_action = self.request.user.current_action
+        if current_action:
+            base_qs = base_qs.filter(action=current_action)
+
+        queryset = base_qs.filter(archived=False)
+        total = queryset.count()
+        payed = queryset.filter(status='payed').count()
+        pending = queryset.filter(status='pending').count()
+        waiting = queryset.filter(status='waiting').count()
+        over = queryset.filter(status='over').count()
+
+        current_stats = {"total": total, "payed": payed, "pending": pending, "waiting": waiting, "over": over}
+
+        queryset = base_qs.filter(archived=True)
+        total = queryset.count()
+        payed = queryset.filter(status='payed').count()
+        not_payed = queryset.filter(~Q(status='payed')).count()
+
+        archived_stats = {"total": total, "payed": payed, "not_payed": not_payed}
+
+        return Response({"current": current_stats, "archived": archived_stats})
+
+    @extend_schema(
+        request=ReferentGroupSerializer(many=True),
+        responses={200: serializers.DictField()}
+    )
+    @action(detail=False, methods=['post'])
+    def ongoing_grouped(self, request):
+        queryset = Contract.objects.filter(Q(status="pending") | Q(status="waiting"), Q(archived=False))
+        user_currect_action = self.request.user.current_action
+        if user_currect_action:
+            queryset = queryset.filter(action=user_currect_action)
+
+        serializer = ReferentGroupSerializer(data=request.data, many=True)
+        if serializer.is_valid():
+            groupedStats = {}
+            for group in serializer.validated_data:
+                ref_list = group['referents']
+                filtered_qs = queryset.filter(referent__in=ref_list)
+                groupedStats[group['id']] = filtered_qs.count()
+            return Response(groupedStats)
+        return Response(serializer.errors, status=400)
 

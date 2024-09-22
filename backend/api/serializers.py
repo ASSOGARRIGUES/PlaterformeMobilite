@@ -289,3 +289,24 @@ class UserActionUpdateSerializer(serializers.ModelSerializer):
         instance.current_action = validated_data.get('current_action', instance.current_action)
         instance.save()
         return instance
+
+
+
+#########################
+### Stats serializers ###
+#########################
+
+
+class ReferentGroupSerializer(serializers.Serializer):
+    referents = serializers.PrimaryKeyRelatedField(queryset=get_user_model().objects.all(), many=True)
+    id = serializers.IntegerField()
+
+class ContractGroupByRefStatsSerializer(serializers.Serializer):
+    """
+       The ContractGroupByRefStatsSerializer is used to serialize the referent group to produce the stats for grouped contracts.
+       This serialiser will be used as an input for the ongoing_grouped action in the ContractStatsViewSet.
+
+       It is a list of list of referent. Each referent represented by its id.
+    """
+    groups = ReferentGroupSerializer(many=True)
+
