@@ -2,7 +2,7 @@ services:
   backend:
     container_name: "mobilite-backend"
     image: ghcr.io/assogarrigues/platerformemobilite_back:latest
-    restart: yes
+    restart: unless-stopped
     ports:
       - "3005:8000"
     links:
