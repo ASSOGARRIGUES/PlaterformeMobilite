@@ -331,14 +331,22 @@
 
 <table class="head container">
     <tbody><tr>
-        <td class="header" style="text-align: left; padding-right: 25px">
-            <img src="{% static 'invoice_files/Logo_original.png' %}"  height="100" alt="&lt;font size=&quot;20px&quot; color=&quot;green&quot;&gt;ASSOCIATION GARRIGUES&lt;/font&gt;">		</td>
+         <td class="header" style="text-align: left; padding-right: 25px">
+                <img src="{% static 'invoice_files/Logo_original.png' %}"  height="110"  alt="&lt;font size=&quot;20px&quot; color=&quot;green&quot;&gt;ASSOCIATION GARRIGUES&lt;/font&gt;">
+                 &nbsp&nbsp
+                <img src="{% static 'invoice_files/logo_en_chemin.jpg' %}"   height="110" alt="&lt;font size=&quot;20px&quot; color=&quot;green&quot;&gt;ASSOCIATION GARRIGUES&lt;/font&gt;">
+        </td>
         <td class="shop-info">
-            <div class="shop-name"><h3><font size="20px" color="green">ASSOCIATION GARRIGUES</font></h3></div>
-            <div class="shop-address"><p>164 Traverse Saint Jean<br>
-                <b>83 470 SAINT-MAXIMIN-LA-SAINTE-BAUME</b><br>
+            <div class="shop-name"><h3><font size="15px" color="green">ASSOCIATION GARRIGUES</font></h3></div>
+            <div class="shop-address"><p>
                 SIRET : 448 362 160 00013<br>
-                tél : 04 94 59 96 63<br>courriel : asso.garrigues@free.fr</p>
+                Courriel : asso.garrigues@free.fr</p>
+            </div>
+            <font size="1px"><br></font>
+            <div class="shop-name"><h3><font size="15px" color="#ff8c00">ASSOCIATION EN CHEMIN</font></h3></div>
+            <div class="shop-address"><p>268 rue Albert Einstein
+                <b>83 061 Fréjus</b><br>
+                tél : 06 72 36 56 47<br>courriel : mgrillo@en-chemin.org</p>
             </div>
         </td>
     </tr>
@@ -381,7 +389,7 @@
                     <td></td>
                 </tr>
                 <tr class="delivery-date">
-                    <th>Référent Garrigues:</th>
+                    <th>Référent:</th>
                     <td>{{ contract.referent.first_name }} {{ contract.referent.last_name }}</td>
                 </tr>
                 <tr class="delivery-date">

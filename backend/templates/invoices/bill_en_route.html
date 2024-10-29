@@ -1,0 +1,523 @@
+{% load static %}
+
+<!DOCTYPE html>
+<!-- saved from url=(0146)https://mobilite.asso-garrigues.fr/wp-admin/admin-ajax.php?action=generate_wpo_wcpdf&document_type=packing-slip&order_ids=9426&_wpnonce=05c31172a1 -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <title>Participation</title>
+    <style type="text/css">/* Main Body */
+@page {
+        size: a4 portrait;
+        {#margin-top: 1cm;#}
+        {#margin-bottom: 3cm;#}
+        {#margin-left: 2cm;#}
+        {#margin-right: 2cm;#}
+
+        @frame content_frame {          /* Content Frame */
+            left: 40pt; width: 515pt; top: 28pt; height: 766pt;
+        }
+
+         @frame footer_frame {           /* Another static Frame */
+            -pdf-frame-content: footer_content;
+            left: 40pt; width: 515pt; top: 794pt; height: 20pt;
+        }
+    }
+
+    {#@font-face {#}
+    {#    font-family: Roboto;#}
+    {#    src: url({% static 'fonts/Roboto-Regular.ttf' %});#}
+    {#}#}
+
+    body {
+        background: #fff;
+        color: #000;
+        margin: 0cm;
+        font-family: 'Open Sans', sans-serif;
+        /* want to use custom fonts? http://docs.wpovernight.com/woocommerce-pdf-invoices-packing-slips/using-custom-fonts/ */
+        font-size: 9pt;
+        line-height: 100%; /* fixes inherit dompdf bug */
+    }
+
+    h1, h2, h3, h4 {
+        font-weight: bold;
+        margin: 0;
+    }
+
+    h1 {
+        font-size: 16pt;
+        margin: 5mm 0;
+    }
+
+    h2 {
+        font-size: 14pt;
+    }
+
+    h3, h4 {
+        font-size: 9pt;
+    }
+
+
+    ol,
+    ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    li,
+    ul {
+        margin-bottom: 0.75em;
+    }
+
+    p {
+        margin: 0;
+        padding: 0;
+    }
+
+    p + p {
+        margin-top: 1.25em;
+    }
+
+    a {
+        border-bottom: 1px solid;
+        text-decoration: none;
+    }
+
+    /* Basic Table Styling */
+    table {
+        border-collapse: collapse;
+        border-spacing: 0;
+        page-break-inside: always;
+        border: 0;
+        margin: 0;
+        padding: 0;
+    }
+
+    th, td {
+        vertical-align: top;
+        text-align: left;
+    }
+
+    table.container {
+        width:100%;
+        border: 0;
+    }
+
+    tr.no-borders,
+    td.no-borders {
+        border: 0 !important;
+        border-top: 0 !important;
+        border-bottom: 0 !important;
+        padding: 0 !important;
+        width: auto;
+    }
+
+    /* Header */
+    table.head {
+        margin-bottom: 20px;
+    }
+
+    td.header img {
+        max-height: 3cm;
+        width: auto;
+    }
+
+    td.header {
+        font-size: 16pt;
+        font-weight: 700;
+    }
+
+    td.shop-info {
+        width: 40%;
+    }
+    .document-type-label {
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+    /* Recipient addressses & order data */
+    table.order-data-addresses {
+        width: 100%;
+        margin-bottom: 10mm;
+    }
+
+    td.order-data {
+        width: 40%;
+    }
+
+    .invoice .shipping-address {
+        width: 30%;
+    }
+
+    .packing-slip .billing-address {
+        width: 30%;
+    }
+
+    td.order-data table th {
+        font-weight: normal;
+        padding-right: 2mm;
+    }
+
+    /* Order details */
+    table.order-details {
+        width:100%;
+        margin-bottom: 20px;
+        margin-top: 16px;
+    }
+
+    .quantity{
+        width: 35%;
+    }
+    .price {
+        width: 20%;
+    }
+
+    .order-details tr {
+        page-break-inside: auto;
+        page-break-after: auto;
+    }
+
+    .order-details td,
+    .order-details th {
+        border-bottom: 1px #ccc solid;
+        border-top: 1px #ccc solid;
+        padding: 0.375em;
+    }
+
+    .order-details th {
+        font-weight: bold;
+        text-align: left;
+    }
+
+    .order-details thead th {
+        color: white;
+        background-color: black;
+        border-color: black;
+    }
+
+    /* product bundles compatibility */
+    .order-details tr.bundled-item td.product {
+        padding-left: 5mm;
+    }
+
+    .order-details tr.product-bundle td,
+    .order-details tr.bundled-item td {
+        border: 0;
+    }
+
+    /* deposit details */
+    table.deposit-details {
+        width: 100%;
+        margin-top: 5px;
+        margin-bottom: 20px;
+    }
+
+        .deposit-details td,
+    .deposit-details th {
+        border-bottom: 1px #ccc solid;
+        border-top: 1px #ccc solid;
+        padding: 0.27em;
+    }
+
+    .deposit-details th {
+        font-weight: bold;
+        text-align: left;
+    }
+
+    .deposit-details thead th {
+        color: white;
+        background-color: black;
+        border-color: black;
+    }
+
+
+    /* item meta formatting for WC2.6 and older */
+    dl {
+        margin: 4px 0;
+    }
+
+    dt, dd, dd p {
+        display: inline;
+        font-size: 7pt;
+        line-height: 7pt;
+    }
+
+    dd {
+        margin-left: 5px;
+    }
+
+    dd:after {
+        content: "\A";
+        white-space: pre;
+    }
+    /* item-meta formatting for WC3.0+ */
+    .wc-item-meta {
+        margin: 4px 0;
+        font-size: 7pt;
+        line-height: 7pt;
+    }
+    .wc-item-meta p {
+        display: inline;
+    }
+    .wc-item-meta li {
+        margin: 0;
+        margin-left: 5px;
+    }
+
+    /* Notes & Totals */
+    .customer-notes {
+        margin-top: 5mm;
+    }
+
+    table.totals {
+        width: 100%;
+        margin-top: 5mm;
+    }
+
+    table.totals th,
+    table.totals td {
+        border: 0;
+        border-top: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+    }
+
+    table.totals th.description,
+    table.totals td.price {
+        width: 50%;
+    }
+
+    table.totals tr.order_total td,
+    table.totals tr.order_total th {
+        border-top: 2px solid #000;
+        border-bottom: 2px solid #000;
+        font-weight: bold;
+    }
+
+
+    .contract-head{
+        display: block;
+    }
+
+    .rules-list {
+        padding-left: 20px;
+    }
+
+    .rules-list li {
+        margin-bottom: 0;
+    }
+
+    .payment-options {
+        white-space: nowrap; /* Prevent wrapping */
+    }
+
+    .payment-options span {
+        display: inline-block; /* Make spans behave as inline-block */
+        margin-right: 10px; /* Adjust spacing between spans */
+    }
+
+    </style>
+</head>
+
+<body class="packing-slip" data-new-gr-c-s-check-loaded="14.1165.0" data-gr-ext-installed="">
+
+<table class="head container">
+    <tbody><tr>
+         <td class="header" style="text-align: left; padding-right: 25px">
+                <img src="{% static 'invoice_files/Logo_original.png' %}"  height="110"  alt="&lt;font size=&quot;20px&quot; color=&quot;green&quot;&gt;ASSOCIATION GARRIGUES&lt;/font&gt;">
+                 &nbsp&nbsp
+                <img src="{% static 'invoice_files/logo_en_chemin.jpg' %}"   height="110" alt="&lt;font size=&quot;20px&quot; color=&quot;green&quot;&gt;ASSOCIATION GARRIGUES&lt;/font&gt;">
+        </td>
+        <td class="shop-info">
+            <div class="shop-name"><h3><font size="15px" color="green">ASSOCIATION GARRIGUES</font></h3></div>
+            <div class="shop-address"><p>
+                SIRET : 448 362 160 00013<br>
+                Courriel : asso.garrigues@free.fr</p>
+            </div>
+            <font size="1px"><br></font>
+            <div class="shop-name"><h3><font size="15px" color="#ff8c00">ASSOCIATION EN CHEMIN</font></h3></div>
+            <div class="shop-address"><p>268 rue Albert Einstein
+                <b>83 061 Fréjus</b><br>
+                tél : 06 72 36 56 47<br>courriel : mgrillo@en-chemin.org</p>
+            </div>
+        </td>
+        </td>
+    </tr>
+    </tbody></table>
+
+<h1 class="document-type-label">Récapitulatif des participations</h1>
+
+
+<table class="contract-head">
+    <tbody>
+    <tr>
+        <td class="billing-address" style="width: 50%">
+            <h3>Bénéficiaire du contrat (Utilisateur du véhicule):</h3>
+            {{ contract.beneficiary.first_name  }} {{ contract.beneficiary.last_name  }}<br>{{ contract.beneficiary.address }}<br>{{ contract.beneficiary.postal_code }} {{ contract.beneficiary.city }}<br>{{ contract.beneficiary.email }}
+            <div class="billing-phone">{{ contract.beneficiary.phone }}</div>
+        </td>
+
+        <td class="order-data" style="width: 50%">
+            <table>
+                <tbody>
+                <tr class="order-number">
+                    <th>Numéro de contrat:</th>
+                    <td>{{ contract.id }}</td>
+                </tr>
+                <tr class="delivery-date">
+                    <th>Date de contrat:</th>
+                    <td>{{ contract.created_at }}</td>
+                </tr>
+                <tr class="delivery-date">
+                    <th>Date du relevé:</th>
+                    <td>{% now "DATETIME_FORMAT" %}</td>
+                </tr>
+
+                <tr class="delivery-date">
+                    <th>_____________________________________</th>
+                    <td></td>
+                </tr>
+                <tr class="delivery-date">
+                    <th>Référent:</th>
+                    <td>{{ contract.referent.first_name }} {{ contract.referent.last_name }}</td>
+                </tr>
+                <tr class="delivery-date">
+                    <th>Tél:</th>
+                    <td>{{ contract.referent.phone }}</td>
+                </tr>
+                </tbody>
+            </table>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<table class="order-details">
+    <thead>
+    <tr>
+        <th class="product">Prestations</th>
+        <th class="quantity">Durée</th>
+        <th class="price">Coûts</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td class="product">
+            {#            <span class="item-name">{{ contract.vehicle.fleet_id }}</span>#}
+            <span style="font-size: 16px;"> <strong>{{ contract.vehicle.brand }} {{ contract.vehicle.modele }}</strong></span> <br>
+            Numéro de flotte: <strong>{{ contract.vehicle.fleet_id }}</strong><br>
+            Immatriculation: <strong>{{ contract.vehicle.imat }}</strong>
+            <div style="padding: 0; margin: 0">
+                KM départ:&nbsp;<strong>{{ contract.start_kilometer }}</strong> <br>
+                <span style="color: {{ km_overpass|yesno:'red,green' }}">
+                    KM retour:&nbsp;<strong>{% firstof contract.end_kilometer "---" %}</strong> / KM retour max :&nbsp;<strong>{{ contract.start_kilometer|add:contract.max_kilometer }}</strong>
+                </span>
+
+            </div>
+
+        </td>
+        <td class="quantity">
+            Du {{ contract.start_date }} au {{ contract.end_date }}
+        </td>
+        <td class="price">
+            {{ contract.price }}€
+        </td>
+    </tr>
+
+
+    <tr class="no-borders">
+        <td class="no-borders">
+
+        </td>
+        <td class="no-borders" colspan="2">
+            <table class="totals">
+                <tfoot>
+                {# if contract.discount is different from 0, then display the discount section #}
+                {% if contract.discount != 0 %}
+                    <tr class="cart_discount">
+                        <td class="no-borders"></td>
+                        <th class="discount-total">Remise&nbsp;</th>
+                        <td class="price-total">
+                            -{{ contract.discount }}€
+                        </td>
+                    </tr>
+                {% endif %}
+
+
+
+                <tr class="order_total">
+                    <td class="no-borders"></td>
+                    <th class="discount-total">Total&nbsp;</th>
+                    <td class="price-total">
+                        {{ final_price }}€
+                    </td>
+                </tr>
+                </tfoot>
+            </table>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<table class="order-details">
+    <thead>
+    <tr>
+        <th class="product">Mode de paiement</th>
+        <th>Date</th>
+        <th class="price">Montant</th>
+    </tr>
+    </thead>
+    <tbody>
+    {# For each payment in contract.payments, add a row #}
+    {% for payment in contract.payments.all %}
+        <tr>
+            <td class="product">
+                <span > <strong>{{ payment.mode_display }}</strong></span> <br>
+                {% if payment.mode == "check" %}
+                    Numéro de chèque: <strong>{{ payment.check_number }}</strong><br>
+                {% endif %}
+
+            </td>
+            <td class="quantity">
+                {{ payment.created_at }}
+            </td>
+            <td class="price">
+                {{ payment.amount }}€
+            </td>
+        </tr>
+    {% endfor %}
+
+
+    </tbody>
+
+    <tfoot>
+    <tr class="no-borders">
+        <td class="no-borders">
+
+        </td>
+        <td class="no-borders" colspan="2">
+            <table class="totals">
+                <tfoot>
+                <tr class="order_total">
+                    <td class="no-borders"></td>
+                    <th class="discount-total">Total&nbsp;</th>
+                    <td class="price-total">
+                        {{ payment_sum }}€
+                    </td>
+                </tr>
+                <tr class="order_total">
+                    <td class="no-borders"></td>
+                    <th class="discount-total">Reste à payer&nbsp;</th>
+                    <td class="price-total">
+                        {{ remaining_due }}€
+                    </td>
+                </tr>
+                </tfoot>
+            </table>
+        </td>
+    </tr>
+    </tfoot>
+</table>
+
+</body>
+
+</html>
