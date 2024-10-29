@@ -262,6 +262,8 @@ class ContractViewSet(ArchivableModelViewSet):
             raise PermissionDenied("Vous ne pouvez pas supprimer un contrat créé il y a plus de 15 minutes")
 
         # If within the time limit, proceed with deletion
+        instance.vehicle.status = 'available'
+        instance.vehicle.save()
         return super().destroy(request, *args, **kwargs)
 
     def validate_archived(self, instance):
