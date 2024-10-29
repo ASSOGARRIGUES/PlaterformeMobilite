@@ -1,7 +1,10 @@
 echo "Starting backend with PROD=$PROD and DEBUG=$DEBUG"
 
+
+if [ "$DEBUG" == "False" ]; then
 echo "Running migrations"
 python manage.py migrate || exit 2
+fi
 
 echo "Registering cron jobs"
 python manage.py crontab add
