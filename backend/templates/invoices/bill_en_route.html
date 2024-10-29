@@ -1,24 +1,23 @@
 {% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
-    <meta charset="UTF-8">
 
-    <title>Contrat de mise à disposition d'un véhicule motorisé</title>
+<!DOCTYPE html>
+<!-- saved from url=(0146)https://mobilite.asso-garrigues.fr/wp-admin/admin-ajax.php?action=generate_wpo_wcpdf&document_type=packing-slip&order_ids=9426&_wpnonce=05c31172a1 -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <title>Participation</title>
     <style type="text/css">/* Main Body */
-    @page {
+@page {
         size: a4 portrait;
-    {#margin-top: 1cm;#}
-    {#margin-bottom: 3cm;#}
-    {#margin-left: 2cm;#}
-    {#margin-right: 2cm;#}
+        {#margin-top: 1cm;#}
+        {#margin-bottom: 3cm;#}
+        {#margin-left: 2cm;#}
+        {#margin-right: 2cm;#}
 
         @frame content_frame {          /* Content Frame */
             left: 40pt; width: 515pt; top: 28pt; height: 766pt;
         }
 
-        @frame footer_frame {           /* Another static Frame */
+         @frame footer_frame {           /* Another static Frame */
             -pdf-frame-content: footer_content;
             left: 40pt; width: 515pt; top: 794pt; height: 20pt;
         }
@@ -213,7 +212,7 @@
         margin-bottom: 20px;
     }
 
-    .deposit-details td,
+        .deposit-details td,
     .deposit-details th {
         border-bottom: 1px #ccc solid;
         border-top: 1px #ccc solid;
@@ -323,20 +322,31 @@
 
 <table class="head container">
     <tbody><tr>
-        <td class="header" style="text-align: left; padding-right: 25px">
-            <img src="{% static 'invoice_files/Logo_original.png' %}"  height="100" alt="&lt;font size=&quot;20px&quot; color=&quot;green&quot;&gt;ASSOCIATION GARRIGUES&lt;/font&gt;">		</td>
+         <td class="header" style="text-align: left; padding-right: 25px">
+                <img src="{% static 'invoice_files/Logo_original.png' %}"  height="130"  alt="&lt;font size=&quot;20px&quot; color=&quot;green&quot;&gt;ASSOCIATION GARRIGUES&lt;/font&gt;">
+                 &nbsp&nbsp
+                <img src="{% static 'invoice_files/logo_en_chemin.jpg' %}"   height="130" alt="&lt;font size=&quot;20px&quot; color=&quot;green&quot;&gt;ASSOCIATION GARRIGUES&lt;/font&gt;">
+        </td>
         <td class="shop-info">
-            <div class="shop-name"><h3><font size="20px" color="green">ASSOCIATION GARRIGUES</font></h3></div>
-            <div class="shop-address"><p>164 Traverse Saint Jean<br>
+            <div class="shop-name"><h3><font size="15px" color="green">ASSOCIATION GARRIGUES</font></h3></div>
+            <div class="shop-address"><p><p>164 Traverse Saint Jean<br>
                 <b>83 470 SAINT-MAXIMIN-LA-SAINTE-BAUME</b><br>
                 SIRET : 448 362 160 00013<br>
-                tél : 04 94 59 96 63<br>courriel : asso.garrigues@free.fr</p>
+                Courriel : asso.garrigues@free.fr</p>
             </div>
+            <font size="1px"><br></font>
+            <div class="shop-name"><h3><font size="15px" color="#ff8c00">ASSOCIATION EN CHEMIN</font></h3></div>
+            <div class="shop-address"><p>268 rue Albert Einstein
+                <b>83 061 Fréjus</b><br>
+                SIRET : 453 460 198 00022<br>
+                tél : 06 72 36 56 47<br>courriel : mgrillo@en-chemin.org</p>
+            </div>
+        </td>
         </td>
     </tr>
     </tbody></table>
 
-<h1 class="document-type-label">Contrat de mise à disposition d'un véhicule motorisé</h1>
+<h1 class="document-type-label">Récapitulatif des participations</h1>
 
 
 <table class="contract-head">
@@ -344,27 +354,7 @@
     <tr>
         <td class="billing-address" style="width: 50%">
             <h3>Bénéficiaire du contrat (Utilisateur du véhicule):</h3>
-            <table>
-                <tbody>
-                <tr>
-                    <td style="font-size: 14px">{{ contract.beneficiary.first_name  }} {{ contract.beneficiary.last_name  }}</td>
-                </tr>
-                <tr>
-                    <td>{{ contract.beneficiary.address  }}</td>
-                </tr>
-                {% if contract.beneficiary.address_complement %}
-                    <tr>
-                        <td>{{ contract.beneficiary.address_complement  }}</td>
-                    </tr>
-                {% endif %}
-                <tr>
-                    <td>{{ contract.beneficiary.postal_code  }} {{ contract.beneficiary.city  }}</td>
-                </tr>
-                <tr>
-                    <td>{{ contract.beneficiary.email  }}</td>
-                </tr>
-                </tbody>
-            </table>
+            {{ contract.beneficiary.first_name  }} {{ contract.beneficiary.last_name  }}<br>{{ contract.beneficiary.address }}<br>{{ contract.beneficiary.postal_code }} {{ contract.beneficiary.city }}<br>{{ contract.beneficiary.email }}
             <div class="billing-phone">{{ contract.beneficiary.phone }}</div>
         </td>
 
@@ -375,17 +365,13 @@
                     <th>Numéro de contrat:</th>
                     <td>{{ contract.id }}</td>
                 </tr>
-                <tr class="order-number">
-                    <th>Crée le:</th>
+                <tr class="delivery-date">
+                    <th>Date de contrat:</th>
                     <td>{{ contract.created_at }}</td>
                 </tr>
                 <tr class="delivery-date">
-                    <th>Référent Garrigues:</th>
-                    <td>{{ contract.referent.first_name }} {{ contract.referent.last_name }}</td>
-                </tr>
-                <tr class="delivery-date">
-                    <th>Tél:</th>
-                    <td>{{ contract.referent.phone }}</td>
+                    <th>Date du relevé:</th>
+                    <td>{% now "DATETIME_FORMAT" %}</td>
                 </tr>
 
                 <tr class="delivery-date">
@@ -393,20 +379,12 @@
                     <td></td>
                 </tr>
                 <tr class="delivery-date">
-                    <th>Permis de Conduire n°:</th>
-                    <td>{% firstof contract.beneficiary.license_number "Pas de permis" %}</td>
+                    <th>Référent:</th>
+                    <td>{{ contract.referent.first_name }} {{ contract.referent.last_name }}</td>
                 </tr>
-                {% if contract.beneficiary.license_number %}
-                    <tr class="delivery-date">
-                        <th>Délivré le:</th>
-                        <td>{% firstof contract.beneficiary.license_delivery_date ""%}</td>
-                    </tr>
-                {% endif %}
-
-                <tr></tr>
                 <tr class="delivery-date">
-                    <th><i>KM autorisés:</i></th>
-                    <td>{{ contract.max_kilometer }}</td>
+                    <th>Tél:</th>
+                    <td>{{ contract.referent.phone }}</td>
                 </tr>
                 </tbody>
             </table>
@@ -414,7 +392,6 @@
     </tr>
     </tbody>
 </table>
-
 
 <table class="order-details">
     <thead>
@@ -432,7 +409,11 @@
             Numéro de flotte: <strong>{{ contract.vehicle.fleet_id }}</strong><br>
             Immatriculation: <strong>{{ contract.vehicle.imat }}</strong>
             <div style="padding: 0; margin: 0">
-                KM départ :&nbsp;<strong>{{ contract.start_kilometer }}</strong> / <span style="color: red">KM retour max :&nbsp;<strong>{{ contract.start_kilometer|add:contract.max_kilometer }}</strong></span>
+                KM départ:&nbsp;<strong>{{ contract.start_kilometer }}</strong> <br>
+                <span style="color: {{ km_overpass|yesno:'red,green' }}">
+                    KM retour:&nbsp;<strong>{% firstof contract.end_kilometer "---" %}</strong> / KM retour max :&nbsp;<strong>{{ contract.start_kilometer|add:contract.max_kilometer }}</strong>
+                </span>
+
             </div>
 
         </td>
@@ -443,43 +424,93 @@
             {{ contract.price }}€
         </td>
     </tr>
-    </tbody>
 
-    <tfoot>
+
     <tr class="no-borders">
         <td class="no-borders">
-            <div class="customer-notes">
-                <br><i>Le rappel du véhicule est prévu pour la date finale indiquée ci-dessus. <b><font color="red">Tout retard = 10€ par jour.</font></b>
-            </i>
-            </div>
+
         </td>
         <td class="no-borders" colspan="2">
             <table class="totals">
                 <tfoot>
-                <tr class="cart_subtotal">
-                    <td class="no-borders"></td>
-                    <th class="description">Sous-total&nbsp;</th>
-                    <td class="price">
-                        {{ contract.price }}€
-                    </td>
-                </tr>
-
                 {# if contract.discount is different from 0, then display the discount section #}
                 {% if contract.discount != 0 %}
                     <tr class="cart_discount">
                         <td class="no-borders"></td>
-                        <th class="description">Remise&nbsp;</th>
-                        <td class="price">
+                        <th class="discount-total">Remise&nbsp;</th>
+                        <td class="price-total">
                             -{{ contract.discount }}€
                         </td>
                     </tr>
                 {% endif %}
 
+
+
                 <tr class="order_total">
                     <td class="no-borders"></td>
-                    <th class="description">Total&nbsp;</th>
-                    <td class="price">
+                    <th class="discount-total">Total&nbsp;</th>
+                    <td class="price-total">
                         {{ final_price }}€
+                    </td>
+                </tr>
+                </tfoot>
+            </table>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<table class="order-details">
+    <thead>
+    <tr>
+        <th class="product">Mode de paiement</th>
+        <th>Date</th>
+        <th class="price">Montant</th>
+    </tr>
+    </thead>
+    <tbody>
+    {# For each payment in contract.payments, add a row #}
+    {% for payment in contract.payments.all %}
+        <tr>
+            <td class="product">
+                <span > <strong>{{ payment.mode_display }}</strong></span> <br>
+                {% if payment.mode == "check" %}
+                    Numéro de chèque: <strong>{{ payment.check_number }}</strong><br>
+                {% endif %}
+
+            </td>
+            <td class="quantity">
+                {{ payment.created_at }}
+            </td>
+            <td class="price">
+                {{ payment.amount }}€
+            </td>
+        </tr>
+    {% endfor %}
+
+
+    </tbody>
+
+    <tfoot>
+    <tr class="no-borders">
+        <td class="no-borders">
+
+        </td>
+        <td class="no-borders" colspan="2">
+            <table class="totals">
+                <tfoot>
+                <tr class="order_total">
+                    <td class="no-borders"></td>
+                    <th class="discount-total">Total&nbsp;</th>
+                    <td class="price-total">
+                        {{ payment_sum }}€
+                    </td>
+                </tr>
+                <tr class="order_total">
+                    <td class="no-borders"></td>
+                    <th class="discount-total">Reste à payer&nbsp;</th>
+                    <td class="price-total">
+                        {{ remaining_due }}€
                     </td>
                 </tr>
                 </tfoot>
@@ -489,79 +520,6 @@
     </tfoot>
 </table>
 
-
-<b style="font-size:13px">Je m'engage à régler le montant de ma participation au coût indiqué ci-dessus le jour même du retour.<br></b>
-<br>
-<b>JE M'ENGAGE PAR AILLEURS À :</b> <br>
-<ul class="rules-list">
-    <li> N'utiliser ce véhicule que pour des déplacements entre mon domicile et le But (géo) tels qu'ils sont définis avec mon référent </li>
-    <li> Maintenir le véhicule dans son état initial et le rendre avec le même niveau de carburant </li>
-    <li> Ne pas le prêter </li>
-    <li> Respecter les règles de sécurité et de circulation routière </li>
-    <li> Régler les contraventions éventuelles ainsi que les dommages du véhicule </li>
-    <li> Restituer le véhicule dans les délais régler ma participation aux frais à chaque fin de contrat </li>
-    <li> Ne pas consommer de substances non compatibles avec la conduite (alcool, drogues, médicaments etc.) </li>
-    <li> Ne pas fumer dans le véhicule et ne pas transporter d'animaux</li>
-
-    {% if contract.vehicle.type == "scouter" %}
-        <li style="color:red"><b>Je m'engage également à ne pas transporter de passager.</b></li>
-    {% endif %}
-</ul>
-
-
-<!-- table pour caution, doit contenir: Montant, Mode(checkbox pour cheque, espèce, CB, virement) et Banque -->
-<table class="deposit-details">
-    <thead>
-    <tr>
-        <th>Caution</th>
-        <th> </th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr>
-        <td>
-            Montant: <b>{{ contract.deposit }}€</b>
-        </td>
-    </tr>
-    <tr>
-        <td style="width: 60%">
-            Mode de paiement : {{ deposit_mode_display }}
-        </td>
-        <td>
-            {% if contract.depositPaymentMode == "check" %}
-                Numéro de chèque: <strong>{{ contract.deposit_check_number }}</strong><br>
-            {% endif %}
-        </td>
-    </tr>
-    </tbody>
-</table>
-
-Fait à _________________________, le _________________________
-<table style="padding-top: 0; margin-bottom: 60px">
-
-    <tr>
-        <td>
-            {{ contract.beneficiary.first_name }} {{ contract.beneficiary.last_name }}(lu et approuvé):
-        </td>
-        <td>
-            Pour l'association Garrigues (Nom et signature):
-        </td>
-    </tr>
-</table>
-
 </body>
 
-<div style="font-size: 11px; border-top: solid; padding: 10px 0 0 0">
-    <p><b style="color:red">IMPORTANT : </b>
-        Lors de la restitution, un état du véhicule sera établi.<b> Les frais de remise en état sont à la charge de l’utilisateur. </b><br>
-        Les opérations d’entretien et de réparation sont assurées par l’atelier de Garrigues, à l’exclusion de tout autre.<br>
-        Pendant la période de prêt, Garrigues assure l’assurance et l’entretien du véhicule, <b> mais se dégage de toute responsabilité en cas d’accident.</b> Ce véhicule est assuré au tiers collision.<br>
-</div>
-<div style="text-align: center; font-size: 11px">
-    <b><u>LES RENOUVELLEMENTS DE CE CONTRAT SONT LIMITÉS À 4 MOIS.</u></b>
-</div>
-<div style="font-size: 11px; font-stretch: condensed">
-    <i style="color: red"><b>Contacts d’urgence :</b></i>
-    <i> Mécaniciens : Dominique LESPILETTE : 07 82 22 33 41 William Petit 06 01 76 36 55 ;<br> Direction : Mathieu GALAND : 06 07 60 33 72</i></p>
-</div>
 </html>

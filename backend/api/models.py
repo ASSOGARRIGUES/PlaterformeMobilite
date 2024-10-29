@@ -209,7 +209,8 @@ class Contract(models.Model):
             "final_price": self.price - self.discount,
             "deposit_mode_display": PaymentMode.toSTR(self.depositPaymentMode),
         }
-        pdf = render_to_pdf('invoices/invoice.html', context)
+        template_suffix = 'garrigues' if self.action.name == 'Garrigues' else 'en_route'
+        pdf = render_to_pdf('invoices/invoice_'+template_suffix+'.html', context)
         return pdf
 
     def render_bill_pdf(self):
@@ -221,7 +222,8 @@ class Contract(models.Model):
             "remaining_due": self.price - self.discount - self.getPaymentsSum(),
             "payment_sum": self.getPaymentsSum(),
         }
-        pdf = render_to_pdf('invoices/bill.html', context)
+        template_suffix = 'garrigues' if self.action.name == 'Garrigues' else 'en_route'
+        pdf = render_to_pdf('invoices/bill_'+template_suffix+'.html', context)
         return pdf
 
     def getPaymentsSum(self):
@@ -265,6 +267,7 @@ class Payment(models.Model):
             "remaining_due": self.contract.price - self.contract.discount - self.contract.getPaymentsSum(),
             "payment_sum": self.contract.getPaymentsSum(),
         }
-        pdf = render_to_pdf('invoices/participation.html', context)
+        template_suffix = 'garrigues' if self.contract.action.name == 'Garrigues' else 'en_route'
+        pdf = render_to_pdf('invoices/participation_'+template_suffix+'.html', context)
         return pdf
 
