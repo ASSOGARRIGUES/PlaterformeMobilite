@@ -115,6 +115,19 @@ class ContractModelTest(TestCase):
             price=300, contract_status='over',
         )
 
+    def test_str(self):
+        self.assertEqual(str(self.contract), 'Renault Clio Dupont')
+
+    def test_update_if_paid_respects_discount(self):
+        v2 = make_vehicle(self.action, self.parking, fleet_id=99)
+        b2 = make_beneficiary(self.action, email='b2@test.com')
+        contract = make_contract(v2, b2, self.user, self.action,
+                                 price=300, discount=100, contract_status='over')
+        make_payment(contract, amount=200)  # 200 >= 300-100
+        contract.updateIfPaid()
+        contract.refresh_from_db()
+        self.assertEqual(contract.status, 'payed')
+
     def test_get_payments_sum_no_payments(self):
         self.assertEqual(self.contract.getPaymentsSum(), 0)
 
@@ -360,6 +373,50 @@ class VehicleViewSetTest(BaseAPITest):
         })
         self.assertEqual(r.status_code, 400)
 
+    def test_archive_get_returns_can_archive_true(self):
+        v = self.new_vehicle()
+        r = self.client.get(f'/api/vehicle/{v.pk}/archive/')
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.data['can_archive'])
+
+    def test_archive_get_returns_can_archive_false_when_rented(self):
+        v = self.new_vehicle(vehicle_status='rented')
+        r = self.client.get(f'/api/vehicle/{v.pk}/archive/')
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(r.data['can_archive'])
+
+    def test_get_all_ids_returns_paginated_list(self):
+        v = self.new_vehicle()
+        r = self.client.get('/api/vehicle/get_all_ids/')
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('results', r.data)
+        fleet_ids = [item['fleet_id'] for item in r.data['results']]
+        self.assertIn(v.fleet_id, fleet_ids)
+
+    def test_action_transfer_to_same_action_fails(self):
+        perm = Permission.objects.get(codename='can_transfer_vehicle')
+        self.user.user_permissions.add(perm)
+        self.user = User.objects.get(pk=self.user.pk)
+        self.client.force_authenticate(user=self.user)
+        v = self.new_vehicle()
+        r = self.client.post(f'/api/vehicle/{v.pk}/action_transfer/', {
+            'action': self.action.pk,
+        })
+        self.assertEqual(r.status_code, 400)
+
+    def test_action_transfer_parking_not_in_target_action_fails(self):
+        perm = Permission.objects.get(codename='can_transfer_vehicle')
+        self.user.user_permissions.add(perm)
+        self.user = User.objects.get(pk=self.user.pk)
+        self.client.force_authenticate(user=self.user)
+        other_action = make_action('TargetAction')
+        v = self.new_vehicle()
+        r = self.client.post(f'/api/vehicle/{v.pk}/action_transfer/', {
+            'action': other_action.pk,
+            'parking': self.parking.pk,  # parking is in self.action, not other_action
+        })
+        self.assertEqual(r.status_code, 400)
+
     def test_vehicle_stats_returns_correct_counts(self):
         make_vehicle(self.action, self.parking, fleet_id=10, vehicle_status='available')
         make_vehicle(self.action, self.parking, fleet_id=11, vehicle_status='rented')
@@ -423,6 +480,24 @@ class BeneficiaryViewSetTest(BaseAPITest):
         self.assertEqual(r.status_code, 200)
         b.refresh_from_db()
         self.assertFalse(b.archived)
+
+    def test_get_archived_lists_archived_beneficiaries(self):
+        b = self.new_beneficiary()
+        b.archived = True
+        b.save()
+        r = self.client.get('/api/beneficiary/get_archived/')
+        self.assertEqual(r.status_code, 200)
+        emails = [item['email'] for item in r.data]
+        self.assertIn(b.email, emails)
+
+    def test_archive_cascades_to_contracts(self):
+        b = self.new_beneficiary()
+        v = self.new_vehicle()
+        contract = make_contract(v, b, self.user, self.action, contract_status='payed')
+        r = self.client.patch(f'/api/beneficiary/{b.pk}/archive/')
+        self.assertEqual(r.status_code, 200)
+        contract.refresh_from_db()
+        self.assertTrue(contract.archived)
 
 
 # ── Contract ──────────────────────────────────────────────────────────────────
@@ -575,6 +650,28 @@ class ContractViewSetTest(BaseAPITest):
         self.assertEqual(r.data['current']['payed'], 1)
         self.assertEqual(r.data['current']['total'], 3)
 
+    def test_end_patch_rejects_end_km_below_vehicle_km(self):
+        v = self.new_vehicle(kilometer=10000)
+        b = self.new_beneficiary()
+        c = make_contract(v, b, self.user, self.action)
+        # Simulate vehicle km updated externally above the proposed end_km
+        Vehicle.objects.filter(pk=v.pk).update(kilometer=12000)
+        r = self.client.patch(f'/api/contract/{c.pk}/end/', {
+            'end_kilometer': 11000, 'price': 500, 'deposit': 100, 'discount': 0,
+        })
+        self.assertEqual(r.status_code, 400)
+
+    def test_contract_stats_includes_archived_section(self):
+        c = self.new_contract(contract_status='payed')
+        c.archived = True
+        c.save()
+        r = self.client.get('/api/contract-stats/')
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('archived', r.data)
+        self.assertEqual(r.data['archived']['total'], 1)
+        self.assertEqual(r.data['archived']['payed'], 1)
+        self.assertEqual(r.data['archived']['not_payed'], 0)
+
     def test_contract_stats_ongoing_grouped(self):
         v1 = make_vehicle(self.action, self.parking, fleet_id=20)
         v2 = make_vehicle(self.action, self.parking, fleet_id=21)
@@ -677,6 +774,28 @@ class PaymentViewSetTest(BaseAPITest):
         r = self.client.get(f'{self.url}summary/')
         self.assertTrue(r.data['is_payed'])
 
+    def test_update_payment_amount(self):
+        p = make_payment(self.contract, amount=100)
+        r = self.client.patch(f'{self.url}{p.pk}/', {'amount': 150, 'mode': 'cash'})
+        self.assertEqual(r.status_code, 200)
+        p.refresh_from_db()
+        self.assertEqual(p.amount, 150)
+
+    def test_update_rejects_total_exceeding_price(self):
+        p = make_payment(self.contract, amount=100)
+        r = self.client.patch(f'{self.url}{p.pk}/', {'amount': 600, 'mode': 'cash'})
+        self.assertEqual(r.status_code, 400)
+
+    def test_delete_payment_reverts_contract_to_over(self):
+        r = self.client.post(self.url, {'amount': 500, 'mode': 'cash'})
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        self.contract.refresh_from_db()
+        self.assertEqual(self.contract.status, 'payed')
+        r2 = self.client.delete(f'{self.url}{r.data["id"]}/')
+        self.assertEqual(r2.status_code, status.HTTP_204_NO_CONTENT)
+        self.contract.refresh_from_db()
+        self.assertEqual(self.contract.status, 'over')
+
     def test_list_payments_for_contract(self):
         make_payment(self.contract, amount=100)
         make_payment(self.contract, amount=50)
@@ -718,3 +837,56 @@ class UserActionViewSetTest(BaseAPITest):
         action_ids = [a['id'] for a in r.data['actions']]
         self.assertIn(self.action.pk, action_ids)
         self.assertIn(other_action.pk, action_ids)
+
+
+# ── Parking ───────────────────────────────────────────────────────────────────
+
+class ParkingViewSetTest(BaseAPITest):
+    def test_list_returns_parking(self):
+        r = self.client.get('/api/parking/')
+        self.assertEqual(r.status_code, 200)
+        names = [p['name'] for p in r.data['results']]
+        self.assertIn('TestParking', names)
+
+    def test_create_parking(self):
+        r = self.client.post('/api/parking/', {
+            'name': 'New Parking',
+            'actions': [self.action.pk],
+        })
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Parking.objects.filter(name='New Parking').exists())
+
+    def test_filter_by_action(self):
+        other_parking = make_parking('UnrelatedParking')
+        r = self.client.get(f'/api/parking/?actions={self.action.pk}')
+        self.assertEqual(r.status_code, 200)
+        names = [p['name'] for p in r.data['results']]
+        self.assertIn('TestParking', names)
+        self.assertNotIn('UnrelatedParking', names)
+
+
+# ── Referent (User) ───────────────────────────────────────────────────────────
+
+class ReferentViewSetTest(BaseAPITest):
+    def test_list_returns_users(self):
+        r = self.client.get('/api/referent/')
+        self.assertEqual(r.status_code, 200)
+        self.assertGreaterEqual(r.data['count'], 1)
+        emails = [u['email'] for u in r.data['results']]
+        self.assertIn(self.user.email, emails)
+
+    def test_filter_by_action(self):
+        other_action = make_action('UserFilterAction')
+        other_user = make_user('other_ref@test.com', action=other_action)
+        r = self.client.get(f'/api/referent/?actions={self.action.pk}')
+        self.assertEqual(r.status_code, 200)
+        emails = [u['email'] for u in r.data['results']]
+        self.assertIn(self.user.email, emails)
+        self.assertNotIn(other_user.email, emails)
+
+    def test_search_by_email(self):
+        r = self.client.get(f'/api/referent/?search={self.user.email}')
+        self.assertEqual(r.status_code, 200)
+        self.assertGreaterEqual(r.data['count'], 1)
+        emails = [u['email'] for u in r.data['results']]
+        self.assertIn(self.user.email, emails)
