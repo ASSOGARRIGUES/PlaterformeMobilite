@@ -2,16 +2,16 @@ name: Tests & Coverage
 
 on:
   pull_request:
-    branches: [master]
+    branches: [master, develop]
   push:
-    branches: [master]
+    branches: [master, develop]
 
 permissions:
   contents: read
   pull-requests: write
 
 jobs:
-  test:
+  backend:
     name: Backend Tests
     runs-on: ubuntu-latest
 
@@ -37,7 +37,7 @@ jobs:
         run: |
           {
             echo 'report<<COVERAGE_EOF'
-            coverage report --skip-covered
+            coverage report --format=markdown --skip-covered
             echo COVERAGE_EOF
           } >> "$GITHUB_OUTPUT"
           coverage xml
@@ -48,13 +48,11 @@ jobs:
         with:
           header: backend-coverage
           message: |
-            ### Backend Coverage Report
+            ### 🐍 Backend Coverage
 
-            ```
             ${{ steps.cov.outputs.report }}
-            ```
 
-            > Quality gate: **≥80%** required — [full run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            > Quality gate: **≥80%** required · files at 100% are hidden · [full run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
       - name: Quality gate — fail if coverage below 80%
         working-directory: backend
@@ -63,6 +61,66 @@ jobs:
       - name: Upload coverage XML
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
+          name: backend-coverage
           path: backend/coverage.xml
+          retention-days: 14
+
+  frontend:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run tests with coverage
+        working-directory: frontend
+        run: npm run test:coverage
+
+      - name: Format coverage summary
+        if: github.event_name == 'pull_request'
+        id: cov
+        working-directory: frontend
+        run: |
+          node -e "
+          const s = require('./coverage/coverage-summary.json').total;
+          const pct = (v) => v.pct.toFixed(1) + '%';
+          const rows = [
+            '| Metric | Coverage | Covered / Total |',
+            '|:-------|:--------:|:---------------:|',
+            \`| Statements | \${pct(s.statements)} | \${s.statements.covered} / \${s.statements.total} |\`,
+            \`| Branches   | \${pct(s.branches)}   | \${s.branches.covered} / \${s.branches.total} |\`,
+            \`| Functions  | \${pct(s.functions)}  | \${s.functions.covered} / \${s.functions.total} |\`,
+            \`| Lines      | \${pct(s.lines)}      | \${s.lines.covered} / \${s.lines.total} |\`,
+          ].join('\n');
+          const fs = require('fs');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, 'report<<COVERAGE_EOF\n' + rows + '\nCOVERAGE_EOF\n');
+          "
+
+      - name: Post coverage comment on PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: frontend-coverage
+          message: |
+            ### ⚡ Frontend Coverage
+
+            ${{ steps.cov.outputs.report }}
+
+            > [full run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
           retention-days: 14
