@@ -40,11 +40,9 @@ Ces variables sont aussi des build args Docker pour l'image frontend — elles d
 | Variable | Description |
 |---|---|
 | `VITE_SENTRY_DSN` | DSN du projet Sentry (affiché dans Settings → Client Keys) |
-| `SENTRY_ORG` | Slug de l'organisation Sentry (pour l'upload des source maps) |
-| `SENTRY_PROJECT` | Slug du projet Sentry |
-| `SENTRY_AUTH_TOKEN` | Token d'auth Sentry avec scope `project:releases` (optionnel — sans lui les source maps ne sont pas uploadées mais l'appli fonctionne) |
+| `SENTRY_AUTH_TOKEN` | Token d'auth Sentry avec scope `project:releases` — créer dans Settings → Auth Tokens (optionnel : sans lui les source maps ne sont pas uploadées mais l'appli fonctionne) |
 
-`SENTRY_ORG`, `SENTRY_PROJECT` et `SENTRY_AUTH_TOKEN` sont uniquement nécessaires au moment du **build** pour uploader les source maps vers Sentry. Ils ne sont pas embarqués dans l'image finale.
+`SENTRY_AUTH_TOKEN` est uniquement nécessaire au moment du **build** pour uploader les source maps vers Sentry. Il n'est pas embarqué dans l'image finale. L'org et le projet sont hardcodés dans `vite.config.ts`.
 
 ### Build et démarrage
 

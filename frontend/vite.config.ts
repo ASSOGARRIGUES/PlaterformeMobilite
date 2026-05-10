@@ -29,8 +29,8 @@ export default defineConfig(({mode})=>{
     plugins: [
       react(),
       sentryVitePlugin({
-        org: process.env.SENTRY_ORG,
-        project: process.env.SENTRY_PROJECT,
+        org: "simtech-gl",
+        project: "garrigues_mobilite",
         authToken: process.env.SENTRY_AUTH_TOKEN,
       }),
     ],

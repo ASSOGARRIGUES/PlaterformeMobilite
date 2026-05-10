@@ -27,8 +27,6 @@ services:
       args:
         - BASE_URL=${BASE_URL}
         - VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
-        - SENTRY_ORG=${SENTRY_ORG}
-        - SENTRY_PROJECT=${SENTRY_PROJECT}
         - SENTRY_AUTH_TOKEN=${SENTRY_AUTH_TOKEN}
     restart: unless-stopped
     ports:
