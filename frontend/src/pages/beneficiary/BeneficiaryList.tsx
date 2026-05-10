@@ -28,23 +28,27 @@ function BeneficiaryList() {
                 accessor: 'first_name', //access nested data with dot notation
                 title: 'Prénom',
                 sortable: true,
+                render: (b) => <span className="sentry-mask">{b.first_name}</span>,
             },
             {
                 accessor: 'last_name',
                 title: 'Nom',
                 sortable: true,
+                render: (b) => <span className="sentry-mask">{b.last_name}</span>,
             },
             {
                 accessor: 'address', //normal accessorKey
                 title: 'Addresse',
                 sortable: true,
-                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`,
+                render: (b) => <span className="sentry-mask">{b.address}</span>,
             },
             {
                 accessor: 'city',
                 title: 'Ville',
                 sortable: true,
-                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`,
+                render: (b) => <span className="sentry-mask">{b.city}</span>,
             },
             {
                 accessor: "actions",

@@ -52,7 +52,7 @@ const VehicleSelect = ({ value, onChange, filters, onChangeCompleteVehicle, ...o
 
                 <div>
                     <Text size="sm">{`${vehicle.fleet_id} - ${vehicle.brand} ${vehicle.modele} ${vehicle.color ?? ""}`}</Text>
-                    <Text size="xs" opacity={0.65}>
+                    <Text size="xs" opacity={0.65} className="sentry-mask">
                         {vehicle.imat}
                     </Text>
                 </div>

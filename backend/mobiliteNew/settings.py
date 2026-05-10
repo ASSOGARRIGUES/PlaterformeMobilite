@@ -39,6 +39,9 @@ CSRF_TRUSTED_ORIGINS = ["http://localhost:5173", getenv("URL_CSRF", "http://loca
 
 CORS_ALLOWED_ORIGINS = CSRF_TRUSTED_ORIGINS
 
+from corsheaders.defaults import default_headers
+CORS_ALLOW_HEADERS = list(default_headers) + ["sentry-trace", "baggage"]
+
 # Application definition
 
 INSTALLED_APPS = [
