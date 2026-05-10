@@ -1,0 +1,68 @@
+name: Tests & Coverage
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r backend/requirements.txt coverage
+
+      - name: Run tests with coverage
+        working-directory: backend
+        run: coverage run manage.py test --settings=mobiliteNew.test_settings --verbosity=2
+
+      - name: Generate coverage report
+        id: cov
+        working-directory: backend
+        run: |
+          {
+            echo 'report<<COVERAGE_EOF'
+            coverage report --skip-covered
+            echo COVERAGE_EOF
+          } >> "$GITHUB_OUTPUT"
+          coverage xml
+
+      - name: Post coverage comment on PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: backend-coverage
+          message: |
+            ### Backend Coverage Report
+
+            ```
+            ${{ steps.cov.outputs.report }}
+            ```
+
+            > Quality gate: **≥80%** required — [full run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+      - name: Quality gate — fail if coverage below 80%
+        working-directory: backend
+        run: coverage report --fail-under=80
+
+      - name: Upload coverage XML
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: backend/coverage.xml
+          retention-days: 14
