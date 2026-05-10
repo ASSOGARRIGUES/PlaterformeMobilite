@@ -1,13 +1,14 @@
 import {SaveButton, UseModalFormReturnType} from "@refinedev/mantine";
 import React from "react";
 import {BaseRecord, HttpError} from "@refinedev/core";
-import {Box, FileInput, Group, Input, LoadingOverlay, Modal, NumberInput, Select, TextInput} from "@mantine/core";
+import {Autocomplete, Box, Group, Input, LoadingOverlay, Modal, NumberInput, Select, TextInput} from "@mantine/core";
 import {VehicleTransformedFields, VehicleWritableFields} from "../../types/vehicle";
 import {FuelTypeEnum, TransmissionEnum, VehicleTypeEnum} from "../../types/schema.d";
 import AvatarUpload from "./AvatarUpload";
 import {useId} from "@mantine/hooks";
 import InputMask from "react-input-mask";
 import {vehicleTypeLabelMap} from "../../constants";
+import vehicleData from "../../data/vehicleData";
 
 
 const VehicleModal: React.FC<
@@ -15,11 +16,16 @@ const VehicleModal: React.FC<
 > = ({
          getInputProps,
          errors,
+         values,
          modal: { visible, close, title },
          saveButtonProps,
          refineCore
 
      }) => {
+
+    const typeData = values.type ? vehicleData[values.type] : undefined;
+    const brandSuggestions = Object.keys(typeData ?? {});
+    const modelSuggestions = typeData?.[values.brand ?? ""] ?? [];
 
 
 
@@ -48,8 +54,8 @@ const VehicleModal: React.FC<
 
 
             <Group grow>
-                <TextInput label="Marque" {...getInputProps("brand")} error={errors.brand} />
-                <TextInput label="Modèle" {...getInputProps("modele")} error={errors.modele} />
+                <Autocomplete label="Marque" data={brandSuggestions} {...getInputProps("brand")} error={errors.brand} />
+                <Autocomplete label="Modèle" data={modelSuggestions} {...getInputProps("modele")} error={errors.modele} />
                 <TextInput label="Couleur" {...getInputProps("color")} error={errors.color} />
             </Group>
 
