@@ -37,7 +37,7 @@ export const contractReasonLabelMap: Record<string,string> = {
 export const contractStatusLabelMap: Record<string, string> = {
     [ContractStatusEnum.waiting]: "En attente d'EDL",
     [ContractStatusEnum.pending]: "En cours",
-    [ContractStatusEnum.over]: "Clôturer",
+    [ContractStatusEnum.over]: "Clôturé",
     [ContractStatusEnum.payed]: "Payé",
 }
 
