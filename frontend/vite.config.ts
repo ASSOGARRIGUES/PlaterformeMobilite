@@ -6,6 +6,7 @@ import { sentryVitePlugin } from "@sentry/vite-plugin";
 const envAvailableKeys = [
     'BASE_URL',
     'VERSION',
+    'VITE_SENTRY_DSN',
     ];
 
 type processEnvKeys = typeof envAvailableKeys[number];
