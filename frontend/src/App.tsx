@@ -8,6 +8,7 @@ import routerBindings, {
     NavigateToResource,
 } from "@refinedev/react-router-v6";
 
+import * as Sentry from "@sentry/react";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { authProvider } from "./providers/auth-provider";
 import { Login } from "./pages/login";
@@ -46,6 +47,8 @@ import {UserActionsProvider} from "./context/UserActionsProvider";
 import VehicleTransfer from "./pages/vehicle/VehicleTransfer";
 import {ErrorComponent} from "./components/ErrorComponent";
 import VehicleReview from "./pages/VehicleReview";
+
+const SentryRoutes = Sentry.withSentryRouting(Routes);
 
 function App() {
 
@@ -159,7 +162,7 @@ function App() {
 
                     >
                         <BugReporterProvider>
-                            <Routes>
+                            <SentryRoutes>
                                 <Route
                                     element={
                                         <Authenticated
@@ -219,13 +222,14 @@ function App() {
                                 >
                                     <Route path="/login" element={<Login />} />
                                 </Route>
-                            </Routes>
+                            </SentryRoutes>
 
                             <ViewBroadcastModal/>
                             {/*<UnsavedChangesNotifier />*/}
                             {/*<DocumentTitleHandler />*/}
 
                         </BugReporterProvider>
+
                     </Refine>
                 </ModalsProvider>
             </MantineProvider>

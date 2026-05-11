@@ -20,7 +20,7 @@ const BeneficiaryBadge = ({ beneficiary, noLink }: { beneficiary: Beneficiary | 
         go({to: path})
     }
 
-    const content = (<>{beneficiary?.first_name} {beneficiary?.last_name}</>)
+    const content = (<span className="sentry-mask">{beneficiary?.first_name} {beneficiary?.last_name}</span>)
 
     if(noLink){
         return content

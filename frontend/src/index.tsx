@@ -1,5 +1,8 @@
+import "./instrument";
+
 import React from "react";
 import { createRoot } from "react-dom/client";
+import * as Sentry from "@sentry/react";
 
 import App from "./App";
 import dayjs from "dayjs";
@@ -12,6 +15,8 @@ dayjs.extend(customParseFormat);
 
 root.render(
   <React.StrictMode>
-    <App />
+    <Sentry.ErrorBoundary fallback={<p>Something went wrong</p>} showDialog>
+      <App />
+    </Sentry.ErrorBoundary>
   </React.StrictMode>
 );

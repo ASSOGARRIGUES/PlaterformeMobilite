@@ -40,6 +40,7 @@ const BeneficiarySelect = ({ value, onChange, onChangeCompleteBeneficiary, ...ot
     return (
         <Select
             styles={{dropdown:{position:"fixed" }}}
+            classNames={{option: "sentry-mask"}}
             label="Bénéficiaire"
             value={value?.toString()}
             onChange={onChangeHandler}

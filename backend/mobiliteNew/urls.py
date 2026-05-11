@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from mobiliteNew.sentry_tunnel import sentry_tunnel
 from drf_spectacular.views import SpectacularAPIView
 from rest_framework import permissions
 from rest_framework_simplejwt import views as jwt_views
@@ -24,6 +25,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    path('sentry-tunnel/', sentry_tunnel, name='sentry_tunnel'),
     path('admin/', include('core.urls')),
     path('admin/', admin.site.urls),
     path("status/", include("health_check.urls")),

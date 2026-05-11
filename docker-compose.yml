@@ -26,6 +26,8 @@ services:
       context: ./frontend
       args:
         - BASE_URL=${BASE_URL}
+        - VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
+        - SENTRY_AUTH_TOKEN=${SENTRY_AUTH_TOKEN}
     restart: unless-stopped
     ports:
       - "8214:80"

@@ -5,6 +5,7 @@ import {BeneficiaryWritableFields} from "../../types/beneficiary";
 import {Box, Group, LoadingOverlay, Modal, TextInput} from "@mantine/core";
 import {DateInput, DateValue} from "@mantine/dates";
 import dayjs from "dayjs";
+import AddressAutocomplete from "./AddressAutocomplete";
 
 
 
@@ -12,6 +13,7 @@ const BeneficiaryModal: React.FC<
   UseModalFormReturnType<BaseRecord, HttpError, BeneficiaryWritableFields>
 > = ({
     getInputProps,
+    setFieldValue,
     errors,
     modal: { visible, close, title },
     saveButtonProps,
@@ -39,7 +41,16 @@ const BeneficiaryModal: React.FC<
              <LoadingOverlay visible={refineCore.formLoading} overlayProps={{blur:2}} />
             <TextInput label="Prénom" {...getInputProps("first_name")} error={errors.first_name} withAsterisk/>
             <TextInput label="Nom" {...getInputProps("last_name")} error={errors.last_name} withAsterisk/>
-            <TextInput label="Adresse" {...getInputProps("address")} error={errors.address} withAsterisk/>
+            <AddressAutocomplete
+                label="Adresse"
+                {...getInputProps("address")}
+                error={errors.address}
+                withAsterisk
+                onAddressSelect={({ name, city, postcode }) => {
+                    setFieldValue("city", city);
+                    setFieldValue("postal_code", postcode);
+                }}
+            />
             <TextInput label="Complement d'adresse" {...getInputProps("address_complement")} error={errors.adress_complement} />
 
             <Group>

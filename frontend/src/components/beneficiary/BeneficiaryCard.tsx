@@ -26,13 +26,13 @@ const BeneficiaryCard = ({beneficiary, withEdit = false, withName = false, title
             <Stack gap={0}>
                 {withName &&
                     <>
-                        <div><span style={{fontWeight: "bold"}}>Nom:</span> {beneficiary?.last_name}</div>
-                        <div><span style={{fontWeight: "bold"}}>Prénom:</span> {beneficiary?.first_name}</div>
+                        <div><span style={{fontWeight: "bold"}}>Nom:</span> <span className="sentry-mask">{beneficiary?.last_name}</span></div>
+                        <div><span style={{fontWeight: "bold"}}>Prénom:</span> <span className="sentry-mask">{beneficiary?.first_name}</span></div>
                     </>
                 }
                 <Flex direction="row">
                     <span style={{fontWeight: "bold"}}>Adresse: </span>
-                    <Flex direction="column" style={{marginLeft:7}}>
+                    <Flex direction="column" style={{marginLeft:7}} className="sentry-mask">
                         <span>{beneficiary?.address}</span>
                         {beneficiary?.address_complement ?? <span>{beneficiary?.address_complement}</span>}
                         <Flex>{beneficiary?.postal_code} {beneficiary?.city}</Flex>
@@ -41,9 +41,9 @@ const BeneficiaryCard = ({beneficiary, withEdit = false, withName = false, title
                 </Flex>
             </Stack>
             <Stack gap={0}>
-                <div><span style={{fontWeight: "bold"}}>Email:</span> <a href={`mailto:${beneficiary?.email}`}>{beneficiary?.email}</a></div>
-                <div><span style={{fontWeight: "bold"}}>Téléphone:</span> <a href={`tel:${beneficiary?.phone}`}>{beneficiary?.phone}</a></div>
-                <div><span style={{fontWeight: "bold"}}>Numéro de permis:</span> {beneficiary?.license_number!=="" ? beneficiary?.license_number : "pas de permis"}</div>
+                <div><span style={{fontWeight: "bold"}}>Email:</span> <a className="sentry-mask" href={`mailto:${beneficiary?.email}`}>{beneficiary?.email}</a></div>
+                <div><span style={{fontWeight: "bold"}}>Téléphone:</span> <a className="sentry-mask" href={`tel:${beneficiary?.phone}`}>{beneficiary?.phone}</a></div>
+                <div><span style={{fontWeight: "bold"}}>Numéro de permis:</span> <span className="sentry-mask">{beneficiary?.license_number!=="" ? beneficiary?.license_number : "pas de permis"}</span></div>
 
             </Stack>
         </Group>

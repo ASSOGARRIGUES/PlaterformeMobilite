@@ -1,5 +1,6 @@
 import react from "@vitejs/plugin-react";
 import {defineConfig, loadEnv} from "vite";
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 
 
 const envAvailableKeys = [
@@ -19,9 +20,19 @@ export default defineConfig(({mode})=>{
   envAvailableKeys.forEach(key => processEnv[key as processEnvKeys] = env[key]);
 
   return {
+    build: {
+      sourcemap: "hidden",
+    },
     define: {
       'process.env': processEnv,
     },
-    plugins: [react()],
+    plugins: [
+      react(),
+      sentryVitePlugin({
+        org: "simtech-gl",
+        project: "garrigues_mobilite",
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+      }),
+    ],
   }
 });

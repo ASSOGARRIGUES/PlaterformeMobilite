@@ -15,6 +15,8 @@ RUN npm install
 FROM deps as build
 ARG BASE_URL
 ARG VERSION
+ARG VITE_SENTRY_DSN
+ARG SENTRY_AUTH_TOKEN
 
 WORKDIR /frontend
 
