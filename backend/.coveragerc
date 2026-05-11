@@ -1,0 +1,16 @@
+[run]
+source = api,core,bugtracker,inappcom
+omit =
+    */migrations/*
+    */tests.py
+    manage.py
+    mobiliteNew/*
+    */admin.py
+    */apps.py
+    core/crons.py
+    core/views.py
+    core/management/*
+
+[report]
+show_missing = True
+skip_empty = True
