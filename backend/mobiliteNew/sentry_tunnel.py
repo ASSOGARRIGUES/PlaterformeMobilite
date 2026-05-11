@@ -1,14 +1,16 @@
 import json
 import urllib.error
 import urllib.request
+from os import getenv
 from urllib.parse import urlparse
 
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-SENTRY_HOST = "o4511367804813312.ingest.de.sentry.io"
-SENTRY_PROJECT_IDS = {"4511367808680016"}
+_dsn = urlparse(getenv("SENTRY_DSN", ""))
+SENTRY_HOST = _dsn.hostname or ""
+SENTRY_PROJECT_IDS = {_dsn.path.lstrip("/")} if _dsn.path.lstrip("/") else set()
 
 
 @csrf_exempt
