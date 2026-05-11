@@ -89,7 +89,8 @@ const VehicleList = () => {
                 accessor: 'imat',
                 title: 'IMMAT',
                 sortable: true,
-                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`
+                visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.md})`,
+                render: (v) => <span className="sentry-mask">{v.imat}</span>,
             },
             {
                 accessor: 'status',

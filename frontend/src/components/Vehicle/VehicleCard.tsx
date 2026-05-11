@@ -46,7 +46,7 @@ const VehicleCard = ({vehicle, withEdit=false, title=(<>Informations</>), style}
                 <Text><span style={{fontWeight: "bold"}}>Modèle: </span> {vehicle?.modele}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Couleur: </span> {vehicle?.color}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Année: </span> {vehicle?.year}</Text>
-                <Text><span style={{fontWeight: "bold"}}>Immatriculation: </span> {vehicle?.imat}</Text>
+                <Text><span style={{fontWeight: "bold"}}>Immatriculation: </span> <span className="sentry-mask">{vehicle?.imat}</span></Text>
                 <Text><span style={{fontWeight: "bold"}}>Kilométrage: </span> {humanizeNumber(vehicle?.kilometer)}km</Text>
                 <Text><span style={{fontWeight: "bold"}}>Transmission: </span> {vehicle?.transmission}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Carburant: </span> {vehicle?.fuel_type}</Text>
