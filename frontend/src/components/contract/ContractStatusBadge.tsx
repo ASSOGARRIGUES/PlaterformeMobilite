@@ -19,7 +19,7 @@ const ContractStatusBadge = ({contract}: {contract: CompleteContract}) => {
     const tooltipTextMap: Record<string, string> = {
         [ContractStatusEnum.waiting]: "En attente d'Etat des lieux",
         [ContractStatusEnum.pending]: "En cours: véhicule à disposition",
-        [ContractStatusEnum.over]: "Clôturer: véhicule rendu, contrat en attente de paiement",
+        [ContractStatusEnum.over]: "Clôturé: véhicule rendu, contrat en attente de paiement",
         [ContractStatusEnum.payed]: "Payé: contrat terminé",
     }
 
