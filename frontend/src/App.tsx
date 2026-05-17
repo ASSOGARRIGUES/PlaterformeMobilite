@@ -202,6 +202,7 @@ function App() {
                                         <Route index element={<ContractList />} />
                                         <Route path=":id" element={<ContractShow />} />
                                         <Route path="create" element={<ContractForm />} />
+                                        <Route path="renew/:id" element={<ContractForm />} />
                                     </Route>
                                     <Route path="/vehicle_review">
                                         <Route index element={<VehicleReview />} />
