@@ -1,6 +1,8 @@
 from datetime import date
 
 from django.contrib.auth import get_user_model
+from django.db import transaction
+from django.utils import timezone
 from django.db.models import Q
 from drf_extra_fields.fields import Base64ImageField
 from drf_spectacular.utils import extend_schema_field
@@ -275,8 +277,9 @@ class MutationContractSerializer(ContractSerializer):
 class RenewContractSerializer(MutationContractSerializer):
     """Serializer pour le renouvellement d'un contrat existant.
 
-    Le véhicule et le bénéficiaire sont imposés par le contrat source et ne peuvent pas être modifiés.
-    La clôture du contrat source est effectuée séparément via l'endpoint /end/.
+    Le véhicule et le bénéficiaire sont imposés par le contrat source.
+    Les données de clôture sont validées en amont via EndContractSerializer (context['end_serializer']).
+    La clôture est effectuée ici sans repasser le véhicule en 'available'.
     """
 
     def validate_vehicle(self, value):
@@ -306,19 +309,21 @@ class RenewContractSerializer(MutationContractSerializer):
             })
         return attrs
 
+    @transaction.atomic
     def create(self, validated_data):
         source = self.context['source_contract']
-        vehicle = source.vehicle
+        end_serializer = self.context['end_serializer']
 
-        validated_data['created_by'] = self.context['request'].user
-        validated_data['action'] = self.context['request'].user.current_action
+        source.status = 'over'
+        source.ended_at = timezone.now()
+        end_serializer.save()
+
         validated_data['status'] = 'pending'
         validated_data['renewed_from'] = source
-        if 'start_kilometer' not in validated_data:
-            validated_data['start_kilometer'] = vehicle.kilometer
+        validated_data.setdefault('start_kilometer', source.end_kilometer)
 
-        contract = Contract.objects.create(**validated_data)
-        return contract
+        # super().create() gère created_by, action, vehicle.status='rented' et vehicle.kilometer
+        return super().create(validated_data)
 
 
 class EndContractSerializer(serializers.ModelSerializer):

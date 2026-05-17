@@ -303,9 +303,12 @@ class ContractViewSet(ArchivableModelViewSet):
                 {'error': 'Ce contrat possède déjà un renouvellement actif.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        end_serializer = EndContractSerializer(source, data=request.data.get('closing', {}))
+        end_serializer.is_valid(raise_exception=True)
+
         serializer = RenewContractSerializer(
             data=request.data,
-            context={'request': request, 'source_contract': source},
+            context={'request': request, 'source_contract': source, 'end_serializer': end_serializer},
         )
         serializer.is_valid(raise_exception=True)
         new_contract = serializer.save()
