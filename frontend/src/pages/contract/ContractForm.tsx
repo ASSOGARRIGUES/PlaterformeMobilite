@@ -413,6 +413,13 @@ const ContractForm = () => {
             </Tooltip>
             {warningMessage}
 
+            {isPastDue && (
+                <Alert icon={<IconInfoCircle/>} color="orange">
+                    Le contrat est arrivé à échéance le{" "}
+                    <strong>{sourceContract?.end_date ? humanizeDate(sourceContract.end_date) : ""}</strong>.
+                    La date de début du renouvellement sera au minimum aujourd'hui.
+                </Alert>
+            )}
             <DatePickerInput
                 type="range"
                 locale="fr"
@@ -640,13 +647,6 @@ const ContractForm = () => {
     if (isRenew) {
         return (
             <Create title={title} resource="contract" footerButtons={footerButtons}>
-                {isPastDue && (
-                    <Alert icon={<IconInfoCircle/>} color="orange" mb="md">
-                        Le contrat est arrivé à échéance le{" "}
-                        <strong>{sourceContract?.end_date ? humanizeDate(sourceContract.end_date) : ""}</strong>.
-                        La date de début du renouvellement sera au minimum aujourd'hui.
-                    </Alert>
-                )}
                 {stepperContent}
             </Create>
         );
