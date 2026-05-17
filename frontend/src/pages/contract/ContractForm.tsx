@@ -37,7 +37,7 @@ import {IconAlertTriangle} from "@tabler/icons-react";
 import {DatePickerInput} from "@mantine/dates";
 import {DatesRangeValue} from "@mantine/dates/lib/types/DatePickerValue";
 
-const ContractCreate = () => {
+const ContractForm = () => {
 
     const whoAmI = useGetIdentity<User>();
     const [startKilometerDirty, setStartKilometerDirty] = useState(false);
@@ -287,4 +287,4 @@ const ContractCreate = () => {
     )
 }
 
-export default ContractCreate;
+export default ContractForm;
