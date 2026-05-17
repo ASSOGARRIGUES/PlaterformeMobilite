@@ -1,10 +1,11 @@
-import {Flex, Group, Paper, SimpleGrid, Skeleton, Text, Title, useMantineTheme} from "@mantine/core";
+import {Anchor, Flex, Group, Paper, SimpleGrid, Skeleton, Text, Title, useMantineTheme} from "@mantine/core";
 import {ContractStatusEnum} from "../../types/schema.d";
 import {CompleteContract} from "../../types/contract";
 import useContractModalForm from "../../hooks/contract/useContractModalForm";
 import ContractStatusBadge from "./ContractStatusBadge";
 import ContractModal from "./ContractModal";
-import {humanizeDate, humanizeFirstName, humanizeNumber} from "../../constants";
+import {humanizeDate, humanizeFirstName, humanizeNumber, paymentModeLabelMap} from "../../constants";
+import {PaymentModeEnum} from "../../types/schema.d";
 import {CSSProperties} from "react";
 import ContractEditButton from "./ContractEditButton";
 
@@ -56,12 +57,37 @@ const ContractCard = ({contract, withEdit=false, style}: {contract: CompleteCont
                 <Text><span style={{fontWeight: "bold"}}>Fin: </span> {humanizeDate(contract.end_date)}</Text>
                 <Text><span style={{fontWeight: "bold"}}>Prix: </span> {contract.price}€</Text>
                 <Text><span style={{fontWeight: "bold"}}>Temps restant: </span> <span style={{color: remainingDaysColor}}>{ remainingDays(contract)}j</span></Text>
-                <Text><span style={{fontWeight: "bold"}}>Caution: </span> {contract.deposit}€</Text>
+                {contract.renewed_from_id ? (
+                    <Text>
+                        <span style={{fontWeight: "bold"}}>Caution: </span>
+                        {contract.root_contract_deposit}€ · {contract.root_contract_deposit_payment_mode ? (paymentModeLabelMap[contract.root_contract_deposit_payment_mode as PaymentModeEnum] ?? contract.root_contract_deposit_payment_mode) : "—"}
+                        {contract.root_contract_deposit_check_number && ` · N° ${contract.root_contract_deposit_check_number}`}
+                        {" · "}{contract.root_contract_created_at ? humanizeDate(contract.root_contract_created_at) : "—"}
+                        {" ("}
+                        <Anchor href={`/contract/${contract.root_contract_id}`}>contrat #{contract.root_contract_id}</Anchor>
+                        {")"}
+                    </Text>
+                ) : (
+                    <Text><span style={{fontWeight: "bold"}}>Caution: </span> {contract.deposit}€</Text>
+                )}
 
                 <Text><span style={{fontWeight: "bold"}}>Km initial: </span> {contract.start_kilometer? humanizeNumber(contract.start_kilometer) : "---"}km</Text>
                 <Text><span style={{fontWeight: "bold"}}>Remise: </span> {contract.discount}€</Text>
                 <Text><span style={{fontWeight: "bold"}}>distance max: </span> {contract.max_kilometer && humanizeNumber(contract.max_kilometer)}km</Text>
                 <Text><span style={{fontWeight: "bold"}}>Km max final: </span> {humanizeNumber(kmFinalMax)}km</Text>
+
+                {contract.renewed_from_id && (
+                    <Text>
+                        <span style={{fontWeight: "bold"}}>Renouvellement de: </span>
+                        <Anchor href={`/contract/${contract.renewed_from_id}`}>#{contract.renewed_from_id}</Anchor>
+                    </Text>
+                )}
+                {contract.active_renewal_id && (
+                    <Text>
+                        <span style={{fontWeight: "bold"}}>Renouvelé par: </span>
+                        <Anchor href={`/contract/${contract.active_renewal_id}`}>#{contract.active_renewal_id}</Anchor>
+                    </Text>
+                )}
 
                 {(contract && (contract?.status === ContractStatusEnum.over || contract?.status === ContractStatusEnum.payed)) && (
                     <>
