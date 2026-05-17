@@ -1,4 +1,5 @@
 import {Anchor, Flex, Group, Paper, SimpleGrid, Skeleton, Text, Title, useMantineTheme} from "@mantine/core";
+import {useGo} from "@refinedev/core";
 import {ContractStatusEnum} from "../../types/schema.d";
 import {CompleteContract} from "../../types/contract";
 import useContractModalForm from "../../hooks/contract/useContractModalForm";
@@ -11,6 +12,7 @@ import ContractEditButton from "./ContractEditButton";
 
 const ContractCard = ({contract, withEdit=false, style}: {contract: CompleteContract | undefined, withEdit?: boolean, style?:CSSProperties}) => {
 
+    const go = useGo();
     const editModalForm = useContractModalForm({action: "edit"});
     const {modal: { show: showEditModal},  getInputProps} = editModalForm;
 
@@ -64,7 +66,7 @@ const ContractCard = ({contract, withEdit=false, style}: {contract: CompleteCont
                         {contract.root_contract_deposit_check_number && ` · N° ${contract.root_contract_deposit_check_number}`}
                         {" · "}{contract.root_contract_created_at ? humanizeDate(contract.root_contract_created_at) : "—"}
                         {" ("}
-                        <Anchor href={`/contract/${contract.root_contract_id}`}>contrat #{contract.root_contract_id}</Anchor>
+                        <Anchor component="button" onClick={() => go({to: `/contract/${contract.root_contract_id}`})}>contrat #{contract.root_contract_id}</Anchor>
                         {")"}
                     </Text>
                 ) : (
@@ -79,13 +81,13 @@ const ContractCard = ({contract, withEdit=false, style}: {contract: CompleteCont
                 {contract.renewed_from_id && (
                     <Text>
                         <span style={{fontWeight: "bold"}}>Renouvellement de: </span>
-                        <Anchor href={`/contract/${contract.renewed_from_id}`}>#{contract.renewed_from_id}</Anchor>
+                        <Anchor component="button" onClick={() => go({to: `/contract/${contract.renewed_from_id}`})}>#{contract.renewed_from_id}</Anchor>
                     </Text>
                 )}
                 {contract.active_renewal_id && (
                     <Text>
                         <span style={{fontWeight: "bold"}}>Renouvelé par: </span>
-                        <Anchor href={`/contract/${contract.active_renewal_id}`}>#{contract.active_renewal_id}</Anchor>
+                        <Anchor component="button" onClick={() => go({to: `/contract/${contract.active_renewal_id}`})}>#{contract.active_renewal_id}</Anchor>
                     </Text>
                 )}
 

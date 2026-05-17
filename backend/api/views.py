@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema_field, extend_schema
-from rest_framework import viewsets, permissions, serializers
+from rest_framework import viewsets, permissions, serializers, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import SearchFilter, OrderingFilter
@@ -296,12 +296,12 @@ class ContractViewSet(ArchivableModelViewSet):
         if source.status != 'pending':
             return Response(
                 {'error': 'Seul un contrat "En cours" peut être renouvelé.'},
-                status=400,
+                status=status.HTTP_400_BAD_REQUEST,
             )
         if source.renewals.filter(status__in=['pending', 'waiting']).exists():
             return Response(
                 {'error': 'Ce contrat possède déjà un renouvellement actif.'},
-                status=400,
+                status=status.HTTP_400_BAD_REQUEST,
             )
         serializer = RenewContractSerializer(
             data=request.data,

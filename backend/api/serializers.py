@@ -211,7 +211,9 @@ class ContractSerializer(serializers.ModelSerializer):
             self._root_cache = {}
         if obj.pk not in self._root_cache:
             root = obj
-            while root.renewed_from_id:
+            seen = set()
+            while root.renewed_from_id and root.pk not in seen:
+                seen.add(root.pk)
                 root = root.renewed_from
             self._root_cache[obj.pk] = root
         return self._root_cache[obj.pk]

@@ -17,9 +17,10 @@ import {
     Text,
     TextInput,
     Title,
+    Tooltip,
 } from "@mantine/core";
 import {SaveButton} from "../../components/SaveButton";
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {
     useApiUrl,
     useCustomMutation,
@@ -50,6 +51,7 @@ import {DatePickerInput} from "@mantine/dates";
 import {DatesRangeValue} from "@mantine/dates/lib/types/DatePickerValue";
 import {Create, Edit} from "@refinedev/mantine";
 import BeneficiaryBadge from "../../components/beneficiary/BeneficiaryBadge";
+import {notifications} from "@mantine/notifications";
 
 // ---------------------------------------------------------------------------
 // ContractForm — handles both creation and renewal in a single component.
@@ -117,9 +119,7 @@ const ContractForm = () => {
     const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | undefined>(undefined);
     const [selectedReferent, setSelectedReferent] = useState<User | undefined>(undefined);
     const [startKilometerDirty, setStartKilometerDirty] = useState(false);
-    // currentStepForValidation mirrors currentStep from useStepsForm to break
-    // the circular reference that arises when passing currentStep into validate.
-    const [currentStepForValidation, setCurrentStepForValidation] = useState(0);
+    const currentStepRef = useRef(0);
 
     // -------------------------------------------------------------------------
     // Form
@@ -208,7 +208,7 @@ const ContractForm = () => {
         setValues,
     } = useStepsForm({
         initialValues,
-        validate: (values) => validate(values as ContractWritableFields, currentStepForValidation),
+        validate: (values) => validate(values as ContractWritableFields, currentStepRef.current),
         validateInputOnBlur: true,
         refineCoreProps: {action: "create", redirect: "show"},
         transformValues: (values) => ({
@@ -217,7 +217,7 @@ const ContractForm = () => {
         }),
     });
 
-    useEffect(() => { setCurrentStepForValidation(currentStep); }, [currentStep]);
+    useEffect(() => { currentStepRef.current = currentStep; }, [currentStep]);
 
     // Resync form when source contract loads in renew mode
     useEffect(() => {
@@ -348,6 +348,16 @@ const ContractForm = () => {
                                 invalidate({resource: "contract", invalidates: ["list", "detail"]});
                                 go({to: `/contract/${newContractId}`});
                             },
+                            onError: () => {
+                                notifications.show({
+                                    color: "orange",
+                                    title: "Clôture échouée",
+                                    message: `Le renouvellement #${newContractId} a été créé mais la clôture du contrat source a échoué. Vous pouvez la faire manuellement.`,
+                                    autoClose: false,
+                                });
+                                invalidate({resource: "contract", invalidates: ["list", "detail"]});
+                                go({to: `/contract/${newContractId}`});
+                            },
                         }
                     );
                 },
@@ -391,11 +401,17 @@ const ContractForm = () => {
                 </Group>
             )}
 
-            <NumberInput
-                label="Kilométrage initial"
-                {...getInputProps("start_kilometer")}
-                error={errors.start_kilometer}
-            />
+            <Tooltip
+                label="Pré-rempli depuis le kilométrage final saisi à l'étape précédente."
+                disabled={!isRenew}
+            >
+                <NumberInput
+                    label="Kilométrage initial"
+                    {...getInputProps("start_kilometer")}
+                    error={errors.start_kilometer}
+                    readOnly={isRenew}
+                />
+            </Tooltip>
             {warningMessage}
 
             <DatePickerInput
@@ -555,7 +571,7 @@ const ContractForm = () => {
             )}
             {currentStep === LAST_STEP && (
                 isRenew
-                    ? <SaveButton onClick={handleRenewSave}/>
+                    ? <SaveButton onClick={handleRenewSave} loading={isRenewSaving}/>
                     : <SaveButton {...saveButtonProps}/>
             )}
         </Group>
