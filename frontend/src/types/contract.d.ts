@@ -9,7 +9,7 @@ type CreateContractValues = Omit<Contract, "id">;
 
 type CompleteContract = Contract
 
-type ContractWritableFields = Omit<components['schemas']['MutationContract'], "id" | "created_by" | "created_at" | "end_kilometer" | "status" | "action" | "renewed_from_id" | "has_active_renewal">
+type ContractWritableFields = Omit<components['schemas']['MutationContract'], "id" | "created_by" | "created_at" | "end_kilometer" | "status" | "action" | "renewed_from_id" | "active_renewal_id" | "root_contract_id" | "root_contract_created_at" | "root_contract_deposit" | "root_contract_deposit_payment_mode" | "root_contract_deposit_check_number" | "has_active_renewal" | "renewed_from">
 
 type EndContract = components["schemas"]["EndContract"]
 type EndContractWritableFields = Omit<EndContract, "id" | "max_kilometer" | "start_kilometer" | "vehicle_kilometer">
