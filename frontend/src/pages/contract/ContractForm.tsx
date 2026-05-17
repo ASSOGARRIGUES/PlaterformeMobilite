@@ -440,7 +440,7 @@ const ContractForm = () => {
                 error={errors.reason}
                 data={reasonOptions}
                 maxDropdownHeight={300}
-                styles={{dropdown: {position: "fixed"}}}
+                comboboxProps={{withinPortal: false}}
             />
             <ReferentSelect
                 label="Référent"

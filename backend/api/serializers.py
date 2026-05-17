@@ -1,5 +1,4 @@
 from datetime import date
-from django.utils import timezone
 
 from django.contrib.auth import get_user_model
 from django.db.models import Q
@@ -277,7 +276,7 @@ class RenewContractSerializer(MutationContractSerializer):
     """Serializer pour le renouvellement d'un contrat existant.
 
     Le véhicule et le bénéficiaire sont imposés par le contrat source et ne peuvent pas être modifiés.
-    L'ancien contrat est clôturé automatiquement lors de la création.
+    La clôture du contrat source est effectuée séparément via l'endpoint /end/.
     """
 
     def validate_vehicle(self, value):
@@ -309,18 +308,8 @@ class RenewContractSerializer(MutationContractSerializer):
 
     def create(self, validated_data):
         source = self.context['source_contract']
-        effective_close_date = max(source.end_date, date.today())
-
-        # Clôturer l'ancien contrat
         vehicle = source.vehicle
-        source.status = 'over'
-        source.end_kilometer = vehicle.kilometer
-        source.ended_at = timezone.make_aware(
-            timezone.datetime.combine(effective_close_date, timezone.datetime.min.time())
-        )
-        source.save()
 
-        # Créer le nouveau contrat (le véhicule reste rented, pas de changement de statut)
         validated_data['created_by'] = self.context['request'].user
         validated_data['action'] = self.context['request'].user.current_action
         validated_data['status'] = 'pending'
