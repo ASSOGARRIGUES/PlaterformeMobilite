@@ -50,7 +50,6 @@ import {DatePickerInput} from "@mantine/dates";
 import {DatesRangeValue} from "@mantine/dates/lib/types/DatePickerValue";
 import {Create} from "@refinedev/mantine";
 import BeneficiaryBadge from "../../components/beneficiary/BeneficiaryBadge";
-import {notifications} from "@mantine/notifications";
 
 // ---------------------------------------------------------------------------
 // ContractForm — handles both creation and renewal in a single component.
@@ -64,7 +63,6 @@ const ContractForm = () => {
 
     const apiUrl = useApiUrl();
     const {mutate: renewMutate, isLoading: isRenewSaving} = useCustomMutation<Contract>();
-    const {mutate: endMutate} = useCustomMutation();
     const invalidate = useInvalidate();
     const go = useGo();
 
@@ -331,34 +329,13 @@ const ContractForm = () => {
                 values: {
                     ...values,
                     start_kilometer: startKilometerDirty ? values.start_kilometer : undefined,
+                    closing: endForm.values,
                 },
             },
             {
                 onSuccess: (data) => {
-                    const newContractId = data.data.id;
-                    endMutate(
-                        {
-                            url: `${apiUrl}/contract/${id}/end/`,
-                            method: "patch",
-                            values: endForm.values,
-                        },
-                        {
-                            onSuccess: () => {
-                                invalidate({resource: "contract", invalidates: ["list", "detail"]});
-                                go({to: `/contract/${newContractId}`});
-                            },
-                            onError: () => {
-                                notifications.show({
-                                    color: "orange",
-                                    title: "Clôture échouée",
-                                    message: `Le renouvellement #${newContractId} a été créé mais la clôture du contrat source a échoué. Vous pouvez la faire manuellement.`,
-                                    autoClose: false,
-                                });
-                                invalidate({resource: "contract", invalidates: ["list", "detail"]});
-                                go({to: `/contract/${newContractId}`});
-                            },
-                        }
-                    );
+                    invalidate({resource: "contract", invalidates: ["list", "detail"]});
+                    go({to: `/contract/${data.data.id}`});
                 },
             }
         );
