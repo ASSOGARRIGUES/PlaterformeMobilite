@@ -1,3 +1,6 @@
+from datetime import date
+from django.utils import timezone
+
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from drf_extra_fields.fields import Base64ImageField
@@ -190,7 +193,48 @@ class ContractSerializer(serializers.ModelSerializer):
     action = ActionSerializer(read_only=True)
     vehicle = VehicleSerializer()
     beneficiary = BeneficiarySerializer()
+    renewed_from_id = serializers.IntegerField(read_only=True, allow_null=True)
+    active_renewal_id = serializers.SerializerMethodField(read_only=True)
+    root_contract_id = serializers.SerializerMethodField(read_only=True)
+    root_contract_created_at = serializers.SerializerMethodField(read_only=True)
+    root_contract_deposit = serializers.SerializerMethodField(read_only=True)
+    root_contract_deposit_payment_mode = serializers.SerializerMethodField(read_only=True)
+    root_contract_deposit_check_number = serializers.SerializerMethodField(read_only=True)
 
+    @extend_schema_field(serializers.IntegerField(allow_null=True))
+    def get_active_renewal_id(self, obj):
+        renewal = obj.renewals.filter(status__in=['pending', 'waiting']).first()
+        return renewal.id if renewal else None
+
+    def _get_root(self, obj):
+        if not hasattr(self, '_root_cache'):
+            self._root_cache = {}
+        if obj.pk not in self._root_cache:
+            root = obj
+            while root.renewed_from_id:
+                root = root.renewed_from
+            self._root_cache[obj.pk] = root
+        return self._root_cache[obj.pk]
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_root_contract_id(self, obj):
+        return self._get_root(obj).id
+
+    @extend_schema_field(serializers.DateTimeField())
+    def get_root_contract_created_at(self, obj):
+        return self._get_root(obj).created_at
+
+    @extend_schema_field(serializers.FloatField())
+    def get_root_contract_deposit(self, obj):
+        return self._get_root(obj).deposit
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_root_contract_deposit_payment_mode(self, obj):
+        return self._get_root(obj).depositPaymentMode
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_root_contract_deposit_check_number(self, obj):
+        return self._get_root(obj).deposit_check_number
 
     class Meta:
         model = Contract
@@ -225,6 +269,65 @@ class MutationContractSerializer(ContractSerializer):
     vehicle = serializers.PrimaryKeyRelatedField(queryset=Vehicle.objects.all())
     beneficiary = serializers.PrimaryKeyRelatedField(queryset=Beneficiary.objects.all())
     referent = serializers.PrimaryKeyRelatedField(queryset=get_user_model().objects.all())
+
+
+class RenewContractSerializer(MutationContractSerializer):
+    """Serializer pour le renouvellement d'un contrat existant.
+
+    Le véhicule et le bénéficiaire sont imposés par le contrat source et ne peuvent pas être modifiés.
+    L'ancien contrat est clôturé automatiquement lors de la création.
+    """
+
+    def validate_vehicle(self, value):
+        source = self.context['source_contract']
+        if value != source.vehicle:
+            raise serializers.ValidationError("Le véhicule doit être identique à celui du contrat renouvelé.")
+        # On bypass la validation 'available' car le véhicule est encore loué sur l'ancien contrat
+        return value
+
+    def validate_beneficiary(self, value):
+        source = self.context['source_contract']
+        if value != source.beneficiary:
+            raise serializers.ValidationError("Le bénéficiaire doit être identique à celui du contrat renouvelé.")
+        return value
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        source = self.context['source_contract']
+        effective_close_date = max(source.end_date, date.today())
+        start_date = attrs.get('start_date')
+        if start_date and start_date < effective_close_date:
+            raise serializers.ValidationError({
+                'start_date': (
+                    f"La date de début doit être au minimum le {effective_close_date.strftime('%d/%m/%Y')} "
+                    f"(date de fin effective du contrat précédent)."
+                )
+            })
+        return attrs
+
+    def create(self, validated_data):
+        source = self.context['source_contract']
+        effective_close_date = max(source.end_date, date.today())
+
+        # Clôturer l'ancien contrat
+        vehicle = source.vehicle
+        source.status = 'over'
+        source.end_kilometer = vehicle.kilometer
+        source.ended_at = timezone.make_aware(
+            timezone.datetime.combine(effective_close_date, timezone.datetime.min.time())
+        )
+        source.save()
+
+        # Créer le nouveau contrat (le véhicule reste rented, pas de changement de statut)
+        validated_data['created_by'] = self.context['request'].user
+        validated_data['action'] = self.context['request'].user.current_action
+        validated_data['status'] = 'pending'
+        validated_data['renewed_from'] = source
+        if 'start_kilometer' not in validated_data:
+            validated_data['start_kilometer'] = vehicle.kilometer
+
+        contract = Contract.objects.create(**validated_data)
+        return contract
 
 
 class EndContractSerializer(serializers.ModelSerializer):

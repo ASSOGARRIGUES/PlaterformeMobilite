@@ -18,7 +18,8 @@ from .models import Vehicle, Beneficiary, Contract, Parking, Payment
 from .serializers import VehicleSerializer, BeneficiarySerializer, ContractSerializer, UserSerializer, \
     EndContractSerializer, ParkingSerializer, MutationContractSerializer, MutationVehicleSerializer, PaymentSerializer, \
     ContractPaymentSummarySerializer, WhoAmISerializer, UserActionSerializer, UserActionUpdateSerializer, \
-    ShortVehicleSerializer, VehicleActionTransferSerializer, ContractGroupByRefStatsSerializer, ReferentGroupSerializer
+    ShortVehicleSerializer, VehicleActionTransferSerializer, ContractGroupByRefStatsSerializer, ReferentGroupSerializer, \
+    RenewContractSerializer
 from core.models import Action
 
 MUTATION_ACTION = ['create', 'update', 'partial_update']
@@ -239,6 +240,7 @@ class ContractViewSet(ArchivableModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        queryset = queryset.select_related('renewed_from').prefetch_related('renewals')
         user_currect_action = self.request.user.current_action
         if user_currect_action:
             return queryset.filter(action=user_currect_action)
@@ -287,6 +289,30 @@ class ContractViewSet(ArchivableModelViewSet):
         contract = self.get_object()
         pdf = contract.render_bill_pdf()
         return HttpResponse(pdf, content_type='application/pdf')
+
+    @action(detail=True, methods=['post'], url_path='renew')
+    def renew(self, request, pk=None):
+        source = self.get_object()
+        if source.status != 'pending':
+            return Response(
+                {'error': 'Seul un contrat "En cours" peut être renouvelé.'},
+                status=400,
+            )
+        if source.renewals.filter(status__in=['pending', 'waiting']).exists():
+            return Response(
+                {'error': 'Ce contrat possède déjà un renouvellement actif.'},
+                status=400,
+            )
+        serializer = RenewContractSerializer(
+            data=request.data,
+            context={'request': request, 'source_contract': source},
+        )
+        serializer.is_valid(raise_exception=True)
+        new_contract = serializer.save()
+        return Response(
+            ContractSerializer(new_contract, context={'request': request}).data,
+            status=201,
+        )
 
     @action(detail=True, methods=['get', 'patch'], serializer_class=EndContractSerializer)
     def end(self, request, pk=None):
