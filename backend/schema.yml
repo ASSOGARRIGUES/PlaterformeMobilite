@@ -2907,8 +2907,28 @@ components:
           type: integer
           readOnly: true
           nullable: true
-        has_active_renewal:
-          type: boolean
+        active_renewal_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        root_contract_id:
+          type: integer
+          readOnly: true
+        root_contract_created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        root_contract_deposit:
+          type: number
+          format: double
+          readOnly: true
+        root_contract_deposit_payment_mode:
+          type: string
+          nullable: true
+          readOnly: true
+        root_contract_deposit_check_number:
+          type: string
+          nullable: true
           readOnly: true
         start_date:
           type: string
@@ -2965,17 +2985,22 @@ components:
           nullable: true
       required:
       - action
+      - active_renewal_id
       - beneficiary
       - created_at
       - created_by
       - deposit
       - end_date
       - end_kilometer
-      - has_active_renewal
       - id
       - price
       - referent
       - renewed_from_id
+      - root_contract_created_at
+      - root_contract_deposit
+      - root_contract_deposit_check_number
+      - root_contract_deposit_payment_mode
+      - root_contract_id
       - start_date
       - vehicle
     ContractPaymentSummary:
@@ -3121,8 +3146,28 @@ components:
           type: integer
           readOnly: true
           nullable: true
-        has_active_renewal:
-          type: boolean
+        active_renewal_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        root_contract_id:
+          type: integer
+          readOnly: true
+        root_contract_created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        root_contract_deposit:
+          type: number
+          format: double
+          readOnly: true
+        root_contract_deposit_payment_mode:
+          type: string
+          nullable: true
+          readOnly: true
+        root_contract_deposit_check_number:
+          type: string
+          nullable: true
           readOnly: true
         start_date:
           type: string
@@ -3179,17 +3224,22 @@ components:
           nullable: true
       required:
       - action
+      - active_renewal_id
       - beneficiary
       - created_at
       - created_by
       - deposit
       - end_date
       - end_kilometer
-      - has_active_renewal
       - id
       - price
       - referent
       - renewed_from_id
+      - root_contract_created_at
+      - root_contract_deposit
+      - root_contract_deposit_check_number
+      - root_contract_deposit_payment_mode
+      - root_contract_id
       - start_date
       - vehicle
     MutationVehicle:
@@ -3583,8 +3633,28 @@ components:
           type: integer
           readOnly: true
           nullable: true
-        has_active_renewal:
-          type: boolean
+        active_renewal_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        root_contract_id:
+          type: integer
+          readOnly: true
+        root_contract_created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        root_contract_deposit:
+          type: number
+          format: double
+          readOnly: true
+        root_contract_deposit_payment_mode:
+          type: string
+          nullable: true
+          readOnly: true
+        root_contract_deposit_check_number:
+          type: string
+          nullable: true
           readOnly: true
         start_date:
           type: string
@@ -3692,8 +3762,28 @@ components:
           type: integer
           readOnly: true
           nullable: true
-        has_active_renewal:
-          type: boolean
+        active_renewal_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        root_contract_id:
+          type: integer
+          readOnly: true
+        root_contract_created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        root_contract_deposit:
+          type: number
+          format: double
+          readOnly: true
+        root_contract_deposit_payment_mode:
+          type: string
+          nullable: true
+          readOnly: true
+        root_contract_deposit_check_number:
+          type: string
+          nullable: true
           readOnly: true
         start_date:
           type: string

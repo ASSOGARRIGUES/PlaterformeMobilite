@@ -11,10 +11,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description OpenApi3 schema for this API. Format can be selected via content negotiation.
+        /**
+         * @description OpenApi3 schema for this API. Format can be selected via content negotiation.
          *
          *     - YAML: application/vnd.oai.openapi
-         *     - JSON: application/vnd.oai.openapi+json */
+         *     - JSON: application/vnd.oai.openapi+json
+         */
         get: operations["api_schema_retrieve"];
         put?: never;
         post?: never;
@@ -360,6 +362,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/contract/{id}/renew/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_contract_renew_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/contract/{id}/unarchive/": {
         parameters: {
             query?: never;
@@ -465,8 +483,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Takes a set of user credentials and returns an access and refresh JSON web
-         *     token pair to prove the authentication of those credentials. */
+        /**
+         * @description Takes a set of user credentials and returns an access and refresh JSON web
+         *     token pair to prove the authentication of those credentials.
+         */
         post: operations["api_token_create"];
         delete?: never;
         options?: never;
@@ -483,8 +503,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Takes a refresh type JSON web token and returns an access type JSON web
-         *     token if the refresh token is valid. */
+        /**
+         * @description Takes a refresh type JSON web token and returns an access type JSON web
+         *     token if the refresh token is valid.
+         */
         post: operations["api_token_refresh_create"];
         delete?: never;
         options?: never;
@@ -518,6 +540,22 @@ export interface paths {
         get: operations["api_vehicle_list"];
         put?: never;
         post: operations["api_vehicle_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/vehicle-stats/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_vehicle_stats_list"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -715,6 +753,15 @@ export interface components {
             readonly action: components["schemas"]["Action"];
             vehicle: components["schemas"]["Vehicle"];
             beneficiary: components["schemas"]["Beneficiary"];
+            readonly renewed_from_id: number | null;
+            readonly active_renewal_id: number | null;
+            readonly root_contract_id: number;
+            /** Format: date-time */
+            readonly root_contract_created_at: string;
+            /** Format: double */
+            readonly root_contract_deposit: number;
+            readonly root_contract_deposit_payment_mode: string | null;
+            readonly root_contract_deposit_check_number: string | null;
             /** Format: date */
             start_date: string;
             /** Format: date */
@@ -735,13 +782,7 @@ export interface components {
             /** Format: date-time */
             ended_at?: string | null;
             archived?: boolean;
-            readonly renewed_from_id?: number | null;
-            readonly active_renewal_id?: number | null;
-            readonly root_contract_id?: number;
-            readonly root_contract_created_at?: string;
-            readonly root_contract_deposit?: number;
-            readonly root_contract_deposit_payment_mode?: string | null;
-            readonly root_contract_deposit_check_number?: string | null;
+            renewed_from?: number | null;
         };
         ContractPaymentSummary: {
             readonly payments_sum: number;
@@ -797,6 +838,15 @@ export interface components {
             readonly action: components["schemas"]["Action"];
             vehicle: number;
             beneficiary: number;
+            readonly renewed_from_id: number | null;
+            readonly active_renewal_id: number | null;
+            readonly root_contract_id: number;
+            /** Format: date-time */
+            readonly root_contract_created_at: string;
+            /** Format: double */
+            readonly root_contract_deposit: number;
+            readonly root_contract_deposit_payment_mode: string | null;
+            readonly root_contract_deposit_check_number: string | null;
             /** Format: date */
             start_date: string;
             /** Format: date */
@@ -817,6 +867,7 @@ export interface components {
             /** Format: date-time */
             ended_at?: string | null;
             archived?: boolean;
+            renewed_from?: number | null;
         };
         MutationVehicle: {
             readonly id: number;
@@ -1016,6 +1067,15 @@ export interface components {
             readonly action?: components["schemas"]["Action"];
             vehicle?: components["schemas"]["Vehicle"];
             beneficiary?: components["schemas"]["Beneficiary"];
+            readonly renewed_from_id?: number | null;
+            readonly active_renewal_id?: number | null;
+            readonly root_contract_id?: number;
+            /** Format: date-time */
+            readonly root_contract_created_at?: string;
+            /** Format: double */
+            readonly root_contract_deposit?: number;
+            readonly root_contract_deposit_payment_mode?: string | null;
+            readonly root_contract_deposit_check_number?: string | null;
             /** Format: date */
             start_date?: string;
             /** Format: date */
@@ -1036,6 +1096,7 @@ export interface components {
             /** Format: date-time */
             ended_at?: string | null;
             archived?: boolean;
+            renewed_from?: number | null;
         };
         PatchedEndContract: {
             price?: number;
@@ -1057,6 +1118,15 @@ export interface components {
             readonly action?: components["schemas"]["Action"];
             vehicle?: number;
             beneficiary?: number;
+            readonly renewed_from_id?: number | null;
+            readonly active_renewal_id?: number | null;
+            readonly root_contract_id?: number;
+            /** Format: date-time */
+            readonly root_contract_created_at?: string;
+            /** Format: double */
+            readonly root_contract_deposit?: number;
+            readonly root_contract_deposit_payment_mode?: string | null;
+            readonly root_contract_deposit_check_number?: string | null;
             /** Format: date */
             start_date?: string;
             /** Format: date */
@@ -1077,6 +1147,7 @@ export interface components {
             /** Format: date-time */
             ended_at?: string | null;
             archived?: boolean;
+            renewed_from?: number | null;
         };
         PatchedMutationVehicle: {
             readonly id?: number;
@@ -1788,25 +1859,31 @@ export interface operations {
                 resolve_version__in?: string[];
                 /** @description A search term. */
                 search?: string;
-                /** @description * `low` - Low
+                /**
+                 * @description * `low` - Low
                  *     * `medium` - Medium
                  *     * `high` - High
-                 *     * `critical` - Critical */
+                 *     * `critical` - Critical
+                 */
                 severity?: PathsApiBugtrackerBugGetParametersQuerySeverity;
                 /** @description Les valeurs multiples doivent être séparées par des virgules. */
                 severity__in?: string[];
-                /** @description * `open` - Open
+                /**
+                 * @description * `open` - Open
                  *     * `closed` - Closed
-                 *     * `pending` - Pending */
+                 *     * `pending` - Pending
+                 */
                 status?: PathsApiBugtrackerBugGetParametersQueryStatus;
                 /** @description Les valeurs multiples doivent être séparées par des virgules. */
                 status__in?: string[];
                 targeted_version?: string;
                 /** @description Les valeurs multiples doivent être séparées par des virgules. */
                 targeted_version__in?: string[];
-                /** @description * `bug` - Bug
+                /**
+                 * @description * `bug` - Bug
                  *     * `feature` - Feature
-                 *     * `suggestion` - Suggestions */
+                 *     * `suggestion` - Suggestions
+                 */
                 type?: PathsApiBugtrackerBugGetParametersQueryType;
                 /** @description Les valeurs multiples doivent être séparées par des virgules. */
                 type__in?: string[];
@@ -1976,10 +2053,12 @@ export interface operations {
                 start_date__gte?: string;
                 start_date__lt?: string;
                 start_date__lte?: string;
-                /** @description * `waiting` - En attente d'EDL
+                /**
+                 * @description * `waiting` - En attente d'EDL
                  *     * `pending` - En cours
                  *     * `over` - Clôturé
-                 *     * `payed` - Payé */
+                 *     * `payed` - Payé
+                 */
                 status?: PathsApiContractGetParametersQueryStatus;
                 /** @description Les valeurs multiples doivent être séparées par des virgules. */
                 status__in?: string[];
@@ -2519,6 +2598,34 @@ export interface operations {
             };
         };
     };
+    api_contract_renew_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this contract. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Contract"];
+                "application/x-www-form-urlencoded": components["schemas"]["Contract"];
+                "multipart/form-data": components["schemas"]["Contract"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Contract"];
+                };
+            };
+        };
+    };
     api_contract_unarchive_partial_update: {
         parameters: {
             query?: never;
@@ -2978,9 +3085,11 @@ export interface operations {
                 fleet_id?: number;
                 /** @description Les valeurs multiples doivent être séparées par des virgules. */
                 fleet_id__in?: number[];
-                /** @description * `essence` - Essence
+                /**
+                 * @description * `essence` - Essence
                  *     * `diesel` - Diesel
-                 *     * `electrique` - Electrique */
+                 *     * `electrique` - Electrique
+                 */
                 fuel_type?: PathsApiVehicleGetParametersQueryFuel_type;
                 /** @description Les valeurs multiples doivent être séparées par des virgules. */
                 fuel_type__in?: string[];
@@ -2995,25 +3104,33 @@ export interface operations {
                 ordering?: string;
                 /** @description A search term. */
                 search?: string;
-                /** @description * `available` - Disponible
+                /**
+                 * @description * `available` - Disponible
                  *     * `rented` - A dispo
-                 *     * `maintenance` - En maintenance */
+                 *     * `maintenance` - En maintenance
+                 */
                 status?: PathsApiVehicleGetParametersQueryStatus;
                 /** @description Les valeurs multiples doivent être séparées par des virgules. */
                 status__in?: string[];
-                /** @description Status or
+                /**
+                 * @description Status or
                  *
                  *     * `available` - Disponible
                  *     * `rented` - A dispo
-                 *     * `maintenance` - En maintenance */
+                 *     * `maintenance` - En maintenance
+                 */
                 status__or?: PathsApiVehicleGetParametersQueryStatus__or;
-                /** @description * `manuelle` - Manuelle
-                 *     * `automatique` - Automatique */
+                /**
+                 * @description * `manuelle` - Manuelle
+                 *     * `automatique` - Automatique
+                 */
                 transmission?: PathsApiVehicleGetParametersQueryTransmission;
                 /** @description Les valeurs multiples doivent être séparées par des virgules. */
                 transmission__in?: string[];
-                /** @description * `voiture` - Voiture
-                 *     * `scouter` - Scooter */
+                /**
+                 * @description * `voiture` - Voiture
+                 *     * `scouter` - Scooter
+                 */
                 type?: PathsApiVehicleGetParametersQueryType;
                 /** @description Les valeurs multiples doivent être séparées par des virgules. */
                 type__in?: string[];
@@ -3055,6 +3172,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MutationVehicle"];
+                };
+            };
+        };
+    };
+    api_vehicle_stats_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
                 };
             };
         };
