@@ -735,6 +735,13 @@ export interface components {
             /** Format: date-time */
             ended_at?: string | null;
             archived?: boolean;
+            readonly renewed_from_id?: number | null;
+            readonly active_renewal_id?: number | null;
+            readonly root_contract_id?: number;
+            readonly root_contract_created_at?: string;
+            readonly root_contract_deposit?: number;
+            readonly root_contract_deposit_payment_mode?: string | null;
+            readonly root_contract_deposit_check_number?: string | null;
         };
         ContractPaymentSummary: {
             readonly payments_sum: number;
