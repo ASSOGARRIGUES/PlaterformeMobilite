@@ -2,7 +2,6 @@ import {Contract, ContractWritableFields, EndContractWritableFields} from "../..
 import {BlankEnum, PaymentModeEnum, ReasonEnum} from "../../types/schema.d";
 import {FormErrors, useForm} from "@mantine/form";
 import {
-    ActionIcon,
     Alert,
     Button,
     Center,
@@ -46,10 +45,10 @@ import {Vehicle} from "../../types/vehicle";
 import {User} from "../../types/auth";
 import BeneficiaryCard from "../../components/beneficiary/BeneficiaryCard";
 import VehicleCard from "../../components/Vehicle/VehicleCard";
-import {IconAlertTriangle, IconArrowLeft, IconInfoCircle} from "@tabler/icons-react";
+import {IconAlertTriangle, IconInfoCircle} from "@tabler/icons-react";
 import {DatePickerInput} from "@mantine/dates";
 import {DatesRangeValue} from "@mantine/dates/lib/types/DatePickerValue";
-import {Create, Edit} from "@refinedev/mantine";
+import {Create} from "@refinedev/mantine";
 import BeneficiaryBadge from "../../components/beneficiary/BeneficiaryBadge";
 import {notifications} from "@mantine/notifications";
 
@@ -639,13 +638,8 @@ const ContractForm = () => {
         : <Title order={3}>Créer un contrat</Title>;
 
     if (isRenew) {
-        const backButton = (
-            <ActionIcon variant="subtle" onClick={() => go({to: `/contract/${id}`})}>
-                <IconArrowLeft/>
-            </ActionIcon>
-        );
         return (
-            <Edit title={title} goBack={backButton} headerButtons={<></>} footerButtons={footerButtons}>
+            <Create title={title} resource="contract" footerButtons={footerButtons}>
                 {isPastDue && (
                     <Alert icon={<IconInfoCircle/>} color="orange" mb="md">
                         Le contrat est arrivé à échéance le{" "}
@@ -654,7 +648,7 @@ const ContractForm = () => {
                     </Alert>
                 )}
                 {stepperContent}
-            </Edit>
+            </Create>
         );
     }
 
