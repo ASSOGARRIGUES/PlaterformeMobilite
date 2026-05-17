@@ -64,10 +64,9 @@ const ContractCard = ({contract, withEdit=false, style}: {contract: CompleteCont
                         <span style={{fontWeight: "bold"}}>Caution: </span>
                         {contract.root_contract_deposit}€ · {contract.root_contract_deposit_payment_mode ? (paymentModeLabelMap[contract.root_contract_deposit_payment_mode as PaymentModeEnum] ?? contract.root_contract_deposit_payment_mode) : "—"}
                         {contract.root_contract_deposit_check_number && ` · N° ${contract.root_contract_deposit_check_number}`}
-                        {" · "}{contract.root_contract_created_at ? humanizeDate(contract.root_contract_created_at) : "—"}
-                        {" ("}
+                        <br/>
                         <Anchor component="button" onClick={() => go({to: `/contract/${contract.root_contract_id}`})}>contrat #{contract.root_contract_id}</Anchor>
-                        {")"}
+                        {" · "}{contract.root_contract_created_at ? humanizeDate(contract.root_contract_created_at) : "—"}
                     </Text>
                 ) : (
                     <Text><span style={{fontWeight: "bold"}}>Caution: </span> {contract.deposit}€</Text>
