@@ -27,7 +27,8 @@ import usePayContract from "../../hooks/contract/usePayContract";
 import ContractComment from "../../components/contract/ContractComment";
 import {useGetToPath, useGo, useResource} from "@refinedev/core";
 import ContractArchiveButton from "../../components/contract/ContractArchiveButton";
-import {IconMessageCircle, IconReceiptEuro} from "@tabler/icons-react";
+import {IconHistory, IconMessageCircle, IconReceiptEuro} from "@tabler/icons-react";
+import ContractRenewalTimeline from "../../components/contract/ContractRenewalTimeline";
 import PaymentTable from "../../components/contract/PaymentTable";
 import PaymentSummary from "../../components/contract/PaymentSummary";
 import ContractNewPaymentButton from "../../components/contract/ContractNewPaymentButton";
@@ -98,6 +99,7 @@ const ContractShow = () => {
             <Tabs.List>
                 <Tabs.Tab leftSection={<IconMessageCircle size={18} />} value={"comment"}>Commentaire d'équipe</Tabs.Tab>
                 <CanAccess permKey={'api.view_payment'}><Tabs.Tab leftSection={<IconReceiptEuro size={18}/>} value={"payments"}>Paiements</Tabs.Tab></CanAccess>
+                <Tabs.Tab leftSection={<IconHistory size={18}/>} value={"history"}>Historique</Tabs.Tab>
             </Tabs.List>
 
             <Tabs.Panel style={{flex: "1 1 auto"}} value={"comment"}>
@@ -115,6 +117,10 @@ const ContractShow = () => {
                     </Stack>
                 </Tabs.Panel>
             </CanAccess>
+
+            <Tabs.Panel value="history" style={{flex: "1 1 auto"}}>
+                <ContractRenewalTimeline contract={contractResponse}/>
+            </Tabs.Panel>
         </Tabs>
     ) : skeleton(2);
 

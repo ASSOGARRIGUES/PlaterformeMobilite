@@ -288,6 +288,26 @@ class ContractViewSet(ArchivableModelViewSet):
         pdf = contract.render_bill_pdf()
         return HttpResponse(pdf, content_type='application/pdf')
 
+
+    @action(detail=True, methods=['get'], url_path='renewal_history')
+    def renewal_history(self, request, pk=None):
+        contract = self.get_object()
+        root = contract
+        seen = set()
+        while root.renewed_from_id and root.pk not in seen:
+            seen.add(root.pk)
+            root = root.renewed_from
+        chain = []
+        current = root
+        seen = set()
+        while current and current.pk not in seen:
+            seen.add(current.pk)
+            chain.append(current)
+            current = current.renewals.first()
+        serializer = ContractSerializer(chain, many=True, context={'request': request})
+        return Response(serializer.data)
+
+
     @action(detail=True, methods=['get', 'patch'], serializer_class=EndContractSerializer)
     def end(self, request, pk=None):
         contract = self.get_object()
