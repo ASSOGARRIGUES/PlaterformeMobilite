@@ -48,7 +48,7 @@ const ReferentSelect = ({ value, onChange, filters, onChangeCompleteReferent, ..
 
     return (
         <Select
-            styles={{dropdown:{position:"fixed" }}}
+            comboboxProps={{withinPortal: false}}
             label="Référent"
             value={value?.toString()}
             onChange={onChangeHandler}

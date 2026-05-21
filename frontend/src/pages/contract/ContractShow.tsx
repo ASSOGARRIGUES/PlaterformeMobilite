@@ -11,7 +11,7 @@ import {
     Title,
     Tooltip
 } from "@mantine/core";
-import { useShow} from "@refinedev/core";
+import {useShow} from "@refinedev/core";
 import {Contract} from "../../types/contract";
 import ContractCard from "../../components/contract/ContractCard";
 import ContractBadge from "../../components/contract/ContractBadge";
@@ -29,6 +29,7 @@ import {useGetToPath, useGo, useResource} from "@refinedev/core";
 import ContractArchiveButton from "../../components/contract/ContractArchiveButton";
 import {IconHistory, IconMessageCircle, IconReceiptEuro} from "@tabler/icons-react";
 import ContractRenewalTimeline from "../../components/contract/ContractRenewalTimeline";
+import ContractRenewButton from "../../components/contract/ContractRenewButton";
 import PaymentTable from "../../components/contract/PaymentTable";
 import PaymentSummary from "../../components/contract/PaymentSummary";
 import ContractNewPaymentButton from "../../components/contract/ContractNewPaymentButton";
@@ -174,6 +175,8 @@ const ContractShow = () => {
                                     {contractResponse? (
                                         <ContractNewPaymentButton contract={contractResponse} variant="button"/>
                                     ): skeleton(1)}
+
+                                    <ContractRenewButton contract={contractResponse}/>
 
                                     <ContractArchiveButton contract={contractResponse}/>
                                     <ContractDeleteButton contract={contractResponse}/>

@@ -40,6 +40,7 @@ services:
   postgres:
     container_name: "mobilite-db"
     image: bitnami/postgresql:14
+    pull_policy: never
     restart: unless-stopped
     networks:
       - mobilite-internal

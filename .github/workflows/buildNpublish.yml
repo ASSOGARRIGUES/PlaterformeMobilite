@@ -66,6 +66,8 @@ jobs:
           build-args: |
             BASE_URL=${{ env.BASE_URL }}
             VERSION=${{ env.VERSION }}
+            VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }}
+            SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
           push: true
           tags: ${{ steps.meta_front.outputs.tags }}
           labels: ${{ steps.meta_front.outputs.labels }}

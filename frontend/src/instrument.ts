@@ -8,7 +8,7 @@ import {
 } from "react-router-dom";
 
 Sentry.init({
-  dsn: import.meta.env.VITE_SENTRY_DSN,
+  dsn: process.env["VITE_SENTRY_DSN"],
   environment: import.meta.env.MODE,
   release: process.env["VERSION"] || "0.0.0-dev",
   integrations: [
