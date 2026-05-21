@@ -25,7 +25,7 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import {IconAddressBook, IconCar, IconDashboard} from "@tabler/icons-react";
 import ContractIcon from "./assets/contract.svg";
 import ContractShow from "./pages/contract/ContractShow";
-import ContractCreate from "./pages/contract/ContractCreate";
+import ContractForm from "./pages/contract/ContractForm";
 import {Notifications} from "@mantine/notifications";
 import {Authenticated} from "./components/forkedFromRefine/Authenticated";
 import dayjs from "dayjs";
@@ -201,7 +201,8 @@ function App() {
                                     <Route path="/contract">
                                         <Route index element={<ContractList />} />
                                         <Route path=":id" element={<ContractShow />} />
-                                        <Route path="create" element={<ContractCreate />} />
+                                        <Route path="create" element={<ContractForm />} />
+                                        <Route path="renew/:id" element={<ContractForm />} />
                                     </Route>
                                     <Route path="/vehicle_review">
                                         <Route index element={<VehicleReview />} />
