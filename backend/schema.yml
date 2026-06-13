@@ -1674,6 +1674,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/Contract'
           description: ''
+  /api/contract/{id}/renew/:
+    post:
+      operationId: api_contract_renew_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this contract.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Contract'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Contract'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Contract'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+          description: ''
   /api/contract/{id}/unarchive/:
     patch:
       operationId: api_contract_unarchive_partial_update
@@ -2393,6 +2427,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/MutationVehicle'
           description: ''
+  /api/vehicle-stats/:
+    get:
+      operationId: api_vehicle_stats_list
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: {}
+                  description: Unspecified response body
+          description: ''
   /api/vehicle/{id}/:
     get:
       operationId: api_vehicle_retrieve
@@ -2849,6 +2903,33 @@ components:
           $ref: '#/components/schemas/Vehicle'
         beneficiary:
           $ref: '#/components/schemas/Beneficiary'
+        renewed_from_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        active_renewal_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        root_contract_id:
+          type: integer
+          readOnly: true
+        root_contract_created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        root_contract_deposit:
+          type: number
+          format: double
+          readOnly: true
+        root_contract_deposit_payment_mode:
+          type: string
+          nullable: true
+          readOnly: true
+        root_contract_deposit_check_number:
+          type: string
+          nullable: true
+          readOnly: true
         start_date:
           type: string
           format: date
@@ -2899,8 +2980,12 @@ components:
           nullable: true
         archived:
           type: boolean
+        renewed_from:
+          type: integer
+          nullable: true
       required:
       - action
+      - active_renewal_id
       - beneficiary
       - created_at
       - created_by
@@ -2910,6 +2995,12 @@ components:
       - id
       - price
       - referent
+      - renewed_from_id
+      - root_contract_created_at
+      - root_contract_deposit
+      - root_contract_deposit_check_number
+      - root_contract_deposit_payment_mode
+      - root_contract_id
       - start_date
       - vehicle
     ContractPaymentSummary:
@@ -3051,6 +3142,33 @@ components:
           type: integer
         beneficiary:
           type: integer
+        renewed_from_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        active_renewal_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        root_contract_id:
+          type: integer
+          readOnly: true
+        root_contract_created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        root_contract_deposit:
+          type: number
+          format: double
+          readOnly: true
+        root_contract_deposit_payment_mode:
+          type: string
+          nullable: true
+          readOnly: true
+        root_contract_deposit_check_number:
+          type: string
+          nullable: true
+          readOnly: true
         start_date:
           type: string
           format: date
@@ -3101,8 +3219,12 @@ components:
           nullable: true
         archived:
           type: boolean
+        renewed_from:
+          type: integer
+          nullable: true
       required:
       - action
+      - active_renewal_id
       - beneficiary
       - created_at
       - created_by
@@ -3112,6 +3234,12 @@ components:
       - id
       - price
       - referent
+      - renewed_from_id
+      - root_contract_created_at
+      - root_contract_deposit
+      - root_contract_deposit_check_number
+      - root_contract_deposit_payment_mode
+      - root_contract_id
       - start_date
       - vehicle
     MutationVehicle:
@@ -3501,6 +3629,33 @@ components:
           $ref: '#/components/schemas/Vehicle'
         beneficiary:
           $ref: '#/components/schemas/Beneficiary'
+        renewed_from_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        active_renewal_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        root_contract_id:
+          type: integer
+          readOnly: true
+        root_contract_created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        root_contract_deposit:
+          type: number
+          format: double
+          readOnly: true
+        root_contract_deposit_payment_mode:
+          type: string
+          nullable: true
+          readOnly: true
+        root_contract_deposit_check_number:
+          type: string
+          nullable: true
+          readOnly: true
         start_date:
           type: string
           format: date
@@ -3551,6 +3706,9 @@ components:
           nullable: true
         archived:
           type: boolean
+        renewed_from:
+          type: integer
+          nullable: true
     PatchedEndContract:
       type: object
       properties:
@@ -3600,6 +3758,33 @@ components:
           type: integer
         beneficiary:
           type: integer
+        renewed_from_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        active_renewal_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        root_contract_id:
+          type: integer
+          readOnly: true
+        root_contract_created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        root_contract_deposit:
+          type: number
+          format: double
+          readOnly: true
+        root_contract_deposit_payment_mode:
+          type: string
+          nullable: true
+          readOnly: true
+        root_contract_deposit_check_number:
+          type: string
+          nullable: true
+          readOnly: true
         start_date:
           type: string
           format: date
@@ -3650,6 +3835,9 @@ components:
           nullable: true
         archived:
           type: boolean
+        renewed_from:
+          type: integer
+          nullable: true
     PatchedMutationVehicle:
       type: object
       properties:

@@ -191,6 +191,10 @@ class Contract(models.Model):
     action = models.ForeignKey(Action, on_delete=models.SET_DEFAULT, related_name='contracts',
                                default=Action.get_default_action_pk)
 
+    renewed_from = models.ForeignKey(
+        'self', null=True, blank=True, on_delete=models.SET_NULL, related_name='renewals'
+    )
+
     archived = models.BooleanField(default=False)
 
     def __str__(self):
