@@ -131,3 +131,44 @@ class MaintenanceConfigTestCase(TestCase):
         b.save()
         self.assertEqual(MaintenanceConfig.objects.count(), 1)
         self.assertEqual(MaintenanceConfig.objects.get().ct_alert_days, 21)
+
+
+class GaragePermissionsTestCase(TestCase):
+    def setUp(self):
+        from garage.apps import _setup_garage_groups
+        _setup_garage_groups(sender=None)
+
+    def _perm_qs(self, group_name):
+        from django.contrib.auth.models import Group
+        group = Group.objects.get(name=group_name)
+        return set(group.permissions.filter(content_type__app_label='garage').values_list('codename', flat=True))
+
+    def test_six_permissions_exist(self):
+        from django.contrib.auth.models import Permission
+        codenames = [
+            'view_dashboard', 'view_vehicle', 'manage_intervention',
+            'manage_inspection', 'correct_mileage', 'override_maintenance_block',
+        ]
+        for codename in codenames:
+            self.assertTrue(
+                Permission.objects.filter(content_type__app_label='garage', codename=codename).exists(),
+                f"Permission garage.{codename} manquante"
+            )
+
+    def test_garagiste_has_four_permissions_not_sensitive(self):
+        perms = self._perm_qs('Garagiste')
+        self.assertIn('view_dashboard', perms)
+        self.assertIn('view_vehicle', perms)
+        self.assertIn('manage_intervention', perms)
+        self.assertIn('manage_inspection', perms)
+        self.assertNotIn('correct_mileage', perms)
+        self.assertNotIn('override_maintenance_block', perms)
+
+    def test_referent_lacks_manage_intervention(self):
+        perms = self._perm_qs('Référents')
+        self.assertNotIn('manage_intervention', perms)
+
+    def test_responsable_referents_has_sensitive_permissions(self):
+        perms = self._perm_qs('Responsable référents')
+        self.assertIn('correct_mileage', perms)
+        self.assertIn('override_maintenance_block', perms)
