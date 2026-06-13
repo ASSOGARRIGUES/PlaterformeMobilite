@@ -1,3 +1,9 @@
+def get_config():
+    from .models import MaintenanceConfig
+    config = MaintenanceConfig.objects.first() or MaintenanceConfig.objects.create()
+    return config
+
+
 def get_vehicle_alert_level(vehicle) -> dict:
     raise NotImplementedError
 

@@ -30,8 +30,7 @@ def create_initial_tasks(apps, schema_editor):
 
 
 def delete_initial_tasks(apps, schema_editor):
-    TaskCatalog = apps.get_model('garage', 'TaskCatalog')
-    TaskCatalog.objects.filter(name__in=[name for name, *_ in INITIAL_TASKS]).delete()
+    pass  # Impossible de distinguer les tâches système des tâches utilisateur par le nom
 
 
 class Migration(migrations.Migration):
