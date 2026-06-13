@@ -30,6 +30,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("status/", include("health_check.urls")),
     path(r'api/', include('api.urls')),
+    path(r'api/garage/', include('garage.urls')),
     path(r'api/appcom/', include('inappcom.urls')),
     path('api/bugtracker/', include('bugtracker.urls')),
     path("api/api-auth", include("rest_framework.urls", namespace="rest_framework")),

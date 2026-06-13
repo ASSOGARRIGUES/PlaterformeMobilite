@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'django_crontab',
     'bugtracker',
     'inappcom',
+    'garage',
 ]
 
 MIDDLEWARE = [
