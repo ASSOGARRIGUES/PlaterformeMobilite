@@ -10,7 +10,7 @@ VEHICLE_TYPE_MIGRATION_MAP = {
 def migrate_vehicle_types(apps, schema_editor):
     TaskCatalog = apps.get_model('garage', 'TaskCatalog')
     for task in TaskCatalog.objects.all():
-        task.vehicle_types = VEHICLE_TYPE_MIGRATION_MAP.get(task.vehicle_type, [task.vehicle_type])
+        task.vehicle_types = VEHICLE_TYPE_MIGRATION_MAP.get(task.vehicle_type, [])
         task.save()
 
 

@@ -1,3 +1,4 @@
+import json
 import django_filters
 from django.db import connection
 from django.db.models import Q
@@ -20,7 +21,7 @@ class TaskCatalogFilter(FilterSet):
             if connection.vendor == 'postgresql':
                 q |= Q(vehicle_types__contains=[v])
             else:
-                q |= Q(vehicle_types__icontains=f'"{v}"')
+                q |= Q(vehicle_types__icontains=json.dumps(v))
         return queryset.filter(q)
 
     class Meta:

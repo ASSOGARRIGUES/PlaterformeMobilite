@@ -42,12 +42,21 @@ class MaintenanceConfig(models.Model):
     class Meta:
         verbose_name = "Configuration de maintenance"
         verbose_name_plural = "Configuration de maintenance"
+        permissions = [
+            ('view_dashboard', "Peut accéder au tableau de bord garage"),
+            ('view_vehicle', "Peut voir les véhicules dans le module garage"),
+            ('manage_intervention', "Peut créer et gérer les fiches d'intervention"),
+            ('manage_inspection', "Peut créer et gérer les fiches de contrôle intermédiaire"),
+            ('correct_mileage', "Peut corriger un kilométrage erroné"),
+            ('override_maintenance_block', "Peut forcer le passage d'un véhicule en disponible malgré un blocage maintenance"),
+        ]
 
     def __str__(self):
         return "Configuration de maintenance"
 
     def save(self, *args, **kwargs):
         self.pk = 1
+        self.clean()
         super().save(*args, **kwargs)
 
     def clean(self):

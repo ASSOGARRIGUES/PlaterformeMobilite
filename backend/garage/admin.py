@@ -36,6 +36,6 @@ class MaintenanceConfigAdmin(admin.ModelAdmin):
 
     def changelist_view(self, request, extra_context=None):
         obj = MaintenanceConfig.objects.first()
-        if obj:
+        if obj and (self.has_change_permission(request, obj) or self.has_view_permission(request, obj)):
             return self.change_view(request, str(obj.pk), extra_context=extra_context)
         return super().changelist_view(request, extra_context)
