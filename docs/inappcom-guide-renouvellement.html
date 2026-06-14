@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<!--
+  Guide InAppBroadcast — Renouvellement de contrat
+  À copier-coller dans le champ "body" d'un InAppBroadcast via l'interface admin.
+  Les balises [IMAGE: ...] sont des emplacements à remplacer par de vraies captures d'écran.
+-->
+<body>
+
+<h2>🎉 Nouvelle fonctionnalité : le renouvellement de contrat</h2>
+
+<p>
+  Bonjour ! Une nouvelle version de la plateforme vient d'être déployée. Elle apporte une fonctionnalité
+  très attendue : <strong>le renouvellement de contrat en quelques clics</strong>, ainsi qu'une frise
+  chronologique pour visualiser l'historique complet d'un bénéficiaire sur un véhicule.
+  Voici tout ce qu'il faut savoir.
+</p>
+
+<hr/>
+
+<h3>1. Renouveler un contrat</h3>
+
+<p>
+  Lorsqu'un contrat arrive à son terme et que le bénéficiaire continue d'utiliser le même véhicule,
+  il n'est plus nécessaire de créer un nouveau contrat de zéro. Le renouvellement clôture automatiquement
+  le contrat en cours et crée le suivant, en conservant le véhicule, le bénéficiaire et la caution déjà versée.
+</p>
+
+<h4>Quand peut-on renouveler ?</h4>
+<ul>
+  <li>Le contrat doit être <strong>en cours</strong> (statut « En cours »).</li>
+  <li>Il ne doit pas déjà avoir un renouvellement actif en attente.</li>
+</ul>
+
+<h4>Comment faire ?</h4>
+
+<p>
+  Ouvrez la fiche du contrat à renouveler, puis cliquez sur le bouton
+  <strong>« Renouveler le contrat »</strong> dans le panneau d'actions à droite.
+</p>
+
+<p><em>[IMAGE: Fiche du contrat #34 — Bénéficiaire Marie Dupont, véhicule Renault Kangoo — bouton bleu « Renouveler le contrat » visible dans le panneau latéral droit]</em></p>
+
+<p>Un formulaire en 4 étapes s'ouvre :</p>
+
+<h4>Étape 1 — Clôture du contrat actuel</h4>
+<p>
+  Renseignez les informations de fin du contrat en cours : kilométrage final, prix définitif, remise
+  éventuelle et caution. Ces données permettent de clore proprement le contrat existant.
+</p>
+<p><em>[IMAGE: Étape 1 « Clôture » — champs kilométrage final (45 230 km), prix (80 €), remise (0 €), caution (150 €) pour le contrat #34 de Marie Dupont]</em></p>
+
+<h4>Étape 2 — Objet du nouveau contrat</h4>
+<p>
+  Le formulaire est <strong>prérempli automatiquement</strong> : la date de début correspond à la date
+  de clôture saisie à l'étape précédente, et le kilométrage initial reprend le kilométrage final que
+  vous venez d'entrer. Ajustez les dates, le prix, la distance maximale et le référent si besoin.
+</p>
+<p><em>[IMAGE: Étape 2 « Objet du contrat » — dates du 15/06/2026 au 15/09/2026 préremplies, kilométrage initial 45 230 km, prix 80 €, référent Sophie M.]</em></p>
+
+<h4>Étape 3 — Caution</h4>
+<p>
+  Bonne nouvelle : <strong>aucune caution n'est à percevoir lors d'un renouvellement</strong>.
+  La caution reste celle versée à la création du premier contrat de la série. Un message récapitulatif
+  vous affiche le montant, le mode de paiement et la date de versement pour référence.
+</p>
+<p><em>[IMAGE: Étape 3 « Caution » — bandeau bleu d'information : « Aucune caution à percevoir. Caution de 150 € (chèque n° 004521) prise le 01/03/2026 lors du contrat #31. »]</em></p>
+
+<h4>Étape 4 — Récapitulatif</h4>
+<p>
+  Un résumé complet s'affiche avant validation. Vérifiez les informations, puis cliquez sur
+  <strong>« Enregistrer »</strong> pour finaliser. Le contrat précédent est clôturé et le nouveau
+  est créé instantanément.
+</p>
+<p><em>[IMAGE: Étape 4 « Récapitulatif » — tableau récapitulatif : Marie Dupont · Renault Kangoo · du 15/06/2026 au 15/09/2026 · 80 € · caution 150 € (contrat #31)]</em></p>
+
+<hr/>
+
+<h3>2. La frise chronologique des renouvellements</h3>
+
+<p>
+  Dès qu'un contrat a été renouvelé au moins une fois, une <strong>frise chronologique</strong> apparaît
+  en bas de chaque fiche de la série. Elle permet de visualiser d'un coup d'œil l'ensemble des contrats
+  liés à un bénéficiaire sur un même véhicule.
+</p>
+
+<p><em>[IMAGE: Frise chronologique sur la fiche du contrat #35 — 3 segments colorés représentant les contrats #31 (gris, payé), #34 (vert, en cours), #35 (orange, en attente) — statistiques en haut : « 3 contrats · depuis le 01/03/2026 · 12 450 km · 240 € »]</em></p>
+
+<h4>Ce que vous pouvez faire avec la frise</h4>
+<ul>
+  <li>
+    <strong>Survolez</strong> un segment pour afficher le détail du contrat correspondant :
+    dates, montant, distance, référent et statut.
+  </li>
+  <li>
+    <strong>Cliquez</strong> sur un segment pour accéder directement à la fiche de ce contrat
+    (sauf le contrat actuellement affiché).
+  </li>
+  <li>
+    Les statistiques cumulées (nombre de contrats, kilomètres totaux, montant total, date de début)
+    s'affichent en en-tête de la frise.
+  </li>
+</ul>
+
+<p><em>[IMAGE: Info-bulle au survol du segment du contrat #31 — Badge « Payé », dates 01/03 → 15/06, montant 80 €, distance 8 230 km, référent Sophie M.]</em></p>
+
+<hr/>
+
+<h3>En résumé</h3>
+
+<table border="0" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+  <thead>
+    <tr style="background-color: #f0f4ff;">
+      <th style="text-align: left; padding: 8px; border-bottom: 2px solid #ddd;">Fonctionnalité</th>
+      <th style="text-align: left; padding: 8px; border-bottom: 2px solid #ddd;">Ce que ça change pour vous</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="padding: 8px; border-bottom: 1px solid #eee;">Renouvellement de contrat</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee;">Plus besoin de ressaisir le bénéficiaire, le véhicule ou la caution — tout est repris automatiquement.</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px; border-bottom: 1px solid #eee;">Frise chronologique</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee;">Visualisez l'historique complet d'un bénéficiaire sur un véhicule et naviguez entre les contrats.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p style="margin-top: 1.5em; color: #555;">
+  Des questions ? N'hésitez pas à signaler un problème via le bouton <strong>« Signaler un bug »</strong>
+  en bas de chaque page.
+</p>
+
+</body>
+</html>
