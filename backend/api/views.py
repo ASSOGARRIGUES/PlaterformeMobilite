@@ -26,6 +26,8 @@ MUTATION_ACTION = ['create', 'update', 'partial_update']
 RETRIEVE_ACTION = ['retrieve', 'list']
 
 class ArchivableModelViewSet(viewsets.ModelViewSet):
+    archive_related_exclusions = []
+
     def get_queryset(self):
         #if archived is not equal to 1 in the query params, return only non archived instances
         if self.action == 'list':
@@ -55,9 +57,11 @@ class ArchivableModelViewSet(viewsets.ModelViewSet):
 
         instance.archived = True
         # Retrieve all instance relying on the current instance
-        for related_instance in instance._meta.related_objects:
-            related_instance = getattr(instance, related_instance.get_accessor_name())
-            for related in related_instance.all():
+        for related_meta in instance._meta.related_objects:
+            accessor = related_meta.get_accessor_name()
+            if accessor in self.archive_related_exclusions:
+                continue
+            for related in getattr(instance, accessor).all():
                 related.archived = True
                 related.save()
         instance.save()
@@ -89,9 +93,11 @@ class ArchivableModelViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         instance.archived = False
         #Retrieve all instance relying on the current instance
-        for related_instance in instance._meta.related_objects:
-            related_instance = getattr(instance, related_instance.get_accessor_name())
-            for related in related_instance.all():
+        for related_meta in instance._meta.related_objects:
+            accessor = related_meta.get_accessor_name()
+            if accessor in self.archive_related_exclusions:
+                continue
+            for related in getattr(instance, accessor).all():
                 related.archived = False
                 related.save()
         instance.save()
@@ -222,6 +228,8 @@ class BeneficiaryViewSet(ArchivableModelViewSet):
 
 
 class ContractViewSet(ArchivableModelViewSet):
+    archive_related_exclusions = ['renewals']
+
     queryset = Contract.objects.all()
     serializer_class = ContractSerializer
     permission_classes = (permissions.DjangoModelPermissions,)
