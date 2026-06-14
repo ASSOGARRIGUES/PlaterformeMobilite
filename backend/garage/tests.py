@@ -1,9 +1,12 @@
+import datetime
+
 from django.test import TestCase, RequestFactory
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from django.contrib.admin.sites import AdminSite
 from core.models import Action
-from .models import TaskCatalog, MaintenanceConfig
+from api.models import Parking, Vehicle
+from .models import MileageEntry, TaskCatalog, MaintenanceConfig
 from .alerts import get_config
 from .admin import MaintenanceConfigAdmin
 
@@ -172,3 +175,125 @@ class GaragePermissionsTestCase(TestCase):
         perms = self._perm_qs('Responsable référents')
         self.assertIn('correct_mileage', perms)
         self.assertIn('override_maintenance_block', perms)
+
+    def test_correct_mileage_on_mileageentry_not_maintenanceconfig(self):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+        mc_ct = ContentType.objects.get_for_model(MaintenanceConfig)
+        me_ct = ContentType.objects.get_for_model(MileageEntry)
+        self.assertFalse(
+            Permission.objects.filter(codename='correct_mileage', content_type=mc_ct).exists()
+        )
+        self.assertTrue(
+            Permission.objects.filter(codename='correct_mileage', content_type=me_ct).exists()
+        )
+
+
+class MileageEntrySignalTestCase(TestCase):
+    def setUp(self):
+        self.action = Action.objects.create(name='Test Garage')
+        self.user = User.objects.create_superuser(
+            username='admin@test.com', email='admin@test.com', password='pass',
+            phone='0600000000', first_name='Admin', last_name='Test',
+        )
+        self.parking = Parking.objects.create(name='Dépôt')
+        self.vehicle = Vehicle.objects.create(
+            brand='Renault', modele='Clio', year=2020, imat='BB-001-BB',
+            fleet_id=99, kilometer=10000, status='available',
+            parking=self.parking, action=self.action,
+            fuel_type='essence', transmission='manuelle', type='voiture',
+        )
+
+    def _make_entry(self, value, date_offset=0):
+        return MileageEntry.objects.create(
+            vehicle=self.vehicle,
+            value=value,
+            date=datetime.date(2024, 1, 1) + datetime.timedelta(days=date_offset),
+            source='contract',
+            author=self.user,
+        )
+
+    def test_post_save_updates_vehicle_kilometer_if_most_recent(self):
+        self._make_entry(value=12000, date_offset=0)
+        self.vehicle.refresh_from_db()
+        self.assertEqual(self.vehicle.kilometer, 12000)
+
+    def test_post_save_does_not_update_if_older_entry(self):
+        # Créer d'abord une entrée récente
+        self._make_entry(value=15000, date_offset=10)
+        self.vehicle.refresh_from_db()
+        self.assertEqual(self.vehicle.kilometer, 15000)
+
+        # Puis une entrée plus ancienne — ne doit pas écraser
+        self._make_entry(value=11000, date_offset=0)
+        self.vehicle.refresh_from_db()
+        self.assertEqual(self.vehicle.kilometer, 15000)
+
+
+class MileageDataMigrationTestCase(TestCase):
+    """
+    Teste la logique de la data migration en appelant directement la fonction RunPython.
+    Avec le registre réel (django.apps.apps), les signaux se déclenchent — on n'asserte
+    donc que les entrées créées, pas vehicle.kilometer.
+    """
+
+    def setUp(self):
+        self.action = Action.objects.create(name='Migration Test')
+        self.system_user = User.objects.create_superuser(
+            username='sys@test.com', email='sys@test.com', password='pass',
+            phone='0600000000', first_name='Sys', last_name='User',
+        )
+        self.parking = Parking.objects.create(name='Test Parking')
+
+    def _make_vehicle(self, imat, kilometer=5000):
+        return Vehicle.objects.create(
+            brand='Peugeot', modele='208', year=2019, imat=imat,
+            fleet_id=hash(imat) % 1000, kilometer=kilometer, status='available',
+            parking=self.parking, action=self.action,
+            fuel_type='essence', transmission='manuelle', type='voiture',
+        )
+
+    def _get_migrate_fn(self):
+        import importlib
+        mod = importlib.import_module('garage.migrations.0009_data_mileage_migration')
+        return mod.migrate_mileage_from_contracts
+
+    def test_migration_creates_entries_from_contracts(self):
+        migrate_mileage_from_contracts = self._get_migrate_fn()
+        vehicle = self._make_vehicle('CC-002-CC', kilometer=20000)
+        from api.models import Beneficiary, Contract
+        beneficiary = Beneficiary.objects.create(
+            first_name='Jean', last_name='Dupont', phone='0600000000',
+            address='1 rue Test', email='jean@test.com',
+            city='Paris', postal_code='75001', action=self.action,
+        )
+        Contract.objects.create(
+            vehicle=vehicle, beneficiary=beneficiary,
+            start_date=datetime.date(2023, 1, 1),
+            end_date=datetime.date(2023, 2, 1),
+            price=300, discount=0, deposit=50,
+            start_kilometer=18000, end_kilometer=19500,
+            referent=self.system_user, action=self.action, status='payed',
+        )
+
+        import django.apps
+        migrate_mileage_from_contracts(django.apps.apps, None)
+
+        entries = MileageEntry.objects.filter(vehicle=vehicle).order_by('date')
+        self.assertEqual(entries.count(), 2)
+        self.assertEqual(entries[0].value, 18000)
+        self.assertEqual(entries[0].source, 'contract')
+        self.assertEqual(entries[1].value, 19500)
+        self.assertEqual(entries[1].source, 'contract')
+
+    def test_migration_fallback_for_vehicle_without_km_contracts(self):
+        migrate_mileage_from_contracts = self._get_migrate_fn()
+        vehicle = self._make_vehicle('DD-003-DD', kilometer=7777)
+
+        import django.apps
+        migrate_mileage_from_contracts(django.apps.apps, None)
+
+        entries = MileageEntry.objects.filter(vehicle=vehicle)
+        self.assertEqual(entries.count(), 1)
+        self.assertEqual(entries.first().value, 7777)
+        self.assertEqual(entries.first().source, 'migration')

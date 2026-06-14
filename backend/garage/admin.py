@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib import admin
 from api.models import Vehicle
-from .models import TaskCatalog, MaintenanceConfig
+from .models import MileageEntry, TaskCatalog, MaintenanceConfig
 
 
 class TaskCatalogForm(forms.ModelForm):
@@ -24,6 +24,11 @@ class TaskCatalogAdmin(admin.ModelAdmin):
     list_filter = ('is_critical', 'archived')
     search_fields = ('name',)
     list_editable = ('archived',)
+
+
+@admin.register(MileageEntry)
+class MileageEntryAdmin(admin.ModelAdmin):
+    list_display = ('vehicle', 'value', 'date', 'source', 'author')
 
 
 @admin.register(MaintenanceConfig)
