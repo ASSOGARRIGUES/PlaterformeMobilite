@@ -23,9 +23,9 @@ export function OfflineBanner() {
       icon={<IconWifiOff size={16} />}
       color="orange"
       radius={0}
-      style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999 }}
+      style={{ position: 'fixed', top: 'env(safe-area-inset-top)', left: 0, right: 0, zIndex: 9999 }}
     >
-      Hors-ligne — la saisie reste possible, mais la soumission est bloquée
+      Hors-ligne — la saisie reste possible, mais la soumission échouera
     </Alert>
   )
 }

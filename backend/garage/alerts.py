@@ -1,6 +1,8 @@
 def get_config():
     from .models import MaintenanceConfig
-    config, _ = MaintenanceConfig.objects.get_or_create(pk=1)
+    config = MaintenanceConfig.objects.first()
+    if config is None:
+        config = MaintenanceConfig.objects.create()
     return config
 
 
