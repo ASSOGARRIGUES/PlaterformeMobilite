@@ -4,3 +4,7 @@ pg_data/
 __pycache__/
 .venv/
 .claude/
+.agents/
+_bmad-output/
+_bmad/
+.github/agents/
