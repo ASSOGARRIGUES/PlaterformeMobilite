@@ -59,7 +59,6 @@ class MaintenanceConfig(models.Model):
         self.clean()
         super().save(*args, **kwargs)
 
-
     def clean(self):
         if self.wear_critical_threshold >= self.wear_alert_threshold:
             raise ValidationError({

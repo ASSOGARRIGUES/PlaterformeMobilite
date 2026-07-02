@@ -177,6 +177,11 @@ class GaragePermissionsTestCase(TestCase):
         self.assertIn('correct_mileage', perms)
         self.assertIn('override_maintenance_block', perms)
 
+    def test_responsable_garagiste_has_sensitive_permissions(self):
+        perms = self._perm_qs('Responsable garagiste')
+        self.assertIn('correct_mileage', perms)
+        self.assertIn('override_maintenance_block', perms)
+
     def test_correct_mileage_on_mileageentry_not_maintenanceconfig(self):
         from django.contrib.auth.models import Permission
         from django.contrib.contenttypes.models import ContentType
@@ -298,6 +303,69 @@ class MileageDataMigrationTestCase(TestCase):
         self.assertEqual(entries.count(), 1)
         self.assertEqual(entries.first().value, 7777)
         self.assertEqual(entries.first().source, 'migration')
+
+
+class MileageDataMigrationHistoricalModelTestCase(TestCase):
+    """
+    Reproduit le contexte réel d'une exécution `manage.py migrate` : la fonction
+    RunPython reçoit des classes de modèles historiques (via ProjectState),
+    distinctes de garage.models.MileageEntry. Le signal post_save — connecté à
+    la classe live via sender='garage.MileageEntry' — ne doit donc PAS se
+    déclencher ici, contrairement à MileageDataMigrationTestCase ci-dessus qui
+    utilise le registre live (django.apps.apps) et déclenche le signal par
+    accident. Valide la Tâche 3.5 sur le vrai mécanisme d'exécution.
+    """
+
+    def setUp(self):
+        self.action = Action.objects.create(name='Migration Historical')
+        self.system_user = User.objects.create_superuser(
+            username='syshist@test.com', email='syshist@test.com', password='pass',
+            phone='0600000000', first_name='Sys', last_name='Historical',
+        )
+        self.parking = Parking.objects.create(name='Historical Parking')
+        self.vehicle = Vehicle.objects.create(
+            brand='Dacia', modele='Sandero', year=2018, imat='EE-004-EE',
+            fleet_id=444, kilometer=3000, status='available',
+            parking=self.parking, action=self.action,
+            fuel_type='essence', transmission='manuelle', type='voiture',
+        )
+        from api.models import Beneficiary, Contract
+        beneficiary = Beneficiary.objects.create(
+            first_name='Alice', last_name='Martin', phone='0600000001',
+            address='2 rue Test', email='alice@test.com',
+            city='Lyon', postal_code='69001', action=self.action,
+        )
+        Contract.objects.create(
+            vehicle=self.vehicle, beneficiary=beneficiary,
+            start_date=datetime.date(2023, 3, 1),
+            end_date=datetime.date(2023, 4, 1),
+            price=300, discount=0, deposit=50,
+            start_kilometer=50000, end_kilometer=51000,
+            referent=self.system_user, action=self.action, status='payed',
+        )
+
+    def test_migration_via_historical_models_does_not_trigger_kilometer_update(self):
+        import importlib
+        from django.db import connection
+        from django.db.migrations.loader import MigrationLoader
+
+        loader = MigrationLoader(connection)
+        state = loader.project_state(('garage', '0009_data_mileage_migration'))
+        historical_apps = state.apps
+
+        mod = importlib.import_module('garage.migrations.0009_data_mileage_migration')
+        mod.migrate_mileage_from_contracts(historical_apps, None)
+
+        self.vehicle.refresh_from_db()
+        self.assertEqual(
+            self.vehicle.kilometer, 3000,
+            "Vehicle.kilometer ne doit pas être modifié par la migration (Tâche 3.5) : "
+            "avec les modèles historiques, le signal post_save (connecté à la classe live) "
+            "ne se déclenche pas."
+        )
+
+        entries = MileageEntry.objects.filter(vehicle=self.vehicle)
+        self.assertEqual(entries.count(), 2)
 
 
 class MileageHistoryAPITestCase(APITestCase):
