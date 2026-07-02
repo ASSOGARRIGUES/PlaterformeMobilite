@@ -1,6 +1,7 @@
 import datetime
 
 from django.test import TestCase, RequestFactory
+from django.contrib.auth.models import Group
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from django.contrib.admin.sites import AdminSite
@@ -297,3 +298,105 @@ class MileageDataMigrationTestCase(TestCase):
         self.assertEqual(entries.count(), 1)
         self.assertEqual(entries.first().value, 7777)
         self.assertEqual(entries.first().source, 'migration')
+
+
+class MileageHistoryAPITestCase(APITestCase):
+    def setUp(self):
+        from garage.apps import _setup_garage_groups
+        _setup_garage_groups(sender=None)
+
+        self.action_a = Action.objects.create(name='Action A')
+        self.action_b = Action.objects.create(name='Action B')
+        self.action_c = Action.objects.create(name='Action C')
+
+        self.parking = Parking.objects.create(name='Dépôt')
+
+        self.garagiste = User.objects.create_user(
+            username='garagiste@test.com', email='garagiste@test.com', password='pass',
+            phone='0600000001', first_name='Jean', last_name='Garagiste',
+        )
+        self.garagiste.actions.set([self.action_a, self.action_b])
+        self.garagiste.current_action = self.action_a
+        self.garagiste.save()
+        garagiste_group = Group.objects.get(name='Garagiste')
+        self.garagiste.groups.add(garagiste_group)
+
+        self.referent = User.objects.create_user(
+            username='referent@test.com', email='referent@test.com', password='pass',
+            phone='0600000002', first_name='Marie', last_name='Référent',
+        )
+        self.referent.actions.set([self.action_a, self.action_b])
+        self.referent.current_action = self.action_a
+        self.referent.save()
+
+        self.vehicle_a = Vehicle.objects.create(
+            brand='Renault', modele='Clio', year=2020, imat='AA-001-AA',
+            fleet_id=1, kilometer=10000, status='available',
+            parking=self.parking, action=self.action_a,
+            fuel_type='essence', transmission='manuelle', type='voiture',
+        )
+        self.vehicle_b = Vehicle.objects.create(
+            brand='Peugeot', modele='208', year=2021, imat='BB-002-BB',
+            fleet_id=2, kilometer=5000, status='available',
+            parking=self.parking, action=self.action_b,
+            fuel_type='essence', transmission='manuelle', type='voiture',
+        )
+        self.vehicle_c = Vehicle.objects.create(
+            brand='Citroën', modele='C3', year=2019, imat='CC-003-CC',
+            fleet_id=3, kilometer=8000, status='available',
+            parking=self.parking, action=self.action_c,
+            fuel_type='essence', transmission='manuelle', type='voiture',
+        )
+
+        self.entry_a1 = MileageEntry.objects.create(
+            vehicle=self.vehicle_a, value=9000,
+            date=datetime.date(2024, 1, 1), source='contract', author=self.garagiste,
+        )
+        self.entry_a2 = MileageEntry.objects.create(
+            vehicle=self.vehicle_a, value=10000,
+            date=datetime.date(2024, 6, 1), source='contract', author=self.garagiste,
+        )
+
+    def _url(self, vehicle):
+        return f'/api/garage/mileage/{vehicle.id}/'
+
+    def test_garagiste_sees_history_in_action_a(self):
+        self.client.force_authenticate(user=self.garagiste)
+        response = self.client.get(self._url(self.vehicle_a))
+        self.assertEqual(response.status_code, 200)
+        ids = [e['id'] for e in response.data['results']]
+        self.assertIn(self.entry_a1.id, ids)
+        self.assertIn(self.entry_a2.id, ids)
+
+    def test_garagiste_sees_history_in_action_b(self):
+        self.client.force_authenticate(user=self.garagiste)
+        response = self.client.get(self._url(self.vehicle_b))
+        self.assertEqual(response.status_code, 200)
+
+    def test_garagiste_gets_403_for_vehicle_in_inaccessible_action(self):
+        self.client.force_authenticate(user=self.garagiste)
+        response = self.client.get(self._url(self.vehicle_c))
+        self.assertEqual(response.status_code, 403)
+
+    def test_non_numeric_vehicle_pk_returns_404(self):
+        self.client.force_authenticate(user=self.garagiste)
+        response = self.client.get('/api/garage/mileage/abc/')
+        self.assertEqual(response.status_code, 404)
+
+    def test_referent_sees_history_in_current_action(self):
+        self.client.force_authenticate(user=self.referent)
+        response = self.client.get(self._url(self.vehicle_a))
+        self.assertEqual(response.status_code, 200)
+
+    def test_referent_gets_403_for_vehicle_outside_current_action(self):
+        # Le référent appartient à action_b mais sa current_action est action_a
+        self.client.force_authenticate(user=self.referent)
+        response = self.client.get(self._url(self.vehicle_b))
+        self.assertEqual(response.status_code, 403)
+
+    def test_entries_sorted_by_date_descending(self):
+        self.client.force_authenticate(user=self.garagiste)
+        response = self.client.get(self._url(self.vehicle_a))
+        self.assertEqual(response.status_code, 200)
+        dates = [e['date'] for e in response.data['results']]
+        self.assertEqual(dates, sorted(dates, reverse=True))

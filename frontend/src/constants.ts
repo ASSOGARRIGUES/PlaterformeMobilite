@@ -6,6 +6,7 @@ import {
     PaymentModeEnum,
     ReasonEnum, VehicleStatusEnum,
     VehicleTypeEnum,
+    SourceEnum,
 } from "./types/schema.d";
 import {axiosInstance} from "./providers/rest-data-provider/utils";
 import {DateInputProps} from "@mantine/dates";
@@ -76,6 +77,14 @@ export const bugSeverityLabelMap: Record<string,string> = {
     [BugSeverityEnum.high]: "Ralentissant: Ne me bloque pas mais me ralentit fortement",
     [BugSeverityEnum.critical]: "Bloquant: je suis bloqué(e) dans mon travail",
 }
+
+export const mileageSourceLabelMap: Record<SourceEnum, string> = {
+    [SourceEnum.contract]: "Contrat",
+    [SourceEnum.intervention]: "Fiche d'intervention",
+    [SourceEnum.inspection]: "Fiche de contrôle",
+    [SourceEnum.correction]: "Correction",
+    [SourceEnum.migration]: "Migration initiale",
+};
 
 export const StatusConsideredOngoing = [ContractStatusEnum.pending,ContractStatusEnum.over,ContractStatusEnum.waiting];
 

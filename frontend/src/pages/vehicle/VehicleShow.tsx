@@ -23,6 +23,8 @@ import {DataTableColumn} from "mantine-datatable";
 import {Show} from "../../components/forkedFromRefine/Show";
 import {useMediaQuery} from "@mantine/hooks";
 import {ErrorComponent} from "../../components/ErrorComponent";
+import CanAccess from "../../components/CanAccess";
+import MileageHistorySection from "../../components/garage/MileageHistorySection";
 
 const VehicleShow = (props: any) => {
 
@@ -105,6 +107,16 @@ const VehicleShow = (props: any) => {
                     <VehicleActions vehicle={vehicle} style={{flexGrow:1, maxWidth:"100%"}}/>
                 </Group>
 
+                <CanAccess permKey="garage.view_vehicle">
+                    {vehicle && (
+                        <Paper shadow="sm" p="md">
+                            <MileageHistorySection
+                                vehicleId={vehicle.id}
+                                currentKilometer={vehicle.kilometer}
+                            />
+                        </Paper>
+                    )}
+                </CanAccess>
 
                 <Paper shadow="sm" p="md" style={{flex: "auto", minHeight:(smallerThanMd ? "100vh" : 0), display: "flex", flexDirection: "column", alignItems:"center", gap:"10px", paddingRight:20, paddingLeft:20, paddingTop:10}}>
                     <Title order={2}>Contrats</Title>
