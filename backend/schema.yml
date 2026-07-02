@@ -1846,6 +1846,43 @@ paths:
               schema:
                 $ref: '#/components/schemas/MileageEntry'
           description: ''
+  /api/garage/mileage/{vehicle_pk}/correct/:
+    post:
+      operationId: api_garage_mileage_correct_create
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: vehicle_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MileageEntry'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MileageEntry'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MileageEntry'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MileageEntry'
+          description: ''
   /api/garage/task-catalog/:
     get:
       operationId: api_garage_task_catalog_list
@@ -3276,35 +3313,34 @@ components:
           readOnly: true
         value:
           type: integer
-          readOnly: true
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
         date:
           type: string
           format: date
-          readOnly: true
         source:
-          allOf:
-          - $ref: '#/components/schemas/SourceEnum'
-          readOnly: true
+          $ref: '#/components/schemas/SourceEnum'
         author_display:
           type: string
           readOnly: true
         is_corrected:
           type: boolean
-          readOnly: true
         corrects:
           type: integer
-          readOnly: true
           nullable: true
         correction_reason:
           type: string
+        created_at:
+          type: string
+          format: date-time
           readOnly: true
+          nullable: true
       required:
       - author_display
-      - correction_reason
-      - corrects
+      - created_at
       - date
       - id
-      - is_corrected
       - source
       - value
     MutationContract:

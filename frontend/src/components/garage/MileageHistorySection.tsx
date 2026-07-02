@@ -3,6 +3,8 @@ import { Badge, Group, Stack, Text, Title } from "@mantine/core";
 import { MileageEntry } from "../../types/garage";
 import { humanizeDate, mileageSourceLabelMap } from "../../constants";
 import SearchableDataTable, { SearchableDataTableColumn } from "../SearchableDataTable";
+import CanAccess from "../CanAccess";
+import MileageCorrectionAction from "./MileageCorrectionAction";
 
 type Props = {
     vehicleId: number;
@@ -38,8 +40,17 @@ const MileageHistorySection = ({ vehicleId, currentKilometer }: Props) => {
                 accessor: "author_display",
                 title: "Auteur",
             },
+            {
+                accessor: "id",
+                title: "",
+                render: (entry) => !entry.is_corrected && (
+                    <CanAccess permKey="garage.correct_mileage">
+                        <MileageCorrectionAction entry={entry} vehicleId={vehicleId} />
+                    </CanAccess>
+                ),
+            },
         ],
-        [],
+        [vehicleId],
     );
 
     return (

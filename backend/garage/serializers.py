@@ -17,4 +17,17 @@ class MileageEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = MileageEntry
         fields = ['id', 'value', 'date', 'source', 'author_display',
-                  'is_corrected', 'corrects', 'correction_reason']
+                  'is_corrected', 'corrects', 'correction_reason', 'created_at']
+
+
+class MileageCorrectionSerializer(serializers.Serializer):
+    entry = serializers.PrimaryKeyRelatedField(queryset=MileageEntry.objects.all())
+    value = serializers.IntegerField(min_value=0)
+    reason = serializers.CharField()
+
+    def validate(self, attrs):
+        entry = attrs['entry']
+        vehicle_pk = self.context['vehicle_pk']
+        if entry.vehicle_id != int(vehicle_pk):
+            raise serializers.ValidationError({'entry': "Cette entrée n'appartient pas à ce véhicule."})
+        return attrs

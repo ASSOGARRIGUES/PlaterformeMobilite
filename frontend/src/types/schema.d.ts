@@ -468,6 +468,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/garage/mileage/{vehicle_pk}/correct/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Remplace le filtrage standard current_action pour les viewsets garage.
+         *     Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+         *     Sinon, filtrage standard par current_action.
+         */
+        post: operations["api_garage_mileage_correct_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/garage/task-catalog/": {
         parameters: {
             query?: never;
@@ -919,14 +940,17 @@ export interface components {
         };
         MileageEntry: {
             readonly id: number;
-            readonly value: number;
+            /** Format: int64 */
+            value: number;
             /** Format: date */
-            readonly date: string;
-            readonly source: components["schemas"]["SourceEnum"];
+            date: string;
+            source: components["schemas"]["SourceEnum"];
             readonly author_display: string;
-            readonly is_corrected: boolean;
-            readonly corrects: number | null;
-            readonly correction_reason: string;
+            is_corrected?: boolean;
+            corrects?: number | null;
+            correction_reason?: string;
+            /** Format: date-time */
+            readonly created_at: string | null;
         };
         MutationContract: {
             readonly id: number;
@@ -2891,6 +2915,33 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MileageEntry"];
+                };
+            };
+        };
+    };
+    api_garage_mileage_correct_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vehicle_pk: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MileageEntry"];
+                "application/x-www-form-urlencoded": components["schemas"]["MileageEntry"];
+                "multipart/form-data": components["schemas"]["MileageEntry"];
+            };
+        };
         responses: {
             200: {
                 headers: {

@@ -99,6 +99,7 @@ class MileageEntry(models.Model):
     )
     correction_reason = models.TextField(blank=True)
     is_corrected = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
 
     class Meta:
         ordering = ['-date', '-id']

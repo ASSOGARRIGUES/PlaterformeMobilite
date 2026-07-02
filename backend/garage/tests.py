@@ -425,8 +425,20 @@ class MileageHistoryAPITestCase(APITestCase):
             date=datetime.date(2024, 6, 1), source='contract', author=self.garagiste,
         )
 
+        self.responsable = User.objects.create_user(
+            username='responsable@test.com', email='responsable@test.com', password='pass',
+            phone='0600000003', first_name='Paul', last_name='Responsable',
+        )
+        self.responsable.actions.set([self.action_a])
+        self.responsable.current_action = self.action_a
+        self.responsable.save()
+        self.responsable.groups.add(Group.objects.get(name='Responsable garagiste'))
+
     def _url(self, vehicle):
         return f'/api/garage/mileage/{vehicle.id}/'
+
+    def _correct_url(self, vehicle):
+        return f'/api/garage/mileage/{vehicle.id}/correct/'
 
     def test_garagiste_sees_history_in_action_a(self):
         self.client.force_authenticate(user=self.garagiste)
@@ -468,3 +480,90 @@ class MileageHistoryAPITestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         dates = [e['date'] for e in response.data['results']]
         self.assertEqual(dates, sorted(dates, reverse=True))
+
+    def test_responsable_can_correct_mileage(self):
+        self.client.force_authenticate(user=self.responsable)
+        response = self.client.post(self._correct_url(self.vehicle_a), {
+            'entry': self.entry_a2.id, 'value': 10500, 'reason': 'Erreur de saisie',
+        })
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['source'], 'correction')
+        correction = MileageEntry.objects.get(pk=response.data['id'])
+        self.assertEqual(correction.value, 10500)
+        self.assertEqual(correction.corrects_id, self.entry_a2.id)
+        self.assertEqual(correction.correction_reason, 'Erreur de saisie')
+        self.assertEqual(correction.author, self.responsable)
+        # La date de l'historique reste celle de l'entrée corrigée (pas la date du jour) ;
+        # la date à laquelle la correction a réellement été faite est tracée via created_at.
+        self.assertEqual(correction.date, self.entry_a2.date)
+        self.assertIsNotNone(correction.created_at)
+
+    def test_correction_marks_original_entry_as_corrected(self):
+        self.client.force_authenticate(user=self.responsable)
+        self.client.post(self._correct_url(self.vehicle_a), {
+            'entry': self.entry_a2.id, 'value': 10500, 'reason': 'Erreur de saisie',
+        })
+        self.entry_a2.refresh_from_db()
+        self.assertTrue(self.entry_a2.is_corrected)
+
+    def test_correcting_most_recent_entry_updates_vehicle_kilometer(self):
+        self.client.force_authenticate(user=self.responsable)
+        self.client.post(self._correct_url(self.vehicle_a), {
+            'entry': self.entry_a2.id, 'value': 10500, 'reason': 'Erreur de saisie',
+        })
+        self.vehicle_a.refresh_from_db()
+        self.assertEqual(self.vehicle_a.kilometer, 10500)
+
+    def test_correcting_older_entry_does_not_change_vehicle_kilometer(self):
+        self.client.force_authenticate(user=self.responsable)
+        # entry_a1 (2024-01-01) est plus ancienne qu'entry_a2 (2024-06-01, toujours non
+        # corrigée) : la correction hérite de la date de l'entrée corrigée (2024-01-01),
+        # elle ne doit donc pas devancer entry_a2 dans le recalcul de kilometer.
+        response = self.client.post(self._correct_url(self.vehicle_a), {
+            'entry': self.entry_a1.id, 'value': 9500, 'reason': 'Erreur de saisie',
+        })
+        self.assertEqual(response.status_code, 201)
+        self.vehicle_a.refresh_from_db()
+        self.assertEqual(self.vehicle_a.kilometer, 10000)
+
+    def test_user_without_correct_mileage_permission_gets_403(self):
+        self.client.force_authenticate(user=self.garagiste)
+        response = self.client.post(self._correct_url(self.vehicle_a), {
+            'entry': self.entry_a2.id, 'value': 10500, 'reason': 'Erreur de saisie',
+        })
+        self.assertEqual(response.status_code, 403)
+
+    def test_empty_reason_returns_400(self):
+        self.client.force_authenticate(user=self.responsable)
+        response = self.client.post(self._correct_url(self.vehicle_a), {
+            'entry': self.entry_a2.id, 'value': 10500, 'reason': '',
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('reason', response.data)
+
+    def test_entry_belonging_to_another_vehicle_returns_400(self):
+        self.client.force_authenticate(user=self.responsable)
+        entry_b1 = MileageEntry.objects.create(
+            vehicle=self.vehicle_b, value=5500,
+            date=datetime.date(2024, 3, 1), source='contract', author=self.garagiste,
+        )
+        response = self.client.post(self._correct_url(self.vehicle_a), {
+            'entry': entry_b1.id, 'value': 10500, 'reason': 'Erreur de saisie',
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('entry', response.data)
+
+    def test_nonexistent_entry_returns_400(self):
+        self.client.force_authenticate(user=self.responsable)
+        response = self.client.post(self._correct_url(self.vehicle_a), {
+            'entry': 999999, 'value': 10500, 'reason': 'Erreur de saisie',
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('entry', response.data)
+
+    def test_nonexistent_vehicle_pk_returns_404_on_correct(self):
+        self.client.force_authenticate(user=self.responsable)
+        response = self.client.post('/api/garage/mileage/999999/correct/', {
+            'entry': self.entry_a2.id, 'value': 10500, 'reason': 'Erreur de saisie',
+        })
+        self.assertEqual(response.status_code, 404)
