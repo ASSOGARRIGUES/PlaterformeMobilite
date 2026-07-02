@@ -1,7 +1,7 @@
 # This Dockerfile uses `serve` npm package to serve the static files with node process.
 # You can find the Dockerfile for nginx in the following link:
 # https://github.com/refinedev/dockerfiles/blob/main/vite/Dockerfile.nginx
-FROM node:lts-alpine3.12 as base
+FROM node:24-alpine as base
 
 FROM base as deps
 WORKDIR /frontend

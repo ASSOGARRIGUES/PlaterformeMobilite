@@ -42,7 +42,7 @@ function formatReferent(c: Contract): string {
 }
 
 function getDistance(c: Contract): string {
-    if (c.end_kilometer != null) return `${humanizeNumber(c.end_kilometer - c.start_kilometer)} km`;
+    if (c.end_kilometer != null) return `${humanizeNumber(c.end_kilometer - (c.start_kilometer ?? 0))} km`;
     if (c.max_kilometer != null) return `${humanizeNumber(c.max_kilometer)} km`;
     return "—";
 }
@@ -150,7 +150,7 @@ export default function ContractRenewalTimeline({contract}: {contract: Contract}
     events.sort((a, b) => dayjs(a.date).diff(dayjs(b.date)));
 
     const {totalKm, totalDue} = chain.reduce((acc, c) => ({
-        totalKm:  acc.totalKm + Math.max(0, c.end_kilometer != null ? c.end_kilometer - c.start_kilometer : (c.max_kilometer ?? 0)),
+        totalKm:  acc.totalKm + Math.max(0, c.end_kilometer != null ? c.end_kilometer - (c.start_kilometer ?? 0) : (c.max_kilometer ?? 0)),
         totalDue: acc.totalDue + (c.price - (c.discount ?? 0)),
     }), {totalKm: 0, totalDue: 0});
 
