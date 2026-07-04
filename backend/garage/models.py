@@ -71,11 +71,15 @@ class MaintenanceConfig(models.Model):
 
 class MileageEntry(models.Model):
     SOURCE_CHOICES = [
-        ('contract', 'Contrat'),
+        ('contract', 'Contrat (historique)'),
+        ('contract_start', 'Contrat — régularisation à la création'),
+        ('contract_end', 'Contrat — clôture/retour'),
         ('intervention', "Fiche d'intervention"),
         ('inspection', 'Fiche de contrôle'),
         ('correction', 'Correction'),
         ('migration', 'Migration initiale'),
+        ('creation', 'Création du véhicule'),
+        ('manual_edit', 'Modification manuelle'),
     ]
 
     vehicle = models.ForeignKey(
@@ -86,6 +90,10 @@ class MileageEntry(models.Model):
     value = models.PositiveIntegerField()
     date = models.DateField()
     source = models.CharField(max_length=20, choices=SOURCE_CHOICES)
+    source_id = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Référence générique vers l'objet à l'origine de l'entrée (ex: id du contrat quand source est contract_start/contract_end)"
+    )
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,

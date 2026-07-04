@@ -6,7 +6,7 @@ from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from django.contrib.admin.sites import AdminSite
 from core.models import Action
-from api.models import Parking, Vehicle
+from api.models import Parking, Vehicle, Beneficiary, Contract
 from .models import MileageEntry, TaskCatalog, MaintenanceConfig
 from .alerts import get_config
 from .admin import MaintenanceConfigAdmin
@@ -434,6 +434,21 @@ class MileageHistoryAPITestCase(APITestCase):
         self.responsable.save()
         self.responsable.groups.add(Group.objects.get(name='Responsable garagiste'))
 
+        self.beneficiary = Beneficiary.objects.create(
+            first_name='Alice', last_name='Dupont', phone='0600000004',
+            address='1 rue de Test', email='alice@test.com',
+            city='Paris', postal_code='75000', action=self.action_a,
+        )
+        self.contract = Contract.objects.create(
+            vehicle=self.vehicle_a, beneficiary=self.beneficiary, referent=self.garagiste,
+            start_date=datetime.date(2024, 1, 1), end_date=datetime.date(2024, 2, 1),
+            price=100, deposit=50, start_kilometer=9000,
+        )
+        self.entry_contract_start = MileageEntry.objects.create(
+            vehicle=self.vehicle_a, value=9000, date=datetime.date(2024, 1, 1),
+            source='contract_start', source_id=self.contract.id, author=self.garagiste,
+        )
+
     def _url(self, vehicle):
         return f'/api/garage/mileage/{vehicle.id}/'
 
@@ -447,6 +462,20 @@ class MileageHistoryAPITestCase(APITestCase):
         ids = [e['id'] for e in response.data['results']]
         self.assertIn(self.entry_a1.id, ids)
         self.assertIn(self.entry_a2.id, ids)
+
+    def test_beneficiary_display_for_contract_entry(self):
+        # Le garagiste n'a pas la permission api.view_contract mais doit tout de même
+        # voir le nom du bénéficiaire (référence sans lien côté frontend).
+        self.client.force_authenticate(user=self.garagiste)
+        response = self.client.get(self._url(self.vehicle_a))
+        entry = next(e for e in response.data['results'] if e['id'] == self.entry_contract_start.id)
+        self.assertEqual(entry['beneficiary_display'], 'Alice Dupont')
+
+    def test_beneficiary_display_none_for_non_contract_source(self):
+        self.client.force_authenticate(user=self.garagiste)
+        response = self.client.get(self._url(self.vehicle_a))
+        entry = next(e for e in response.data['results'] if e['id'] == self.entry_a1.id)
+        self.assertIsNone(entry['beneficiary_display'])
 
     def test_garagiste_sees_history_in_action_b(self):
         self.client.force_authenticate(user=self.garagiste)

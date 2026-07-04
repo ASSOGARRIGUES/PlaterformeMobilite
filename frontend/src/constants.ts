@@ -79,11 +79,15 @@ export const bugSeverityLabelMap: Record<string,string> = {
 }
 
 export const mileageSourceLabelMap: Record<SourceEnum, string> = {
-    [SourceEnum.contract]: "Contrat",
+    [SourceEnum.contract]: "Contrat (historique)",
+    [SourceEnum.contract_start]: "Régularisation à la création du contrat",
+    [SourceEnum.contract_end]: "Clôture du contrat",
     [SourceEnum.intervention]: "Fiche d'intervention",
     [SourceEnum.inspection]: "Fiche de contrôle",
     [SourceEnum.correction]: "Correction",
     [SourceEnum.migration]: "Migration initiale",
+    [SourceEnum.creation]: "Création du véhicule",
+    [SourceEnum.manual_edit]: "Modification manuelle",
 };
 
 export const StatusConsideredOngoing = [ContractStatusEnum.pending,ContractStatusEnum.over,ContractStatusEnum.waiting];

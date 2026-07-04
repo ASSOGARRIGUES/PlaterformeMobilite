@@ -3,6 +3,7 @@ import { useApiUrl, useCustomMutation, useInvalidate } from "@refinedev/core";
 import { closeAllModals, openModal } from "@mantine/modals";
 import { Button, NumberInput, Stack, Textarea } from "@mantine/core";
 import { MileageEntry, MileageCorrectionPayload } from "../../types/garage";
+import useAccessControl from "../useAccessControl";
 
 type CorrectionFormProps = {
     initialValue: number;
@@ -11,7 +12,7 @@ type CorrectionFormProps = {
 };
 
 const CorrectionForm = ({ initialValue, loading, onSubmit }: CorrectionFormProps) => {
-    const [value, setValue] = useState<number>(initialValue);
+    const [value, setValue] = useState<number | "">(initialValue);
     const [reason, setReason] = useState("");
 
     return (
@@ -19,7 +20,7 @@ const CorrectionForm = ({ initialValue, loading, onSubmit }: CorrectionFormProps
             <NumberInput
                 label="Nouveau kilométrage"
                 value={value}
-                onChange={(v) => setValue(Number(v))}
+                onChange={(v) => setValue(v === "" ? "" : Number(v))}
                 min={0}
             />
             <Textarea
@@ -29,8 +30,8 @@ const CorrectionForm = ({ initialValue, loading, onSubmit }: CorrectionFormProps
                 onChange={(e) => setReason(e.currentTarget.value)}
             />
             <Button
-                onClick={() => onSubmit(value, reason)}
-                disabled={!reason.trim()}
+                onClick={() => onSubmit(value as number, reason)}
+                disabled={!reason.trim() || value === ""}
                 loading={loading}
             >
                 Valider
@@ -39,12 +40,13 @@ const CorrectionForm = ({ initialValue, loading, onSubmit }: CorrectionFormProps
     );
 };
 
-const MileageCorrectionAction = ({ entry, vehicleId }: { entry: MileageEntry; vehicleId: number }) => {
+export const useMileageCorrection = (vehicleId: number) => {
     const apiUrl = useApiUrl();
     const { mutate, isLoading } = useCustomMutation<MileageEntry>();
     const invalidate = useInvalidate();
+    const { isAuthorized } = useAccessControl();
 
-    const openCorrectionModal = () => {
+    const openCorrectionModal = (entry: MileageEntry) => {
         openModal({
             title: "Corriger le kilométrage",
             children: (
@@ -60,6 +62,7 @@ const MileageCorrectionAction = ({ entry, vehicleId }: { entry: MileageEntry; ve
                         }, {
                             onSuccess: () => {
                                 invalidate({ resource: `garage/mileage/${vehicleId}`, invalidates: ["list"] });
+                                invalidate({ resource: "vehicle", id: vehicleId, invalidates: ["detail"] });
                                 closeAllModals();
                             },
                         });
@@ -69,7 +72,8 @@ const MileageCorrectionAction = ({ entry, vehicleId }: { entry: MileageEntry; ve
         });
     };
 
-    return <Button variant="subtle" onClick={openCorrectionModal}>Corriger</Button>;
+    return {
+        openCorrectionModal,
+        canCorrect: !!isAuthorized("garage.correct_mileage"),
+    };
 };
-
-export default MileageCorrectionAction;

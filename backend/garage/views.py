@@ -1,11 +1,12 @@
 from django.db import transaction
-from rest_framework import viewsets
+from rest_framework import viewsets, serializers
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from api.models import Vehicle
+from drf_spectacular.utils import extend_schema
+from api.models import Vehicle, Contract
 from .models import TaskCatalog, MileageEntry
 from .serializers import TaskCatalogSerializer, MileageEntrySerializer, MileageCorrectionSerializer
 from .filters import TaskCatalogFilter
@@ -46,6 +47,24 @@ class MileageHistoryViewSet(GarageMultiActionMixin, viewsets.ReadOnlyModelViewSe
         qs = super().get_queryset()
         return qs.filter(vehicle_id=self.kwargs['vehicle_pk'])
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        entries = page if page is not None else queryset
+        contract_ids = [
+            entry.source_id for entry in entries
+            if entry.source in MileageEntrySerializer.CONTRACT_SOURCES and entry.source_id
+        ]
+        contracts_by_id = {
+            contract.id: contract
+            for contract in Contract.objects.filter(pk__in=contract_ids).select_related('beneficiary')
+        }
+        serializer = self.get_serializer(entries, many=True, context={**self.get_serializer_context(), 'contracts_by_id': contracts_by_id})
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
+
+    @extend_schema(request=MileageCorrectionSerializer, responses=MileageEntrySerializer)
     @action(detail=False, methods=['post'], url_path='correct')
     def correct(self, request, vehicle_pk=None):
         if not request.user.has_perm('garage.correct_mileage'):
@@ -56,6 +75,9 @@ class MileageHistoryViewSet(GarageMultiActionMixin, viewsets.ReadOnlyModelViewSe
         )
         serializer.is_valid(raise_exception=True)
         original = serializer.validated_data['entry']
+
+        if original.is_corrected:
+            raise serializers.ValidationError({'entry': "Cette entrée est déjà corrigée."})
 
         with transaction.atomic():
             correction = MileageEntry.objects.create(

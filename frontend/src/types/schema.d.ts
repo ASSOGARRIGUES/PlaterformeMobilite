@@ -938,17 +938,24 @@ export interface components {
             active?: boolean;
             viewedBy?: number[];
         };
+        MileageCorrection: {
+            entry: number;
+            value: number;
+            reason: string;
+        };
         MileageEntry: {
             readonly id: number;
-            /** Format: int64 */
-            value: number;
+            readonly value: number;
             /** Format: date */
-            date: string;
-            source: components["schemas"]["SourceEnum"];
+            readonly date: string;
+            readonly source: components["schemas"]["SourceEnum"];
+            /** @description Référence générique vers l'objet à l'origine de l'entrée (ex: id du contrat quand source est contract_start/contract_end) */
+            readonly source_id: number | null;
             readonly author_display: string;
-            is_corrected?: boolean;
-            corrects?: number | null;
-            correction_reason?: string;
+            readonly beneficiary_display: string | null;
+            readonly is_corrected: boolean;
+            readonly corrects: number | null;
+            readonly correction_reason: string;
             /** Format: date-time */
             readonly created_at: string | null;
         };
@@ -1429,11 +1436,15 @@ export interface components {
             readonly action: components["schemas"]["Action"];
         };
         /**
-         * @description * `contract` - Contrat
+         * @description * `contract` - Contrat (historique)
+         *     * `contract_start` - Contrat — régularisation à la création
+         *     * `contract_end` - Contrat — clôture/retour
          *     * `intervention` - Fiche d'intervention
          *     * `inspection` - Fiche de contrôle
          *     * `correction` - Correction
          *     * `migration` - Migration initiale
+         *     * `creation` - Création du véhicule
+         *     * `manual_edit` - Modification manuelle
          * @enum {string}
          */
         SourceEnum: SourceEnum;
@@ -2937,9 +2948,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MileageEntry"];
-                "application/x-www-form-urlencoded": components["schemas"]["MileageEntry"];
-                "multipart/form-data": components["schemas"]["MileageEntry"];
+                "application/json": components["schemas"]["MileageCorrection"];
+                "application/x-www-form-urlencoded": components["schemas"]["MileageCorrection"];
+                "multipart/form-data": components["schemas"]["MileageCorrection"];
             };
         };
         responses: {
@@ -3993,10 +4004,14 @@ export enum ReasonEnum {
 }
 export enum SourceEnum {
     contract = "contract",
+    contract_start = "contract_start",
+    contract_end = "contract_end",
     intervention = "intervention",
     inspection = "inspection",
     correction = "correction",
-    migration = "migration"
+    migration = "migration",
+    creation = "creation",
+    manual_edit = "manual_edit"
 }
 export enum TransmissionEnum {
     manuelle = "manuelle",

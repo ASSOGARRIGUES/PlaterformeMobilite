@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -343,16 +344,26 @@ class ContractViewSet(ArchivableModelViewSet):
             serializer = EndContractSerializer(contract)
             return Response(serializer.data)
         elif request.method == 'PATCH':
+            from garage.models import MileageEntry
+
             serializer = EndContractSerializer(contract, data=request.data)
             if serializer.is_valid():
-                serializer.save()
-                contract.status = 'over'
-                contract.vehicle.kilometer = contract.end_kilometer
-                contract.ended_at = datetime.now()
-                contract.vehicle.status = 'available'
-                contract.save()
-                contract.vehicle.save()
-                contract.updateIfPaid()
+                with transaction.atomic():
+                    serializer.save()
+                    contract.status = 'over'
+                    contract.ended_at = datetime.now()
+                    contract.vehicle.status = 'available'
+                    contract.save()
+                    contract.vehicle.save()
+                    MileageEntry.objects.create(
+                        vehicle=contract.vehicle,
+                        value=contract.end_kilometer,
+                        date=contract.ended_at.date(),
+                        source='contract_end',
+                        source_id=contract.id,
+                        author=request.user,
+                    )
+                    contract.updateIfPaid()
                 return Response(serializer.data, status=200)
             return Response(serializer.errors, status=400)
 

@@ -1865,13 +1865,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MileageEntry'
+              $ref: '#/components/schemas/MileageCorrection'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/MileageEntry'
+              $ref: '#/components/schemas/MileageCorrection'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/MileageEntry'
+              $ref: '#/components/schemas/MileageCorrection'
         required: true
       security:
       - jwtAuth: []
@@ -3305,6 +3305,20 @@ components:
       - id
       - title
       - updated_at
+    MileageCorrection:
+      type: object
+      properties:
+        entry:
+          type: integer
+        value:
+          type: integer
+          minimum: 0
+        reason:
+          type: string
+      required:
+      - entry
+      - reason
+      - value
     MileageEntry:
       type: object
       properties:
@@ -3313,24 +3327,38 @@ components:
           readOnly: true
         value:
           type: integer
-          maximum: 9223372036854775807
-          minimum: 0
-          format: int64
+          readOnly: true
         date:
           type: string
           format: date
+          readOnly: true
         source:
-          $ref: '#/components/schemas/SourceEnum'
+          allOf:
+          - $ref: '#/components/schemas/SourceEnum'
+          readOnly: true
+        source_id:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: 'Référence générique vers l''objet à l''origine de l''entrée
+            (ex: id du contrat quand source est contract_start/contract_end)'
         author_display:
           type: string
           readOnly: true
+        beneficiary_display:
+          type: string
+          nullable: true
+          readOnly: true
         is_corrected:
           type: boolean
+          readOnly: true
         corrects:
           type: integer
+          readOnly: true
           nullable: true
         correction_reason:
           type: string
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -3338,10 +3366,15 @@ components:
           nullable: true
       required:
       - author_display
+      - beneficiary_display
+      - correction_reason
+      - corrects
       - created_at
       - date
       - id
+      - is_corrected
       - source
+      - source_id
       - value
     MutationContract:
       type: object
@@ -4403,17 +4436,25 @@ components:
     SourceEnum:
       enum:
       - contract
+      - contract_start
+      - contract_end
       - intervention
       - inspection
       - correction
       - migration
+      - creation
+      - manual_edit
       type: string
       description: |-
-        * `contract` - Contrat
+        * `contract` - Contrat (historique)
+        * `contract_start` - Contrat — régularisation à la création
+        * `contract_end` - Contrat — clôture/retour
         * `intervention` - Fiche d'intervention
         * `inspection` - Fiche de contrôle
         * `correction` - Correction
         * `migration` - Migration initiale
+        * `creation` - Création du véhicule
+        * `manual_edit` - Modification manuelle
     TaskCatalog:
       type: object
       properties:
