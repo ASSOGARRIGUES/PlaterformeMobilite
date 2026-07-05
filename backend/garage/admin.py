@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib import admin
 from api.models import Vehicle
-from .models import MileageEntry, TaskCatalog, MaintenanceConfig
+from .models import MileageEntry, TaskCatalog, MaintenanceConfig, InterventionSheet, VehicleTaskRecord, AuditLog
 
 
 class TaskCatalogForm(forms.ModelForm):
@@ -44,3 +44,18 @@ class MaintenanceConfigAdmin(admin.ModelAdmin):
         if obj and (self.has_change_permission(request, obj) or self.has_view_permission(request, obj)):
             return self.change_view(request, str(obj.pk), extra_context=extra_context)
         return super().changelist_view(request, extra_context)
+
+
+@admin.register(InterventionSheet)
+class InterventionSheetAdmin(admin.ModelAdmin):
+    list_display = ('vehicle', 'status', 'current_step', 'created_by', 'created_at')
+
+
+@admin.register(VehicleTaskRecord)
+class VehicleTaskRecordAdmin(admin.ModelAdmin):
+    list_display = ('vehicle', 'catalog_task', 'date', 'kilometer')
+
+
+@admin.register(AuditLog)
+class AuditLogAdmin(admin.ModelAdmin):
+    list_display = ('action', 'author', 'created_at', 'content_type', 'object_id')

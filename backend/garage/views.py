@@ -1,4 +1,6 @@
 from django.db import transaction
+from django.db.models import Q
+from django.utils import timezone
 from rest_framework import viewsets, serializers
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -6,9 +8,14 @@ from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
+from api.views import MUTATION_ACTION
 from api.models import Vehicle, Contract
-from .models import TaskCatalog, MileageEntry
-from .serializers import TaskCatalogSerializer, MileageEntrySerializer, MileageCorrectionSerializer
+from .models import TaskCatalog, MileageEntry, InterventionSheet, VehicleTaskRecord
+from .serializers import (
+    TaskCatalogSerializer, MileageEntrySerializer, MileageCorrectionSerializer,
+    InterventionSheetSerializer, MutationInterventionSheetSerializer,
+    InterventionTaskSerializer, MutationInterventionTaskSerializer,
+)
 from .filters import TaskCatalogFilter
 from .mixins import GarageMultiActionMixin
 
@@ -99,3 +106,63 @@ class MileageHistoryViewSet(GarageMultiActionMixin, viewsets.ReadOnlyModelViewSe
                 Vehicle.objects.filter(pk=vehicle_pk).update(kilometer=latest.value)
 
         return Response(MileageEntrySerializer(correction).data, status=201)
+
+
+class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
+    queryset = InterventionSheet.objects.select_related('vehicle', 'created_by').prefetch_related('tasks__parts').all()
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action in MUTATION_ACTION:
+            return MutationInterventionSheetSerializer
+        return InterventionSheetSerializer
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if self.action in ('create', 'update', 'partial_update', 'destroy', 'tasks', 'validate') \
+                and not request.user.has_perm('garage.manage_intervention'):
+            raise PermissionDenied()
+
+    @action(detail=True, methods=['post'], url_path='tasks')
+    def tasks(self, request, pk=None):
+        sheet = self.get_object()
+        serializer = MutationInterventionTaskSerializer(data=request.data, context={'sheet': sheet})
+        serializer.is_valid(raise_exception=True)
+        task = serializer.save()
+        return Response(InterventionTaskSerializer(task, context=self.get_serializer_context()).data, status=201)
+
+    @action(detail=True, methods=['post'], url_path='validate')
+    def validate(self, request, pk=None):
+        sheet = self.get_object()
+
+        with transaction.atomic():
+            sheet = InterventionSheet.objects.select_for_update().get(pk=sheet.pk)
+            if sheet.status == 'validated':
+                raise serializers.ValidationError("Cette fiche est déjà validée.")
+            if sheet.start_mileage is None:
+                raise serializers.ValidationError("Le kilométrage de départ est requis avant de valider la fiche.")
+
+            sheet.status = 'validated'
+            sheet.save(update_fields=['status'])
+
+            entry_date = sheet.end_date or timezone.now().date()
+            MileageEntry.objects.create(
+                vehicle=sheet.vehicle,
+                value=sheet.start_mileage,
+                date=entry_date,
+                source='intervention',
+                source_id=sheet.id,
+                author=request.user,
+            )
+
+            done_tasks = sheet.tasks.filter(type='done', catalog_task__isnull=False).filter(
+                Q(catalog_task__km_periodicity__isnull=False) | Q(catalog_task__month_periodicity__isnull=False)
+            )
+            for task in done_tasks:
+                VehicleTaskRecord.objects.update_or_create(
+                    vehicle=sheet.vehicle,
+                    catalog_task=task.catalog_task,
+                    defaults={'date': entry_date, 'kilometer': sheet.start_mileage},
+                )
+
+        return Response(InterventionSheetSerializer(sheet, context=self.get_serializer_context()).data)

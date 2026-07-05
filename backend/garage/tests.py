@@ -7,7 +7,10 @@ from django.contrib.auth import get_user_model
 from django.contrib.admin.sites import AdminSite
 from core.models import Action
 from api.models import Parking, Vehicle, Beneficiary, Contract
-from .models import MileageEntry, TaskCatalog, MaintenanceConfig
+from .models import (
+    MileageEntry, TaskCatalog, MaintenanceConfig, InterventionSheet, InterventionTask, VehicleTaskRecord,
+    GaragePhoto,
+)
 from .alerts import get_config
 from .admin import MaintenanceConfigAdmin
 
@@ -596,3 +599,214 @@ class MileageHistoryAPITestCase(APITestCase):
             'entry': self.entry_a2.id, 'value': 10500, 'reason': 'Erreur de saisie',
         })
         self.assertEqual(response.status_code, 404)
+
+
+class InterventionSheetAPITestCase(APITestCase):
+    def setUp(self):
+        from garage.apps import _setup_garage_groups
+        _setup_garage_groups(sender=None)
+
+        self.action_a = Action.objects.create(name='Action A')
+        self.action_b = Action.objects.create(name='Action B')
+        self.action_c = Action.objects.create(name='Action C')
+
+        self.parking = Parking.objects.create(name='Dépôt')
+
+        self.garagiste = User.objects.create_user(
+            username='garagiste2@test.com', email='garagiste2@test.com', password='pass',
+            phone='0600000011', first_name='Jean', last_name='Garagiste',
+        )
+        self.garagiste.actions.set([self.action_a, self.action_b])
+        self.garagiste.current_action = self.action_a
+        self.garagiste.save()
+        self.garagiste.groups.add(Group.objects.get(name='Garagiste'))
+
+        self.referent = User.objects.create_user(
+            username='referent2@test.com', email='referent2@test.com', password='pass',
+            phone='0600000012', first_name='Marie', last_name='Référent',
+        )
+        self.referent.actions.set([self.action_a, self.action_b])
+        self.referent.current_action = self.action_a
+        self.referent.save()
+        self.referent.groups.add(Group.objects.get(name='Référents'))
+
+        self.vehicle_a = Vehicle.objects.create(
+            brand='Renault', modele='Clio', year=2020, imat='AA-101-AA',
+            fleet_id=11, kilometer=10000, status='available',
+            parking=self.parking, action=self.action_a,
+            fuel_type='essence', transmission='manuelle', type='voiture',
+        )
+        self.vehicle_b = Vehicle.objects.create(
+            brand='Peugeot', modele='208', year=2021, imat='BB-102-BB',
+            fleet_id=12, kilometer=5000, status='available',
+            parking=self.parking, action=self.action_b,
+            fuel_type='essence', transmission='manuelle', type='voiture',
+        )
+        self.vehicle_c = Vehicle.objects.create(
+            brand='Citroën', modele='C3', year=2019, imat='CC-103-CC',
+            fleet_id=13, kilometer=8000, status='available',
+            parking=self.parking, action=self.action_c,
+            fuel_type='essence', transmission='manuelle', type='voiture',
+        )
+
+        self.catalog_task_periodic = TaskCatalog.objects.create(
+            name='Vidange', vehicle_types=['voiture'], km_periodicity=10000,
+        )
+        self.catalog_task_no_periodicity = TaskCatalog.objects.create(
+            name='Nettoyage', vehicle_types=['voiture'],
+        )
+
+    def _list_url(self):
+        return '/api/garage/intervention/'
+
+    def _detail_url(self, sheet):
+        return f'/api/garage/intervention/{sheet.id}/'
+
+    def _tasks_url(self, sheet):
+        return f'/api/garage/intervention/{sheet.id}/tasks/'
+
+    def _validate_url(self, sheet):
+        return f'/api/garage/intervention/{sheet.id}/validate/'
+
+    def test_create_sheet_by_garagiste(self):
+        self.client.force_authenticate(user=self.garagiste)
+        response = self.client.post(self._list_url(), {'vehicle': self.vehicle_a.id})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['status'], 'open')
+        self.assertEqual(response.data['current_step'], 1)
+        sheet = InterventionSheet.objects.get(pk=response.data['id'])
+        self.assertEqual(sheet.created_by, self.garagiste)
+
+    def test_create_sheet_for_out_of_scope_vehicle_returns_400(self):
+        self.client.force_authenticate(user=self.garagiste)
+        response = self.client.post(self._list_url(), {'vehicle': self.vehicle_c.id})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(InterventionSheet.objects.count(), 0)
+
+    def test_referent_forbidden_on_write_actions(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+
+        self.client.force_authenticate(user=self.referent)
+        self.assertEqual(self.client.post(self._list_url(), {'vehicle': self.vehicle_a.id}).status_code, 403)
+        self.assertEqual(
+            self.client.patch(self._detail_url(sheet), {'current_step': 2}, format='json').status_code, 403
+        )
+        self.assertEqual(
+            self.client.post(self._tasks_url(sheet), {'type': 'done', 'description': 'Test'}).status_code, 403
+        )
+        self.assertEqual(self.client.post(self._validate_url(sheet)).status_code, 403)
+
+    def test_patch_start_mileage_valid(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+        response = self.client.patch(
+            self._detail_url(sheet), {'start_mileage': 10500, 'current_step': 2}, format='json'
+        )
+        self.assertEqual(response.status_code, 200)
+        sheet.refresh_from_db()
+        self.assertEqual(sheet.start_mileage, 10500)
+        self.assertEqual(sheet.current_step, 2)
+
+    def test_patch_start_mileage_lower_than_vehicle_kilometer_returns_400(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+        response = self.client.patch(self._detail_url(sheet), {'start_mileage': 9000}, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('start_mileage', response.data)
+
+    def test_create_task_with_catalog_wear_and_parts(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+        response = self.client.post(self._tasks_url(sheet), {
+            'type': 'done',
+            'catalog_task': self.catalog_task_periodic.id,
+            'wear_level': 3,
+            'parts': [{'name': 'Filtre à huile', 'unit_price': '12.50', 'quantity': 1}],
+        }, format='json')
+        self.assertEqual(response.status_code, 201)
+        task = InterventionTask.objects.get(pk=response.data['id'])
+        self.assertEqual(task.sheet, sheet)
+        self.assertEqual(task.parts.count(), 1)
+
+    def test_create_free_task_without_catalog(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+        response = self.client.post(self._tasks_url(sheet), {
+            'type': 'planned', 'description': 'Vérifier les freins',
+        }, format='json')
+        self.assertEqual(response.status_code, 201)
+
+    def test_create_task_with_photo(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+        image_b64 = (
+            'data:image/png;base64,'
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+        )
+        response = self.client.post(self._tasks_url(sheet), {
+            'type': 'done', 'description': 'Nettoyage', 'photos': [image_b64],
+        }, format='json')
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(len(response.data['photos']), 1)
+        task = InterventionTask.objects.get(pk=response.data['id'])
+        self.assertEqual(GaragePhoto.objects.filter(object_id=task.pk).count(), 1)
+
+    def test_validate_sheet_creates_mileage_entry_and_task_records(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = InterventionSheet.objects.create(
+            vehicle=self.vehicle_a, created_by=self.garagiste, start_mileage=10500,
+        )
+        InterventionTask.objects.create(
+            sheet=sheet, type='done', catalog_task=self.catalog_task_periodic,
+        )
+        InterventionTask.objects.create(
+            sheet=sheet, type='planned', catalog_task=self.catalog_task_periodic,
+        )
+        InterventionTask.objects.create(
+            sheet=sheet, type='done', catalog_task=self.catalog_task_no_periodicity,
+        )
+
+        response = self.client.post(self._validate_url(sheet))
+        self.assertEqual(response.status_code, 200)
+        sheet.refresh_from_db()
+        self.assertEqual(sheet.status, 'validated')
+
+        entry = MileageEntry.objects.get(vehicle=self.vehicle_a, source='intervention')
+        self.assertEqual(entry.value, 10500)
+
+        self.vehicle_a.refresh_from_db()
+        self.assertEqual(self.vehicle_a.kilometer, 10500)
+
+        self.assertTrue(VehicleTaskRecord.objects.filter(
+            vehicle=self.vehicle_a, catalog_task=self.catalog_task_periodic,
+        ).exists())
+        self.assertFalse(VehicleTaskRecord.objects.filter(
+            vehicle=self.vehicle_a, catalog_task=self.catalog_task_no_periodicity,
+        ).exists())
+
+    def test_garagiste_multi_action_can_act_on_vehicle_b(self):
+        self.client.force_authenticate(user=self.garagiste)
+        response = self.client.post(self._list_url(), {'vehicle': self.vehicle_b.id})
+        self.assertEqual(response.status_code, 201)
+
+    def test_garagiste_cannot_access_sheet_for_vehicle_c(self):
+        other_garagiste = User.objects.create_user(
+            username='garagiste-c@test.com', email='garagiste-c@test.com', password='pass',
+            phone='0600000013', first_name='Paul', last_name='GarC',
+        )
+        other_garagiste.actions.set([self.action_c])
+        other_garagiste.current_action = self.action_c
+        other_garagiste.save()
+        other_garagiste.groups.add(Group.objects.get(name='Garagiste'))
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_c, created_by=other_garagiste)
+
+        self.client.force_authenticate(user=self.garagiste)
+        self.assertEqual(self.client.get(self._detail_url(sheet)).status_code, 404)
+        self.assertEqual(
+            self.client.patch(self._detail_url(sheet), {'current_step': 2}, format='json').status_code, 404
+        )
+        self.assertEqual(
+            self.client.post(self._tasks_url(sheet), {'type': 'done', 'description': 'Test'}).status_code, 404
+        )
+        self.assertEqual(self.client.post(self._validate_url(sheet)).status_code, 404)
