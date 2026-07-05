@@ -14,6 +14,7 @@ class TaskCatalog(models.Model):
     km_periodicity = models.PositiveIntegerField(null=True, blank=True, help_text="Périodicité kilométrique (km)")
     month_periodicity = models.PositiveIntegerField(null=True, blank=True, help_text="Périodicité temporelle (mois)")
     is_critical = models.BooleanField(default=False, help_text="Si vrai, le dépassement déclenche le passage automatique en maintenance")
+    is_wear_task = models.BooleanField(default=False, help_text="Si vrai, la tâche est saisie avec un niveau d'usure /10 plutôt que simplement cochée comme faite")
     archived = models.BooleanField(default=False)
 
     class Meta:

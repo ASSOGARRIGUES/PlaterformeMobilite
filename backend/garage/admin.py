@@ -20,8 +20,8 @@ class TaskCatalogForm(forms.ModelForm):
 @admin.register(TaskCatalog)
 class TaskCatalogAdmin(admin.ModelAdmin):
     form = TaskCatalogForm
-    list_display = ('name', 'vehicle_types', 'km_periodicity', 'month_periodicity', 'is_critical', 'archived')
-    list_filter = ('is_critical', 'archived')
+    list_display = ('name', 'vehicle_types', 'km_periodicity', 'month_periodicity', 'is_critical', 'is_wear_task', 'archived')
+    list_filter = ('is_critical', 'is_wear_task', 'archived')
     search_fields = ('name',)
     list_editable = ('archived',)
 

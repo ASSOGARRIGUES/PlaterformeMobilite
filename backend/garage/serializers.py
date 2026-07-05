@@ -11,7 +11,7 @@ from .models import TaskCatalog, MileageEntry, InterventionSheet, InterventionTa
 class TaskCatalogSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskCatalog
-        fields = ['id', 'name', 'vehicle_types', 'km_periodicity', 'month_periodicity', 'is_critical']
+        fields = ['id', 'name', 'vehicle_types', 'km_periodicity', 'month_periodicity', 'is_critical', 'is_wear_task']
 
 
 class MileageEntrySerializer(serializers.ModelSerializer):

@@ -81,6 +81,12 @@ class TaskCatalogAPITestCase(APITestCase):
         self.assertEqual(response.data['name'], 'Vidange')
         self.assertEqual(response.data['km_periodicity'], 15000)
 
+    def test_is_wear_task_field_exposed(self):
+        task = TaskCatalog.objects.create(name='Plaquettes de frein', vehicle_types=['voiture'], is_wear_task=True)
+        response = self.client.get(f'/api/garage/task-catalog/{task.id}/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data['is_wear_task'])
+
 
 class MaintenanceConfigTestCase(TestCase):
     def setUp(self):
