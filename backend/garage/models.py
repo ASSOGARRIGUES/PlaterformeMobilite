@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -47,7 +48,6 @@ class MaintenanceConfig(models.Model):
             ('view_vehicle', "Peut voir les véhicules dans le module garage"),
             ('manage_intervention', "Peut créer et gérer les fiches d'intervention"),
             ('manage_inspection', "Peut créer et gérer les fiches de contrôle intermédiaire"),
-            ('correct_mileage', "Peut corriger un kilométrage erroné"),
             ('override_maintenance_block', "Peut forcer le passage d'un véhicule en disponible malgré un blocage maintenance"),
         ]
 
@@ -67,3 +67,56 @@ class MaintenanceConfig(models.Model):
                     f"strictement inférieur au seuil d'alerte ({self.wear_alert_threshold})."
                 )
             })
+
+
+class MileageEntry(models.Model):
+    SOURCE_CHOICES = [
+        ('contract', 'Contrat (historique)'),
+        ('contract_start', 'Contrat — régularisation à la création'),
+        ('contract_end', 'Contrat — clôture/retour'),
+        ('intervention', "Fiche d'intervention"),
+        ('inspection', 'Fiche de contrôle'),
+        ('correction', 'Correction'),
+        ('migration', 'Migration initiale'),
+        ('creation', 'Création du véhicule'),
+        ('manual_edit', 'Modification manuelle'),
+    ]
+
+    vehicle = models.ForeignKey(
+        'api.Vehicle',
+        on_delete=models.CASCADE,
+        related_name='mileage_entries'
+    )
+    value = models.PositiveIntegerField()
+    date = models.DateField()
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES)
+    source_id = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Référence générique vers l'objet à l'origine de l'entrée (ex: id du contrat quand source est contract_start/contract_end)"
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='mileage_entries'
+    )
+    corrects = models.ForeignKey(
+        'self',
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='corrections'
+    )
+    correction_reason = models.TextField(blank=True)
+    is_corrected = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+
+    class Meta:
+        ordering = ['-date', '-id']
+        indexes = [
+            models.Index(fields=['vehicle', '-date'])
+        ]
+        permissions = [
+            ('correct_mileage', 'Peut corriger un kilométrage erroné'),
+        ]
+
+    def __str__(self):
+        return f"{self.vehicle} — {self.value} km ({self.date})"

@@ -1702,7 +1702,29 @@ paths:
       - jwtAuth: []
       - cookieAuth: []
       responses:
-        '201':
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+          description: ''
+  /api/contract/{id}/renewal_history/:
+    get:
+      operationId: api_contract_renewal_history_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this contract.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
           content:
             application/json:
               schema:
@@ -1755,6 +1777,176 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Contract'
+          description: ''
+  /api/garage/mileage/{vehicle_pk}/:
+    get:
+      operationId: api_garage_mileage_list
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - in: path
+        name: vehicle_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMileageEntryList'
+          description: ''
+  /api/garage/mileage/{vehicle_pk}/{id}/:
+    get:
+      operationId: api_garage_mileage_retrieve
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this mileage entry.
+        required: true
+      - in: path
+        name: vehicle_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MileageEntry'
+          description: ''
+  /api/garage/mileage/{vehicle_pk}/correct/:
+    post:
+      operationId: api_garage_mileage_correct_create
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: vehicle_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MileageCorrection'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MileageCorrection'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MileageCorrection'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MileageEntry'
+          description: ''
+  /api/garage/task-catalog/:
+    get:
+      operationId: api_garage_task_catalog_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - in: query
+        name: vehicle_types
+        schema:
+          type: array
+          items:
+            enum:
+            - scouter
+            - voiture
+        description: |-
+          Types de véhicules concernés (ex: ["voiture", "scouter"])
+
+          * `voiture` - Voiture
+          * `scouter` - Scooter
+        explode: true
+        style: form
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTaskCatalogList'
+          description: ''
+  /api/garage/task-catalog/{id}/:
+    get:
+      operationId: api_garage_task_catalog_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task catalog.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskCatalog'
           description: ''
   /api/parking/:
     get:
@@ -3113,6 +3305,77 @@ components:
       - id
       - title
       - updated_at
+    MileageCorrection:
+      type: object
+      properties:
+        entry:
+          type: integer
+        value:
+          type: integer
+          minimum: 0
+        reason:
+          type: string
+      required:
+      - entry
+      - reason
+      - value
+    MileageEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        value:
+          type: integer
+          readOnly: true
+        date:
+          type: string
+          format: date
+          readOnly: true
+        source:
+          allOf:
+          - $ref: '#/components/schemas/SourceEnum'
+          readOnly: true
+        source_id:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: 'Référence générique vers l''objet à l''origine de l''entrée
+            (ex: id du contrat quand source est contract_start/contract_end)'
+        author_display:
+          type: string
+          readOnly: true
+        beneficiary_display:
+          type: string
+          nullable: true
+          readOnly: true
+        is_corrected:
+          type: boolean
+          readOnly: true
+        corrects:
+          type: integer
+          readOnly: true
+          nullable: true
+        correction_reason:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - author_display
+      - beneficiary_display
+      - correction_reason
+      - corrects
+      - created_at
+      - date
+      - id
+      - is_corrected
+      - source
+      - source_id
+      - value
     MutationContract:
       type: object
       properties:
@@ -3404,6 +3667,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/InAppBroadcast'
+    PaginatedMileageEntryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MileageEntry'
     PaginatedParkingList:
       type: object
       required:
@@ -3450,6 +3736,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Payment'
+    PaginatedTaskCatalogList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskCatalog'
     PaginatedUserList:
       type: object
       required:
@@ -4124,6 +4433,60 @@ components:
       - action
       - fleet_id
       - id
+    SourceEnum:
+      enum:
+      - contract
+      - contract_start
+      - contract_end
+      - intervention
+      - inspection
+      - correction
+      - migration
+      - creation
+      - manual_edit
+      type: string
+      description: |-
+        * `contract` - Contrat (historique)
+        * `contract_start` - Contrat — régularisation à la création
+        * `contract_end` - Contrat — clôture/retour
+        * `intervention` - Fiche d'intervention
+        * `inspection` - Fiche de contrôle
+        * `correction` - Correction
+        * `migration` - Migration initiale
+        * `creation` - Création du véhicule
+        * `manual_edit` - Modification manuelle
+    TaskCatalog:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        vehicle_types:
+          description: 'Types de véhicules concernés (ex: ["voiture", "scouter"])'
+        km_periodicity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: Périodicité kilométrique (km)
+        month_periodicity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: Périodicité temporelle (mois)
+        is_critical:
+          type: boolean
+          description: Si vrai, le dépassement déclenche le passage automatique en
+            maintenance
+      required:
+      - id
+      - name
     TokenObtainPair:
       type: object
       properties:

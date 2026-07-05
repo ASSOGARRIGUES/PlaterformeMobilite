@@ -4,7 +4,7 @@ import {useMemo} from "react";
 import {CompleteContract} from "../../types/contract";
 import {Vehicle} from "../../types/vehicle";
 import VehicleBadge from "../../components/Vehicle/VehicleBadge";
-import {Group, Paper, Stack, Title, useMantineTheme} from "@mantine/core";
+import {Group, Paper, Stack, Tabs, Title, useMantineTheme} from "@mantine/core";
 import ContractTable from "../../components/contract/ContractTable";
 import BeneficiaryBadge from "../../components/beneficiary/BeneficiaryBadge";
 import VehicleCard from "../../components/Vehicle/VehicleCard";
@@ -23,6 +23,9 @@ import {DataTableColumn} from "mantine-datatable";
 import {Show} from "../../components/forkedFromRefine/Show";
 import {useMediaQuery} from "@mantine/hooks";
 import {ErrorComponent} from "../../components/ErrorComponent";
+import CanAccess from "../../components/CanAccess";
+import MileageHistoryChart from "../../components/garage/MileageHistoryChart";
+import {IconHistory, IconFileText} from "@tabler/icons-react";
 
 const VehicleShow = (props: any) => {
 
@@ -105,24 +108,44 @@ const VehicleShow = (props: any) => {
                     <VehicleActions vehicle={vehicle} style={{flexGrow:1, maxWidth:"100%"}}/>
                 </Group>
 
+                <Paper shadow="sm" p="md" style={{flex: "auto", minHeight:(smallerThanMd ? "100vh" : 0), display: "flex", flexDirection: "column"}}>
+                    <Tabs variant="outline" defaultValue="contracts" keepMounted={false} style={{display: "flex", flexDirection: "column", flex: "1 1 auto"}}>
+                        <Tabs.List>
+                            <Tabs.Tab leftSection={<IconFileText size={18}/>} value="contracts">Contrats</Tabs.Tab>
+                            <CanAccess permKey="garage.view_vehicle">
+                                <Tabs.Tab leftSection={<IconHistory size={18}/>} value="mileage">Historique kilométrique</Tabs.Tab>
+                            </CanAccess>
+                        </Tabs.List>
 
-                <Paper shadow="sm" p="md" style={{flex: "auto", minHeight:(smallerThanMd ? "100vh" : 0), display: "flex", flexDirection: "column", alignItems:"center", gap:"10px", paddingRight:20, paddingLeft:20, paddingTop:10}}>
-                    <Title order={2}>Contrats</Title>
-                    <ContractTable
-                        searchPlaceHolder={"Rechercher un contrat"}
-                        columns={columns}
-                        withReloadIcon
-                        /*@ts-ignore*/
-                        verticalSpacing="md"
-                        style={{flex: "auto", minHeight:0}}
-                        permanentFilters={[{field: "vehicle", operator: "in", value: [vehicle?.id]}]}
-                        syncWithLocation={false}
-                        defaultSortedColumn="start_date"
-                        defaultSortedDirection="desc"
-                        searchInfoTooltip={ContractSearchTooltip}
-                        defaultArchived={vehicle?.archived? true : undefined}
-                        withArchivedSwitch={!vehicle?.archived}
-                    />
+                        <Tabs.Panel value="contracts" style={{flex: "1 1 auto", display: "flex", flexDirection: "column", alignItems:"center", gap:"10px", paddingRight:20, paddingLeft:20, paddingTop:10}}>
+                            <ContractTable
+                                searchPlaceHolder={"Rechercher un contrat"}
+                                columns={columns}
+                                withReloadIcon
+                                /*@ts-ignore*/
+                                verticalSpacing="md"
+                                style={{flex: "auto", minHeight:0}}
+                                permanentFilters={[{field: "vehicle", operator: "in", value: [vehicle?.id]}]}
+                                syncWithLocation={false}
+                                defaultSortedColumn="start_date"
+                                defaultSortedDirection="desc"
+                                searchInfoTooltip={ContractSearchTooltip}
+                                defaultArchived={vehicle?.archived? true : undefined}
+                                withArchivedSwitch={!vehicle?.archived}
+                            />
+                        </Tabs.Panel>
+
+                        <CanAccess permKey="garage.view_vehicle">
+                            <Tabs.Panel value="mileage" p="md">
+                                {vehicle && (
+                                    <MileageHistoryChart
+                                        vehicleId={vehicle.id}
+                                        currentKilometer={vehicle.kilometer}
+                                    />
+                                )}
+                            </Tabs.Panel>
+                        </CanAccess>
+                    </Tabs>
                 </Paper>
 
             </Stack>

@@ -37,6 +37,7 @@ import 'mantine-datatable/styles.css';
 import {Layout} from "./components/layout";
 import '@mantine/dates/styles.css';
 import '@mantine/notifications/styles.css';
+import '@mantine/charts/styles.css';
 import {useNotificationProvider} from "./providers/notificationProvider";
 import {BugReporterProvider} from "./context/BugReporterProvider";
 import logSaver from "./logSaver";
