@@ -35,7 +35,7 @@ PROD = getenv("PROD", "False") == "True"
 BASE_URL = getenv("BASE_URL", "http://localhost:8000")
 
 ALLOWED_HOSTS = ["*"]
-CSRF_TRUSTED_ORIGINS = ["http://localhost:5173", getenv("URL_CSRF", "http://localhost:8000")] if DEBUG and not PROD else [getenv("URL_CSRF", "http://localhost:8000")]
+CSRF_TRUSTED_ORIGINS = ["http://localhost:5173", "http://localhost:4173", "https://localhost:4173", getenv("URL_CSRF", "http://localhost:8000")] if DEBUG and not PROD else [getenv("URL_CSRF", "http://localhost:8000")]
 
 CORS_ALLOWED_ORIGINS = CSRF_TRUSTED_ORIGINS
 
@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'django_crontab',
     'bugtracker',
     'inappcom',
+    'garage',
 ]
 
 MIDDLEWARE = [

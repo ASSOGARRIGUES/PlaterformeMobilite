@@ -5,9 +5,11 @@ import {AppShell, Box, px, rem, useMantineTheme} from "@mantine/core";
 import type { RefineThemedLayoutV2Props } from "@refinedev/mantine";
 import NavBar from "./sider";
 import {useThemedLayoutContext} from "@refinedev/mantine";
-import {useHeadroom, useWindowScroll} from "@mantine/hooks";
+import {useHeadroom, useMediaQuery, useWindowScroll} from "@mantine/hooks";
 import {ErrorBoundary} from "react-error-boundary";
 import ErrorFallback from "../ErrorFallback";
+import {OfflineBanner} from "../garage/OfflineBanner";
+import {GarageBottomNav} from "../garage/GarageBottomNav";
 
 export const Layout: React.FC<RefineThemedLayoutV2Props> = ({
                                                                 Title,
@@ -33,33 +35,63 @@ export const Layout: React.FC<RefineThemedLayoutV2Props> = ({
     //
     // }, [scroll]);
 
+    const theme = useMantineTheme()
     const navBarWidth = siderCollapsed ? 80 : 200;
 
     const headerHeight = 52;
+    const bottomNavHeight = 'calc(64px + env(safe-area-inset-bottom))';
 
     const pinned = useHeadroom({fixedAt:headerHeight})
+    const isMobile = useMediaQuery('(max-width: 768px)')
+    const isStandalone = useMediaQuery('(display-mode: standalone)')
+
+    const isPWAMobile = isMobile && isStandalone
 
     return (
-        <AppShell
-            layout="alt"
-            header={{height:52, collapsed: !pinned, offset: false}}
-            navbar={{width:navBarWidth, breakpoint:"md", collapsed:{mobile:!mobileSiderOpen}}}
-        >
-            <Header />
-            <NavBar Title={Title} />
-
-            <AppShell.Main
-                pt = {`calc(${rem(headerHeight)} + var(--mantine-spacing-md))`}
-                style={{backgroundColor: "var(--mantine-color-scheme-dark)", height: "100vh"}}
+        <>
+            <OfflineBanner />
+            {isPWAMobile && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 'env(safe-area-inset-top)',
+                    backgroundColor: theme.colors.cyan[8],
+                    zIndex: 1000,
+                }} />
+            )}
+            <AppShell
+                layout="alt"
+                header={{height:52, collapsed: !pinned || isPWAMobile, offset: false}}
+                navbar={{width:navBarWidth, breakpoint:"md", collapsed:{mobile:!mobileSiderOpen}}}
+                footer={{height: bottomNavHeight, collapsed: !isPWAMobile}}
             >
-                <ErrorBoundary FallbackComponent={ErrorFallback}>
-                    <div style={{paddingRight: 8, paddingLeft: 8, height:"100%"}}>
-                        {children}
-                    </div>
-                </ErrorBoundary>
+                <Header />
+                <NavBar Title={Title} />
 
-            </AppShell.Main>
+                <AppShell.Main
+                    pt={isPWAMobile
+                        ? `calc(env(safe-area-inset-top) + var(--mantine-spacing-md))`
+                        : `calc(${rem(headerHeight)} + var(--mantine-spacing-md))`
+                    }
+                    style={{backgroundColor: "var(--mantine-color-scheme-dark)", height: "100vh"}}
+                >
+                    <ErrorBoundary FallbackComponent={ErrorFallback}>
+                        <div style={{paddingRight: 8, paddingLeft: 8, height:"100%"}}>
+                            {children}
+                        </div>
+                    </ErrorBoundary>
 
-        </AppShell>
+                </AppShell.Main>
+
+                {isPWAMobile && (
+                    <AppShell.Footer style={{borderTop: 'none'}}>
+                        <GarageBottomNav />
+                    </AppShell.Footer>
+                )}
+
+            </AppShell>
+        </>
     );
 };

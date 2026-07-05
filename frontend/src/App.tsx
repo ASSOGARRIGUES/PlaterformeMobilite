@@ -22,7 +22,7 @@ import BeneficiaryShow from "./pages/beneficiary/BeneficiaryShow";
 import VehicleShow from "./pages/vehicle/VehicleShow";
 import { ModalsProvider } from "@mantine/modals";
 import Dashboard from "./pages/dashboard/Dashboard";
-import {IconAddressBook, IconCar, IconDashboard} from "@tabler/icons-react";
+import {IconAddressBook, IconCar, IconDashboard, IconTool} from "@tabler/icons-react";
 import ContractIcon from "./assets/contract.svg";
 import ContractShow from "./pages/contract/ContractShow";
 import ContractForm from "./pages/contract/ContractForm";
@@ -47,6 +47,7 @@ import {UserActionsProvider} from "./context/UserActionsProvider";
 import VehicleTransfer from "./pages/vehicle/VehicleTransfer";
 import {ErrorComponent} from "./components/ErrorComponent";
 import VehicleReview from "./pages/VehicleReview";
+import GarageDashboard from "./pages/garage/GarageDashboard";
 
 const SentryRoutes = Sentry.withSentryRouting(Routes);
 
@@ -140,6 +141,15 @@ function App() {
                                     label: "Revue véhicules",
                                     permKey: 'api.review_vehicle',
                                 },
+                            },
+                            {
+                                name: "garage",
+                                list: "garage/",
+                                meta: {
+                                    label: "Garage",
+                                    icon: <IconTool />,
+                                    permKey: true,
+                                },
                             }
                         ]}
                         options={{
@@ -206,6 +216,9 @@ function App() {
                                     </Route>
                                     <Route path="/vehicle_review">
                                         <Route index element={<VehicleReview />} />
+                                    </Route>
+                                    <Route path="/garage">
+                                        <Route index element={<GarageDashboard />} />
                                     </Route>
                                     <Route path={"/buglist"} element={<BugList/>} />
                                     <Route path="*" element={<ErrorComponent />} />

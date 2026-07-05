@@ -52,6 +52,7 @@ const Header: React.FC<RefineThemedLayoutV2HeaderProps> = ({
         borderBottom: `1px solid ${borderColor}`,
         // ...stickyStyles,
         backgroundColor:colorScheme === "dark" ? "dark" : theme.colors.cyan[8],
+        paddingTop: 'env(safe-area-inset-top)',
       }}
     >
       <Flex
