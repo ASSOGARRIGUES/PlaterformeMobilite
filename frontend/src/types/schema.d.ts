@@ -509,6 +509,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/garage/intervention/{id}/tasks/{task_pk}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * @description Remplace le filtrage standard current_action pour les viewsets garage.
+         *     Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+         *     Sinon, filtrage standard par current_action.
+         */
+        delete: operations["api_garage_intervention_tasks_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description Remplace le filtrage standard current_action pour les viewsets garage.
+         *     Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+         *     Sinon, filtrage standard par current_action.
+         */
+        patch: operations["api_garage_intervention_tasks_partial_update"];
+        trace?: never;
+    };
     "/api/garage/intervention/{id}/validate/": {
         parameters: {
             query?: never;
@@ -1031,6 +1057,11 @@ export interface components {
          * @enum {string}
          */
         FuelTypeEnum: FuelTypeEnum;
+        GaragePhoto: {
+            id: number;
+            /** Format: uri */
+            url: string;
+        };
         InAppBroadcast: {
             readonly id: number;
             title: string;
@@ -1072,10 +1103,12 @@ export interface components {
             readonly sheet: number;
             type: components["schemas"]["InterventionTaskTypeEnum"];
             catalog_task?: number | null;
+            /** @description Nom de la tâche libre (hors catalogue) — laisser vide si catalog_task est renseigné, le nom vient alors du catalogue */
+            name?: string;
             description?: string;
             wear_level?: number | null;
             readonly parts: components["schemas"]["InterventionTaskPart"][];
-            readonly photos: string[];
+            readonly photos: components["schemas"]["GaragePhoto"][];
         };
         InterventionTaskPart: {
             readonly id: number;
@@ -1436,6 +1469,25 @@ export interface components {
             readonly start_kilometer?: number;
             readonly max_kilometer?: number;
             readonly vehicle_kilometer?: number;
+        };
+        PatchedInterventionSheet: {
+            readonly id?: number;
+            readonly vehicle?: components["schemas"]["Vehicle"];
+            readonly created_by?: components["schemas"]["User"];
+            /** Format: int64 */
+            current_step?: number;
+            status?: components["schemas"]["InterventionSheetStatusEnum"];
+            /** Format: int64 */
+            start_mileage?: number | null;
+            /** Format: date */
+            start_date?: string | null;
+            /** Format: date */
+            end_date?: string | null;
+            /** Format: date-time */
+            readonly created_at?: string;
+            /** Format: date-time */
+            readonly updated_at?: string;
+            readonly tasks?: components["schemas"]["InterventionTask"][];
         };
         PatchedMutationContract: {
             readonly id?: number;
@@ -3061,10 +3113,17 @@ export interface operations {
     api_garage_intervention_list: {
         parameters: {
             query?: {
+                created_by?: number;
                 /** @description Number of results to return per page. */
                 limit?: number;
                 /** @description The initial index from which to return the results. */
                 offset?: number;
+                /**
+                 * @description * `open` - Ouverte
+                 *     * `validated` - Validée
+                 */
+                status?: PathsApiGarageInterventionGetParametersQueryStatus;
+                vehicle?: number;
             };
             header?: never;
             path?: never;
@@ -3200,6 +3259,57 @@ export interface operations {
                 "application/json": components["schemas"]["InterventionSheet"];
                 "application/x-www-form-urlencoded": components["schemas"]["InterventionSheet"];
                 "multipart/form-data": components["schemas"]["InterventionSheet"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterventionSheet"];
+                };
+            };
+        };
+    };
+    api_garage_intervention_tasks_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this intervention sheet. */
+                id: number;
+                task_pk: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_garage_intervention_tasks_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this intervention sheet. */
+                id: number;
+                task_pk: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedInterventionSheet"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedInterventionSheet"];
+                "multipart/form-data": components["schemas"]["PatchedInterventionSheet"];
             };
         };
         responses: {
@@ -4283,6 +4393,10 @@ export enum PathsApiContractGetParametersQueryStatus {
     payed = "payed",
     pending = "pending",
     waiting = "waiting"
+}
+export enum PathsApiGarageInterventionGetParametersQueryStatus {
+    open = "open",
+    validated = "validated"
 }
 export enum PathsApiGarageTaskCatalogGetParametersQueryVehicle_types {
     scouter = "scouter",

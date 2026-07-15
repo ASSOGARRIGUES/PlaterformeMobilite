@@ -1786,6 +1786,10 @@ paths:
         Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
         Sinon, filtrage standard par current_action.
       parameters:
+      - in: query
+        name: created_by
+        schema:
+          type: integer
       - name: limit
         required: false
         in: query
@@ -1796,6 +1800,20 @@ paths:
         required: false
         in: query
         description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - open
+          - validated
+        description: |-
+          * `open` - Ouverte
+          * `validated` - Validée
+      - in: query
+        name: vehicle
         schema:
           type: integer
       tags:
@@ -1950,6 +1968,74 @@ paths:
               schema:
                 $ref: '#/components/schemas/InterventionSheet'
           description: ''
+  /api/garage/intervention/{id}/tasks/{task_pk}/:
+    patch:
+      operationId: api_garage_intervention_tasks_partial_update
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this intervention sheet.
+        required: true
+      - in: path
+        name: task_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInterventionSheet'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInterventionSheet'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInterventionSheet'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterventionSheet'
+          description: ''
+    delete:
+      operationId: api_garage_intervention_tasks_destroy
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this intervention sheet.
+        required: true
+      - in: path
+        name: task_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/garage/intervention/{id}/validate/:
     post:
       operationId: api_garage_intervention_validate_create
@@ -3482,6 +3568,17 @@ components:
         * `essence` - Essence
         * `diesel` - Diesel
         * `electrique` - Electrique
+    GaragePhoto:
+      type: object
+      properties:
+        id:
+          type: integer
+        url:
+          type: string
+          format: uri
+      required:
+      - id
+      - url
     InAppBroadcast:
       type: object
       properties:
@@ -3591,6 +3688,11 @@ components:
         catalog_task:
           type: integer
           nullable: true
+        name:
+          type: string
+          description: Nom de la tâche libre (hors catalogue) — laisser vide si catalog_task
+            est renseigné, le nom vient alors du catalogue
+          maxLength: 200
         description:
           type: string
         wear_level:
@@ -3606,8 +3708,7 @@ components:
         photos:
           type: array
           items:
-            type: string
-            format: uri
+            $ref: '#/components/schemas/GaragePhoto'
           readOnly: true
       required:
       - id
@@ -4400,6 +4501,54 @@ components:
           readOnly: true
         vehicle_kilometer:
           type: integer
+          readOnly: true
+    PatchedInterventionSheet:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        vehicle:
+          allOf:
+          - $ref: '#/components/schemas/Vehicle'
+          readOnly: true
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        current_step:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        status:
+          $ref: '#/components/schemas/InterventionSheetStatusEnum'
+        start_mileage:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        end_date:
+          type: string
+          format: date
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/InterventionTask'
           readOnly: true
     PatchedMutationContract:
       type: object

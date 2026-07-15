@@ -2,14 +2,16 @@ import datetime
 
 from django.test import TestCase, RequestFactory
 from django.contrib.auth.models import Group
+from django.contrib.contenttypes.models import ContentType
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from django.contrib.admin.sites import AdminSite
 from core.models import Action
 from api.models import Parking, Vehicle, Beneficiary, Contract
 from .models import (
-    MileageEntry, TaskCatalog, MaintenanceConfig, InterventionSheet, InterventionTask, VehicleTaskRecord,
-    GaragePhoto,
+    MileageEntry, TaskCatalog, MaintenanceConfig, InterventionSheet, InterventionTask, InterventionTaskPart,
+    VehicleTaskRecord, GaragePhoto,
 )
 from .alerts import get_config
 from .admin import MaintenanceConfigAdmin
@@ -739,9 +741,19 @@ class InterventionSheetAPITestCase(APITestCase):
         self.client.force_authenticate(user=self.garagiste)
         sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
         response = self.client.post(self._tasks_url(sheet), {
-            'type': 'planned', 'description': 'Vérifier les freins',
+            'type': 'planned', 'name': 'Vérifier les freins', 'description': 'RAS',
         }, format='json')
         self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['name'], 'Vérifier les freins')
+
+    def test_create_free_task_without_name_returns_400(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+        response = self.client.post(self._tasks_url(sheet), {
+            'type': 'planned', 'description': 'Sans nom ni catalogue',
+        }, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('name', response.data)
 
     def test_create_task_with_photo(self):
         self.client.force_authenticate(user=self.garagiste)
@@ -751,10 +763,12 @@ class InterventionSheetAPITestCase(APITestCase):
             'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
         )
         response = self.client.post(self._tasks_url(sheet), {
-            'type': 'done', 'description': 'Nettoyage', 'photos': [image_b64],
+            'type': 'done', 'name': 'Nettoyage', 'photos': [image_b64],
         }, format='json')
         self.assertEqual(response.status_code, 201)
         self.assertEqual(len(response.data['photos']), 1)
+        self.assertIn('id', response.data['photos'][0])
+        self.assertIn('url', response.data['photos'][0])
         task = InterventionTask.objects.get(pk=response.data['id'])
         self.assertEqual(GaragePhoto.objects.filter(object_id=task.pk).count(), 1)
 
@@ -813,6 +827,128 @@ class InterventionSheetAPITestCase(APITestCase):
             self.client.patch(self._detail_url(sheet), {'current_step': 2}, format='json').status_code, 404
         )
         self.assertEqual(
-            self.client.post(self._tasks_url(sheet), {'type': 'done', 'description': 'Test'}).status_code, 404
+            self.client.post(self._tasks_url(sheet), {'type': 'done', 'name': 'Test'}).status_code, 404
         )
         self.assertEqual(self.client.post(self._validate_url(sheet)).status_code, 404)
+
+    # ── task_detail : édition/suppression par tâche (story 2.6, Tâche 1.6) ──────
+
+    IMAGE_B64 = (
+        'data:image/png;base64,'
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+    )
+
+    def _task_detail_url(self, sheet, task):
+        return f'/api/garage/intervention/{sheet.id}/tasks/{task.id}/'
+
+    def _make_open_sheet_with_task(self, **task_kwargs):
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+        task = InterventionTask.objects.create(sheet=sheet, type='done', **task_kwargs)
+        return sheet, task
+
+    def test_patch_task_description_and_wear_level(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet, task = self._make_open_sheet_with_task(catalog_task=self.catalog_task_periodic, wear_level=8)
+        response = self.client.patch(
+            self._task_detail_url(sheet, task),
+            {'description': 'Huile 5W30', 'wear_level': 4}, format='json',
+        )
+        self.assertEqual(response.status_code, 200)
+        task.refresh_from_db()
+        self.assertEqual(task.description, 'Huile 5W30')
+        self.assertEqual(task.wear_level, 4)
+
+    def test_patch_task_parts_replaces_previous(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet, task = self._make_open_sheet_with_task(catalog_task=self.catalog_task_periodic)
+        InterventionTaskPart.objects.create(task=task, name='Ancienne', unit_price='5.00', quantity=1)
+        response = self.client.patch(
+            self._task_detail_url(sheet, task),
+            {'parts': [{'name': 'Neuve', 'unit_price': '9.90', 'quantity': 2}]}, format='json',
+        )
+        self.assertEqual(response.status_code, 200)
+        names = list(task.parts.values_list('name', flat=True))
+        self.assertEqual(names, ['Neuve'])
+
+    def test_patch_task_add_and_remove_photos(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet, task = self._make_open_sheet_with_task(name='Nettoyage')
+        add = self.client.patch(
+            self._task_detail_url(sheet, task),
+            {'add_photos': [self.IMAGE_B64]}, format='json',
+        )
+        self.assertEqual(add.status_code, 200)
+        self.assertEqual(len(add.data['photos']), 1)
+        photo_id = add.data['photos'][0]['id']
+        self.assertEqual(GaragePhoto.objects.filter(object_id=task.pk).count(), 1)
+
+        remove = self.client.patch(
+            self._task_detail_url(sheet, task),
+            {'remove_photo_ids': [photo_id]}, format='json',
+        )
+        self.assertEqual(remove.status_code, 200)
+        self.assertEqual(len(remove.data['photos']), 0)
+        self.assertEqual(GaragePhoto.objects.filter(object_id=task.pk).count(), 0)
+
+    def test_delete_task_removes_task_and_photos(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet, task = self._make_open_sheet_with_task(name='À supprimer')
+        content_type = ContentType.objects.get_for_model(InterventionTask)
+        GaragePhoto.objects.create(
+            image=SimpleUploadedFile('p.png', b'\x89PNG\r\n', content_type='image/png'),
+            content_type=content_type, object_id=task.pk,
+        )
+        response = self.client.delete(self._task_detail_url(sheet, task))
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(InterventionTask.objects.filter(pk=task.pk).exists())
+        self.assertEqual(GaragePhoto.objects.filter(object_id=task.pk).count(), 0)
+
+    def test_referent_forbidden_on_task_detail(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet, task = self._make_open_sheet_with_task(name='X')
+        self.client.force_authenticate(user=self.referent)
+        self.assertEqual(
+            self.client.patch(self._task_detail_url(sheet, task), {'description': 'Y'}, format='json').status_code, 403
+        )
+        self.assertEqual(self.client.delete(self._task_detail_url(sheet, task)).status_code, 403)
+
+    def test_task_detail_task_of_other_sheet_returns_404(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet_a, task_a = self._make_open_sheet_with_task(name='A')
+        sheet_b = InterventionSheet.objects.create(vehicle=self.vehicle_b, created_by=self.garagiste)
+        # task_a appartient à sheet_a, on tente d'y accéder via sheet_b
+        response = self.client.patch(
+            self._task_detail_url(sheet_b, task_a), {'description': 'Z'}, format='json',
+        )
+        self.assertEqual(response.status_code, 404)
+
+    # ── filterset InterventionSheetFilter (story 2.6, Tâche 1.8) ───────────────
+
+    def test_filter_by_vehicle_and_status(self):
+        self.client.force_authenticate(user=self.garagiste)
+        validated = InterventionSheet.objects.create(
+            vehicle=self.vehicle_a, created_by=self.garagiste, status='validated', start_mileage=10500,
+        )
+        InterventionTask.objects.create(sheet=validated, type='planned', name='À prévoir')
+        InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste, status='open')
+        response = self.client.get(f'{self._list_url()}?vehicle={self.vehicle_a.id}&status=validated')
+        self.assertEqual(response.status_code, 200)
+        ids = [s['id'] for s in response.data['results']]
+        self.assertEqual(ids, [validated.id])
+        self.assertEqual(len(response.data['results'][0]['tasks']), 1)
+
+    def test_filter_by_status_and_created_by(self):
+        self.client.force_authenticate(user=self.garagiste)
+        mine = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste, status='open')
+        response = self.client.get(f'{self._list_url()}?status=open&created_by={self.garagiste.id}')
+        self.assertEqual(response.status_code, 200)
+        ids = [s['id'] for s in response.data['results']]
+        self.assertIn(mine.id, ids)
+
+    def test_filter_by_out_of_scope_vehicle_returns_empty(self):
+        # vehicle_c appartient à action_c, hors périmètre du garagiste (actions A+B)
+        InterventionSheet.objects.create(vehicle=self.vehicle_c, created_by=self.garagiste, status='validated')
+        self.client.force_authenticate(user=self.garagiste)
+        response = self.client.get(f'{self._list_url()}?vehicle={self.vehicle_c.id}')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['results'], [])

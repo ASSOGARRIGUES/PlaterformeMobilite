@@ -49,6 +49,8 @@ import VehicleTransfer from "./pages/vehicle/VehicleTransfer";
 import {ErrorComponent} from "./components/ErrorComponent";
 import VehicleReview from "./pages/VehicleReview";
 import GarageDashboard from "./pages/garage/GarageDashboard";
+import InterventionCreate from "./pages/garage/intervention/InterventionCreate";
+import InterventionStepper from "./pages/garage/intervention/InterventionStepper";
 
 const SentryRoutes = Sentry.withSentryRouting(Routes);
 
@@ -220,6 +222,8 @@ function App() {
                                     </Route>
                                     <Route path="/garage">
                                         <Route index element={<GarageDashboard />} />
+                                        <Route path="intervention/create" element={<InterventionCreate />} />
+                                        <Route path="intervention/:id" element={<InterventionStepper />} />
                                     </Route>
                                     <Route path={"/buglist"} element={<BugList/>} />
                                     <Route path="*" element={<ErrorComponent />} />

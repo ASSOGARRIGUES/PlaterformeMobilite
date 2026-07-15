@@ -1,5 +1,7 @@
+from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import viewsets, serializers
 from rest_framework.decorators import action
@@ -10,13 +12,14 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from api.views import MUTATION_ACTION
 from api.models import Vehicle, Contract
-from .models import TaskCatalog, MileageEntry, InterventionSheet, VehicleTaskRecord
+from .models import TaskCatalog, MileageEntry, InterventionSheet, InterventionTask, VehicleTaskRecord, GaragePhoto
 from .serializers import (
     TaskCatalogSerializer, MileageEntrySerializer, MileageCorrectionSerializer,
     InterventionSheetSerializer, MutationInterventionSheetSerializer,
     InterventionTaskSerializer, MutationInterventionTaskSerializer,
+    UpdateInterventionTaskSerializer,
 )
-from .filters import TaskCatalogFilter
+from .filters import TaskCatalogFilter, InterventionSheetFilter
 from .mixins import GarageMultiActionMixin
 
 
@@ -111,6 +114,7 @@ class MileageHistoryViewSet(GarageMultiActionMixin, viewsets.ReadOnlyModelViewSe
 class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
     queryset = InterventionSheet.objects.select_related('vehicle', 'created_by').prefetch_related('tasks__parts').all()
     permission_classes = [IsAuthenticated]
+    filterset_class = InterventionSheetFilter
 
     def get_serializer_class(self):
         if self.action in MUTATION_ACTION:
@@ -119,7 +123,7 @@ class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
 
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
-        if self.action in ('create', 'update', 'partial_update', 'destroy', 'tasks', 'validate') \
+        if self.action in ('create', 'update', 'partial_update', 'destroy', 'tasks', 'task_detail', 'validate') \
                 and not request.user.has_perm('garage.manage_intervention'):
             raise PermissionDenied()
 
@@ -130,6 +134,24 @@ class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         task = serializer.save()
         return Response(InterventionTaskSerializer(task, context=self.get_serializer_context()).data, status=201)
+
+    @action(detail=True, methods=['patch', 'delete'], url_path=r'tasks/(?P<task_pk>[^/.]+)')
+    def task_detail(self, request, pk=None, task_pk=None):
+        sheet = self.get_object()
+        if sheet.status != 'open':
+            raise PermissionDenied("Impossible de modifier une fiche validée.")
+        task = get_object_or_404(InterventionTask, pk=task_pk, sheet=sheet)
+        if request.method == 'DELETE':
+            content_type = ContentType.objects.get_for_model(InterventionTask)
+            for photo in GaragePhoto.objects.filter(content_type=content_type, object_id=task.pk):
+                photo.image.delete(save=False)
+                photo.delete()
+            task.delete()
+            return Response(status=204)
+        serializer = UpdateInterventionTaskSerializer(task, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(InterventionTaskSerializer(task, context=self.get_serializer_context()).data)
 
     @action(detail=True, methods=['post'], url_path='validate')
     def validate(self, request, pk=None):

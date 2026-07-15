@@ -25,7 +25,8 @@ import {useMediaQuery} from "@mantine/hooks";
 import {ErrorComponent} from "../../components/ErrorComponent";
 import CanAccess from "../../components/CanAccess";
 import MileageHistoryChart from "../../components/garage/MileageHistoryChart";
-import {IconHistory, IconFileText} from "@tabler/icons-react";
+import {PlannedTasksPanel} from "../../components/garage/PlannedTasksPanel";
+import {IconHistory, IconFileText, IconClipboardList} from "@tabler/icons-react";
 
 const VehicleShow = (props: any) => {
 
@@ -115,6 +116,9 @@ const VehicleShow = (props: any) => {
                             <CanAccess permKey="garage.view_vehicle">
                                 <Tabs.Tab leftSection={<IconHistory size={18}/>} value="mileage">Historique kilométrique</Tabs.Tab>
                             </CanAccess>
+                            <CanAccess permKey="garage.view_vehicle">
+                                <Tabs.Tab leftSection={<IconClipboardList size={18}/>} value="planned-tasks">À prévoir</Tabs.Tab>
+                            </CanAccess>
                         </Tabs.List>
 
                         <Tabs.Panel value="contracts" style={{flex: "1 1 auto", display: "flex", flexDirection: "column", alignItems:"center", gap:"10px", paddingRight:20, paddingLeft:20, paddingTop:10}}>
@@ -141,6 +145,17 @@ const VehicleShow = (props: any) => {
                                     <MileageHistoryChart
                                         vehicleId={vehicle.id}
                                         currentKilometer={vehicle.kilometer}
+                                    />
+                                )}
+                            </Tabs.Panel>
+                        </CanAccess>
+
+                        <CanAccess permKey="garage.view_vehicle">
+                            <Tabs.Panel value="planned-tasks" p="md">
+                                {vehicle && (
+                                    <PlannedTasksPanel
+                                        vehicleId={vehicle.id}
+                                        vehicleType={vehicle.type!}
                                     />
                                 )}
                             </Tabs.Panel>

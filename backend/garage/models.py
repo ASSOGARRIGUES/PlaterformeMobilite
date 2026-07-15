@@ -178,6 +178,10 @@ class InterventionTask(models.Model):
         null=True, blank=True,
         on_delete=models.PROTECT
     )
+    name = models.CharField(
+        max_length=200, blank=True,
+        help_text="Nom de la tâche libre (hors catalogue) — laisser vide si catalog_task est renseigné, le nom vient alors du catalogue"
+    )
     description = models.TextField(blank=True)
     wear_level = models.PositiveSmallIntegerField(
         null=True, blank=True,

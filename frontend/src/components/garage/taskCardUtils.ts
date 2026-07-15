@@ -1,9 +1,24 @@
 import { components } from '../../types/schema'
 import { LocalTaskPart } from '../../types/garage'
+import { humanizeNumber } from '../../constants'
 
 export const FREE_TASK_LABEL = 'Tâche libre (hors catalogue)'
 
 export type TaskCatalogItem = components['schemas']['TaskCatalog']
+
+export function periodicityLabel(task: TaskCatalogItem): string | undefined {
+  const segments: string[] = []
+  if (task.km_periodicity) segments.push(`${humanizeNumber(task.km_periodicity)} km`)
+  if (task.month_periodicity) {
+    if (task.month_periodicity % 12 === 0) {
+      const years = task.month_periodicity / 12
+      segments.push(`${humanizeNumber(years)} an${years > 1 ? 's' : ''}`)
+    } else {
+      segments.push(`${humanizeNumber(task.month_periodicity)} mois`)
+    }
+  }
+  return segments.length ? segments.join(' / ') : undefined
+}
 
 export type TaskPickerRow =
   | { kind: 'catalog'; task: TaskCatalogItem }

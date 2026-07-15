@@ -1,5 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
+from django.utils import timezone
 from drf_extra_fields.fields import Base64ImageField
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -63,25 +64,33 @@ class InterventionTaskPartSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'unit_price', 'quantity']
 
 
+class GaragePhotoSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    url = serializers.URLField()
+
+
 class InterventionTaskSerializer(serializers.ModelSerializer):
     parts = InterventionTaskPartSerializer(many=True, read_only=True)
     photos = serializers.SerializerMethodField()
 
-    @extend_schema_field(serializers.ListField(child=serializers.URLField()))
+    @extend_schema_field(GaragePhotoSerializer(many=True))
     def get_photos(self, obj):
         request = self.context.get('request')
         photos = GaragePhoto.objects.filter(
             content_type=ContentType.objects.get_for_model(InterventionTask),
             object_id=obj.pk,
         )
-        urls = [photo.image.url for photo in photos]
-        if request is not None:
-            urls = [request.build_absolute_uri(url) for url in urls]
-        return urls
+        result = []
+        for photo in photos:
+            url = photo.image.url
+            if request is not None:
+                url = request.build_absolute_uri(url)
+            result.append({'id': photo.id, 'url': url})
+        return result
 
     class Meta:
         model = InterventionTask
-        fields = ['id', 'sheet', 'type', 'catalog_task', 'description', 'wear_level', 'parts', 'photos']
+        fields = ['id', 'sheet', 'type', 'catalog_task', 'name', 'description', 'wear_level', 'parts', 'photos']
         read_only_fields = ['sheet']
 
 
@@ -91,7 +100,12 @@ class MutationInterventionTaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = InterventionTask
-        fields = ['id', 'type', 'catalog_task', 'description', 'wear_level', 'parts', 'photos']
+        fields = ['id', 'type', 'catalog_task', 'name', 'description', 'wear_level', 'parts', 'photos']
+
+    def validate(self, attrs):
+        if not attrs.get('catalog_task') and not (attrs.get('name') or '').strip():
+            raise serializers.ValidationError({'name': "Le nom est requis pour une tâche libre."})
+        return attrs
 
     def create(self, validated_data):
         parts_data = validated_data.pop('parts', [])
@@ -105,6 +119,40 @@ class MutationInterventionTaskSerializer(serializers.ModelSerializer):
             for image in photos_data:
                 GaragePhoto.objects.create(image=image, content_type=content_type, object_id=task.pk)
         return task
+
+
+class UpdateInterventionTaskSerializer(serializers.Serializer):
+    name = serializers.CharField(required=False, allow_blank=True)
+    description = serializers.CharField(required=False, allow_blank=True)
+    wear_level = serializers.IntegerField(required=False, allow_null=True, min_value=0, max_value=10)
+    parts = InterventionTaskPartSerializer(many=True, required=False)
+    add_photos = serializers.ListField(child=Base64ImageField(), required=False)
+    remove_photo_ids = serializers.ListField(child=serializers.IntegerField(), required=False)
+
+    def validate(self, attrs):
+        if 'name' in attrs and not attrs['name'].strip() and not self.instance.catalog_task:
+            raise serializers.ValidationError({'name': "Le nom est requis pour une tâche libre."})
+        return attrs
+
+    def update(self, instance, validated_data):
+        with transaction.atomic():
+            if 'parts' in validated_data:
+                instance.parts.all().delete()
+                for part_data in validated_data['parts']:
+                    InterventionTaskPart.objects.create(task=instance, **part_data)
+            content_type = ContentType.objects.get_for_model(InterventionTask)
+            for photo in GaragePhoto.objects.filter(
+                pk__in=validated_data.get('remove_photo_ids', []), content_type=content_type, object_id=instance.pk,
+            ):
+                photo.image.delete(save=False)
+                photo.delete()
+            for image in validated_data.get('add_photos', []):
+                GaragePhoto.objects.create(image=image, content_type=content_type, object_id=instance.pk)
+            for field in ('name', 'description', 'wear_level'):
+                if field in validated_data:
+                    setattr(instance, field, validated_data[field])
+            instance.save()
+        return instance
 
 
 class InterventionSheetSerializer(serializers.ModelSerializer):
@@ -157,6 +205,23 @@ class MutationInterventionSheetSerializer(serializers.ModelSerializer):
                     'start_mileage': f"Le kilométrage ({start_mileage}) ne peut pas être inférieur "
                                       f"au kilométrage actuel du véhicule ({vehicle.kilometer})."
                 })
+
+        today = timezone.now().date()
+        start_date = attrs.get('start_date')
+        if start_date is not None and start_date > today:
+            raise serializers.ValidationError({
+                'start_date': "La date de début ne peut pas être postérieure à aujourd'hui."
+            })
+        end_date = attrs.get('end_date')
+        if end_date is not None and end_date > today:
+            raise serializers.ValidationError({
+                'end_date': "La date de fin ne peut pas être postérieure à aujourd'hui."
+            })
+        effective_start_date = start_date if start_date is not None else (self.instance.start_date if self.instance else None)
+        if end_date is not None and effective_start_date is not None and end_date < effective_start_date:
+            raise serializers.ValidationError({
+                'end_date': "La date de fin ne peut pas être antérieure à la date de début."
+            })
         return attrs
 
     def create(self, validated_data):

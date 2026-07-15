@@ -15,5 +15,34 @@ type LocalTask = {
     wearLevel?: number;           // 0-10, affiché seulement quand isWearTask est vrai
     description?: string;
     parts: LocalTaskPart[];
-    photos: string[];             // base64 data URLs
+    photos: string[];             // URLs serveur (existantes) ou base64 data URLs (nouvelles)
+    serverId?: number;            // id côté serveur dès que POST .../tasks/ a réussi (story 2.6)
+    photoIds?: (number | null)[]; // aligné sur photos ; id GaragePhoto si URL serveur, null si base64 pas encore uploadé
 };
+
+// ── Fiches d'intervention (story 2.6) ────────────────────────────────────────
+type InterventionSheet = components["schemas"]["InterventionSheet"];
+type InterventionTask = components["schemas"]["InterventionTask"];
+type InterventionTaskPart = components["schemas"]["InterventionTaskPart"];
+
+// Types de payload manuels : le schéma OpenAPI est incomplet sur les actions custom
+// de InterventionSheetViewSet (cf. Dev Notes 2.6 "Schéma OpenAPI incomplet")
+type CreateInterventionPayload = { vehicle: number };
+type PatchInterventionPayload = Partial<{
+    start_mileage: number; current_step: number; start_date: string; end_date: string;
+}>;
+type CreateInterventionTaskPayload = {
+    type: "done" | "planned";
+    catalog_task?: number;
+    name?: string;
+    description?: string;
+    wear_level?: number;
+};
+type UpdateInterventionTaskPayload = Partial<{
+    name: string;
+    description: string;
+    wear_level: number | null;
+    parts: { name: string; unit_price: number; quantity: number }[];
+    add_photos: string[];
+    remove_photo_ids: number[];
+}>;

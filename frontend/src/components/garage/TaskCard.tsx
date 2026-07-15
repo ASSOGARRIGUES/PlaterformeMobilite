@@ -21,11 +21,13 @@ import {
 import { IconTool, IconTrash, IconChevronDown, IconChevronUp, IconX, IconCameraFilled, IconPlus } from '@tabler/icons-react'
 import { LocalTask, LocalTaskPart } from '../../types/garage'
 import { computePartsSubtotal, isWearLevelCritical } from './taskCardUtils'
+import { PhotoLightbox } from './PhotoLightbox'
 
 type TaskCardProps = {
   task: LocalTask
   onChange: (task: LocalTask) => void
   onRemove: () => void
+  readOnly?: boolean
 }
 
 function readAsBase64(file: File): Promise<string> {
@@ -37,8 +39,9 @@ function readAsBase64(file: File): Promise<string> {
   })
 }
 
-export function TaskCard({ task, onChange, onRemove }: TaskCardProps) {
+export function TaskCard({ task, onChange, onRemove, readOnly = false }: TaskCardProps) {
   const [expanded, setExpanded] = useState(false)
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null)
 
   const updateParts = (parts: LocalTaskPart[]) => onChange({ ...task, parts })
 
@@ -82,17 +85,19 @@ export function TaskCard({ task, onChange, onRemove }: TaskCardProps) {
             )}
           </Group>
           <Group gap="xs" wrap="nowrap">
-            <ActionIcon
-              variant="subtle"
-              color="red"
-              onClick={(e) => {
-                e.stopPropagation()
-                onRemove()
-              }}
-              aria-label="Supprimer la tâche"
-            >
-              <IconTrash size={18} stroke={2} />
-            </ActionIcon>
+            {!readOnly && (
+              <ActionIcon
+                variant="subtle"
+                color="red"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onRemove()
+                }}
+                aria-label="Supprimer la tâche"
+              >
+                <IconTrash size={18} stroke={2} />
+              </ActionIcon>
+            )}
             {expanded ? <IconChevronUp size={18} stroke={2} /> : <IconChevronDown size={18} stroke={2} />}
           </Group>
         </Group>
@@ -100,13 +105,14 @@ export function TaskCard({ task, onChange, onRemove }: TaskCardProps) {
 
       <Collapse in={expanded}>
         <Stack gap="md" mt="md">
-          {task.isWearTask && (
+          {task.isWearTask && task.type === 'done' && (
             <Stack gap={4}>
               <Text size="sm">Niveau d'usure : {task.wearLevel ?? 10}/10</Text>
               <Slider
                 min={0}
                 max={10}
                 step={1}
+                disabled={readOnly}
                 value={task.wearLevel ?? 10}
                 onChange={(value) => onChange({ ...task, wearLevel: value })}
                 marks={Array.from({ length: 11 }, (_, i) => ({ value: i }))}
@@ -124,6 +130,7 @@ export function TaskCard({ task, onChange, onRemove }: TaskCardProps) {
                 <TextInput
                   label="Désignation"
                   value={part.name}
+                  disabled={readOnly}
                   onChange={(e) => updatePart(part.localId, { name: e.currentTarget.value })}
                   style={{ flex: 2 }}
                 />
@@ -131,6 +138,7 @@ export function TaskCard({ task, onChange, onRemove }: TaskCardProps) {
                   label="P.U."
                   min={0}
                   decimalScale={2}
+                  disabled={readOnly}
                   value={part.unitPrice}
                   onChange={(value) => updatePart(part.localId, { unitPrice: Math.max(0, Number(value) || 0) })}
                   style={{ flex: 1 }}
@@ -138,65 +146,99 @@ export function TaskCard({ task, onChange, onRemove }: TaskCardProps) {
                 <NumberInput
                   label="Qté"
                   min={1}
+                  disabled={readOnly}
                   value={part.quantity}
                   onChange={(value) => updatePart(part.localId, { quantity: Math.max(1, Number(value) || 1) })}
                   style={{ flex: 1 }}
                 />
-                <Input.Wrapper label=" ">
-                  <ActionIcon
-                    size="lg"
-                    color="red"
-                    variant="subtle"
-                    onClick={() => removePart(part.localId)}
-                    aria-label="Supprimer la pièce"
-                  >
-                    <IconX size={18} stroke={2} />
-                  </ActionIcon>
-                </Input.Wrapper>
+                {!readOnly && (
+                  <Input.Wrapper label=" ">
+                    <ActionIcon
+                      size="lg"
+                      color="red"
+                      variant="subtle"
+                      onClick={() => removePart(part.localId)}
+                      aria-label="Supprimer la pièce"
+                    >
+                      <IconX size={18} stroke={2} />
+                    </ActionIcon>
+                  </Input.Wrapper>
+                )}
               </Group>
             ))}
-            <Button variant="light" leftSection={<IconPlus size={16} stroke={2} />} onClick={addPart}>
-              Ajouter une pièce
-            </Button>
+            {!readOnly && (
+              <Button variant="light" leftSection={<IconPlus size={16} stroke={2} />} onClick={addPart}>
+                Ajouter une pièce
+              </Button>
+            )}
           </Stack>
 
-          <Textarea
-            label="Description"
-            placeholder="Détails complémentaires (optionnel)"
-            value={task.description ?? ''}
-            onChange={(e) => onChange({ ...task, description: e.currentTarget.value })}
-          />
+          {readOnly && !task.description ? (
+            <Stack gap={4}>
+              <Text size="sm" fw={500}>
+                Description
+              </Text>
+              <Text size="sm" c="dimmed">
+                Aucune description renseignée
+              </Text>
+            </Stack>
+          ) : (
+            <Textarea
+              label="Description"
+              placeholder="Détails complémentaires (optionnel)"
+              value={task.description ?? ''}
+              readOnly={readOnly}
+              onChange={(e) => onChange({ ...task, description: e.currentTarget.value })}
+            />
+          )}
 
           <Stack gap="xs">
             <Text size="sm" fw={500}>
               Photos
             </Text>
+            {readOnly && task.photos.length === 0 && (
+              <Text size="sm" c="dimmed">
+                Aucune photo
+              </Text>
+            )}
             <Group gap="xs">
               {task.photos.map((photo, index) => (
                 <Box key={index} pos="relative">
-                  <Image src={photo} w={80} h={80} radius={4} fit="cover" />
-                  <ActionIcon
-                    size="xs"
-                    color="red"
-                    variant="filled"
-                    radius="xl"
-                    pos="absolute"
-                    top={-6}
-                    right={-6}
-                    onClick={() => removePhoto(index)}
-                    aria-label="Supprimer la photo"
-                  >
-                    <IconX size={12} stroke={2} />
-                  </ActionIcon>
+                  <Image
+                    src={photo}
+                    w={80}
+                    h={80}
+                    radius={4}
+                    fit="cover"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setPreviewIndex(index)}
+                  />
+                  {!readOnly && (
+                    <ActionIcon
+                      size="xs"
+                      color="red"
+                      variant="filled"
+                      radius="xl"
+                      pos="absolute"
+                      top={-6}
+                      right={-6}
+                      onClick={() => removePhoto(index)}
+                      aria-label="Supprimer la photo"
+                    >
+                      <IconX size={12} stroke={2} />
+                    </ActionIcon>
+                  )}
                 </Box>
               ))}
-              <FileButton onChange={addPhoto} accept="image/*" capture="environment">
-                {(props) => (
-                  <ActionIcon {...props} size={80} variant="light" radius={4} aria-label="Ajouter une photo">
-                    <IconCameraFilled size={28} stroke={2} />
-                  </ActionIcon>
-                )}
-              </FileButton>
+              {!readOnly && (
+                <FileButton onChange={addPhoto} accept="image/*" capture="environment">
+                  {(props) => (
+                    <ActionIcon {...props} size={80} variant="light" radius={4} aria-label="Ajouter une photo">
+                      <IconCameraFilled size={28} stroke={2} />
+                    </ActionIcon>
+                  )}
+                </FileButton>
+              )}
             </Group>
           </Stack>
 
@@ -207,6 +249,15 @@ export function TaskCard({ task, onChange, onRemove }: TaskCardProps) {
           </Group>
         </Stack>
       </Collapse>
+
+      {previewIndex !== null && (
+        <PhotoLightbox
+          photos={task.photos}
+          index={previewIndex}
+          onIndexChange={setPreviewIndex}
+          onClose={() => setPreviewIndex(null)}
+        />
+      )}
     </Paper>
   )
 }

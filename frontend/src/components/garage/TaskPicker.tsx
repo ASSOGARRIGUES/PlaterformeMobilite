@@ -3,9 +3,9 @@ import { useList } from '@refinedev/core'
 import { Drawer, TextInput, Stack, UnstyledButton, Group, Text, Badge, Button, Loader } from '@mantine/core'
 import { IconSearch, IconPlus } from '@tabler/icons-react'
 import { VehicleTypeEnum } from '../../types/schema.d'
-import { vehicleTypeLabelMap, humanizeNumber } from '../../constants'
+import { vehicleTypeLabelMap } from '../../constants'
 import { LocalTask } from '../../types/garage'
-import { buildTaskPickerRows, FREE_TASK_LABEL, TaskCatalogItem } from './taskCardUtils'
+import { buildTaskPickerRows, FREE_TASK_LABEL, TaskCatalogItem, periodicityLabel } from './taskCardUtils'
 
 type TaskPickerProps = {
   vehicleType: VehicleTypeEnum
@@ -13,20 +13,6 @@ type TaskPickerProps = {
   existingCatalogTaskIds?: number[]
   onClose: () => void
   onPick: (task: LocalTask) => void
-}
-
-function periodicityLabel(task: TaskCatalogItem): string | undefined {
-  const segments: string[] = []
-  if (task.km_periodicity) segments.push(`${humanizeNumber(task.km_periodicity)} km`)
-  if (task.month_periodicity) {
-    if (task.month_periodicity % 12 === 0) {
-      const years = task.month_periodicity / 12
-      segments.push(`${humanizeNumber(years)} an${years > 1 ? 's' : ''}`)
-    } else {
-      segments.push(`${humanizeNumber(task.month_periodicity)} mois`)
-    }
-  }
-  return segments.length ? segments.join(' / ') : undefined
 }
 
 export function TaskPicker({ vehicleType, opened, existingCatalogTaskIds, onClose, onPick }: TaskPickerProps) {
