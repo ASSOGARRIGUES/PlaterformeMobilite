@@ -98,7 +98,7 @@ export function useInterventionStepper(sheetId: number) {
   }, [sheet, catalogData, catalogById])
 
   const { mutateAsync: customMutate, isLoading: isMutating } = useCustomMutation<InterventionTask>()
-  const { mutateAsync: updateSheet } = useUpdate()
+  const { mutateAsync: updateSheet, isLoading: isSavingStep } = useUpdate()
 
   /** Création immédiate d'une tâche (POST minimal) dès la sélection dans le TaskPicker. */
   const addTask = async (picked: LocalTask, section: Section) => {
@@ -108,6 +108,7 @@ export function useInterventionStepper(sheetId: number) {
         url: `${apiUrl}/garage/intervention/${sheetId}/tasks/`,
         method: 'post',
         values: localTaskToCreatePayload({ ...picked, type: section }),
+        successNotification: false,
       })
       const rebuilt = { ...localTaskFromApiTask(response.data, catalogById), type: section }
       const setter = section === 'done' ? setDoneTasks : setPlannedTasks
@@ -149,6 +150,7 @@ export function useInterventionStepper(sheetId: number) {
           url: `${apiUrl}/garage/intervention/${sheetId}/tasks/${task.serverId}/`,
           method: 'delete',
           values: {},
+          successNotification: false,
         })
       }
       const setter = section === 'done' ? setDoneTasks : setPlannedTasks
@@ -183,6 +185,7 @@ export function useInterventionStepper(sheetId: number) {
               url: `${apiUrl}/garage/intervention/${sheetId}/tasks/${task.serverId}/`,
               method: 'patch',
               values: payload,
+              successNotification: false,
             })
           } catch (error) {
             throw new Error(`Échec de la synchronisation de "${task.name}" : ${extractStepError(error)}`)
@@ -196,6 +199,7 @@ export function useInterventionStepper(sheetId: number) {
         resource: 'garage/intervention',
         id: sheetId,
         values: { current_step: nextStep + 1, ...sheetValues },
+        successNotification: false,
       })
       warningConfirmedRef.current = false
       setActiveStep(nextStep)
@@ -259,6 +263,7 @@ export function useInterventionStepper(sheetId: number) {
     vehicle,
     isLoading: queryResult.isLoading,
     isMutating,
+    isSavingStep,
     doneTasks,
     plannedTasks,
     suggestions,
