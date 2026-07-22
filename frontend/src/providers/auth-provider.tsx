@@ -1,5 +1,6 @@
 import {AuthProvider, HttpError, useApiUrl} from "@refinedev/core";
 import axios from "axios";
+import * as Sentry from "@sentry/react";
 import {TokenCreate} from "../types/auth";
 import {ACCESS_TOKEN_KEY, API_URL, REFRESH_TOKEN_KEY} from "../constants";
 import {AuthActionResponse} from "@refinedev/core/dist/contexts/auth/types";
@@ -62,6 +63,8 @@ export const authProvider: AuthProvider = {
   logout: async (props) => {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
+
+    Sentry.setUser(null);
 
     return {
       success: true,
@@ -148,6 +151,8 @@ export const authProvider: AuthProvider = {
     if (!data) {
       return undefined;
     }
+
+    Sentry.setUser({ id: data.id, email: data.email });
 
     return {
         id: data.id,
