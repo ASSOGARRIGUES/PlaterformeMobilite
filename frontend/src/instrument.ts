@@ -31,7 +31,7 @@ Sentry.init({
     ...(process.env["BASE_URL"] ? [process.env["BASE_URL"]] : []),
   ],
 
-  replaysSessionSampleRate: 1.0,
+  replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,
 
   tunnel: `${process.env["BASE_URL"] || ""}/sentry-tunnel/`,
