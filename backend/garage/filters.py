@@ -32,4 +32,9 @@ class TaskCatalogFilter(FilterSet):
 class InterventionSheetFilter(FilterSet):
     class Meta:
         model = InterventionSheet
-        fields = ['vehicle', 'status', 'created_by']
+        fields = {
+            'vehicle': ['exact'],
+            'status': ['exact', 'in'],
+            'created_by': ['exact'],
+            'created_at': ['gte', 'lte'],
+        }

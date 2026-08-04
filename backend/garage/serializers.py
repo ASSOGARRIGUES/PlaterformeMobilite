@@ -6,7 +6,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from api.models import Contract, Vehicle
 from api.serializers import VehicleSerializer, UserSerializer
-from .models import TaskCatalog, MileageEntry, InterventionSheet, InterventionTask, InterventionTaskPart, GaragePhoto
+from .models import TaskCatalog, MileageEntry, InterventionSheet, InterventionTask, InterventionTaskPart, GaragePhoto, AuditLog
 
 
 class TaskCatalogSerializer(serializers.ModelSerializer):
@@ -43,6 +43,17 @@ class MileageEntrySerializer(serializers.ModelSerializer):
         fields = ['id', 'value', 'date', 'source', 'source_id', 'author_display',
                   'beneficiary_display', 'is_corrected', 'corrects', 'correction_reason', 'created_at']
         read_only_fields = ['value', 'date', 'source', 'source_id', 'is_corrected', 'corrects', 'correction_reason']
+
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    author_display = serializers.SerializerMethodField()
+
+    def get_author_display(self, obj):
+        return f"{obj.author.first_name} {obj.author.last_name}".strip()
+
+    class Meta:
+        model = AuditLog
+        fields = ['id', 'author_display', 'created_at', 'action', 'field_name', 'old_value', 'new_value']
 
 
 class MileageCorrectionSerializer(serializers.Serializer):
@@ -190,6 +201,23 @@ class MutationInterventionSheetSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     'vehicle': "Le véhicule d'une fiche ne peut pas être modifié après sa création."
                 })
+            if (
+                self.instance.status == 'validated'
+                and 'start_mileage' in attrs
+                and attrs['start_mileage'] != self.instance.start_mileage
+            ):
+                raise serializers.ValidationError({
+                    'start_mileage': "Le kilométrage d'une fiche validée ne peut être modifié que via la "
+                                      "correction kilométrique (voir l'historique du véhicule)."
+                })
+            if (
+                self.instance.status == 'validated'
+                and 'current_step' in attrs
+                and attrs['current_step'] != self.instance.current_step
+            ):
+                raise serializers.ValidationError({
+                    'current_step': "L'étape d'une fiche validée ne peut pas être modifiée."
+                })
         else:
             vehicle = attrs.get('vehicle')
             if vehicle is not None and InterventionSheet.objects.filter(vehicle=vehicle, status='open').exists():
@@ -218,7 +246,13 @@ class MutationInterventionSheetSerializer(serializers.ModelSerializer):
                 'end_date': "La date de fin ne peut pas être postérieure à aujourd'hui."
             })
         effective_start_date = start_date if start_date is not None else (self.instance.start_date if self.instance else None)
-        if end_date is not None and effective_start_date is not None and end_date < effective_start_date:
+        effective_end_date = end_date if end_date is not None else (self.instance.end_date if self.instance else None)
+        if (
+            (start_date is not None or end_date is not None)
+            and effective_start_date is not None
+            and effective_end_date is not None
+            and effective_end_date < effective_start_date
+        ):
             raise serializers.ValidationError({
                 'end_date': "La date de fin ne peut pas être antérieure à la date de début."
             })

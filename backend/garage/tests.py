@@ -11,7 +11,7 @@ from core.models import Action
 from api.models import Parking, Vehicle, Beneficiary, Contract
 from .models import (
     MileageEntry, TaskCatalog, MaintenanceConfig, InterventionSheet, InterventionTask, InterventionTaskPart,
-    VehicleTaskRecord, GaragePhoto,
+    VehicleTaskRecord, GaragePhoto, AuditLog,
 )
 from .alerts import get_config
 from .admin import MaintenanceConfigAdmin
@@ -716,6 +716,18 @@ class InterventionSheetAPITestCase(APITestCase):
         self.assertEqual(sheet.start_mileage, 10500)
         self.assertEqual(sheet.current_step, 2)
 
+    def test_search_by_vehicle_imat(self):
+        self.client.force_authenticate(user=self.garagiste)
+        InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+        other_sheet = InterventionSheet.objects.create(vehicle=self.vehicle_b, created_by=self.garagiste)
+        self.garagiste.current_action = self.action_b
+        self.garagiste.save()
+
+        response = self.client.get(self._list_url(), {'search': self.vehicle_b.imat})
+        self.assertEqual(response.status_code, 200)
+        results = response.data['results'] if 'results' in response.data else response.data
+        self.assertEqual([r['id'] for r in results], [other_sheet.id])
+
     def test_patch_start_mileage_lower_than_vehicle_kilometer_returns_400(self):
         self.client.force_authenticate(user=self.garagiste)
         sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
@@ -952,3 +964,210 @@ class InterventionSheetAPITestCase(APITestCase):
         response = self.client.get(f'{self._list_url()}?vehicle={self.vehicle_c.id}')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['results'], [])
+
+    # ── Story 2.7 : éditabilité des fiches validées + traçabilité AuditLog ─────
+
+    def _audit_log_url(self, sheet):
+        return f'/api/garage/intervention/{sheet.id}/audit-log/'
+
+    def _make_validated_sheet(self, **kwargs):
+        defaults = {
+            'vehicle': self.vehicle_a, 'created_by': self.garagiste, 'status': 'validated',
+            'start_mileage': 10500, 'start_date': datetime.date(2026, 1, 1),
+        }
+        defaults.update(kwargs)
+        return InterventionSheet.objects.create(**defaults)
+
+    def test_patch_dates_on_validated_sheet_creates_audit_log(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = self._make_validated_sheet()
+        response = self.client.patch(
+            self._detail_url(sheet), {'start_date': '2026-01-05'}, format='json'
+        )
+        self.assertEqual(response.status_code, 200)
+        sheet.refresh_from_db()
+        self.assertEqual(str(sheet.start_date), '2026-01-05')
+        log = AuditLog.objects.get(field_name='start_date')
+        self.assertEqual(log.action, 'field_modified')
+        self.assertEqual(log.old_value, '2026-01-01')
+        self.assertEqual(log.new_value, '2026-01-05')
+        self.assertEqual(log.author, self.garagiste)
+
+        # Aucun changement (même valeur) → pas de nouveau log
+        response = self.client.patch(
+            self._detail_url(sheet), {'start_date': '2026-01-05'}, format='json'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(AuditLog.objects.filter(field_name='start_date').count(), 1)
+
+    def test_patch_start_mileage_on_validated_sheet_returns_400(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = self._make_validated_sheet()
+        response = self.client.patch(
+            self._detail_url(sheet), {'start_mileage': 11000}, format='json'
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('start_mileage', response.data)
+        sheet.refresh_from_db()
+        self.assertEqual(sheet.start_mileage, 10500)
+        self.assertFalse(AuditLog.objects.exists())
+
+    def test_patch_open_sheet_stepper_flow_creates_no_audit_log(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+        response = self.client.patch(
+            self._detail_url(sheet), {'start_mileage': 10500, 'current_step': 2}, format='json'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(AuditLog.objects.exists())
+
+    def test_patch_task_fields_on_validated_sheet_creates_audit_logs(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = self._make_validated_sheet()
+        task = InterventionTask.objects.create(
+            sheet=sheet, type='done', name='Nettoyage', description='Avant', wear_level=8,
+        )
+        response = self.client.patch(
+            self._task_detail_url(sheet, task),
+            {'name': 'Nettoyage moteur', 'description': 'Après', 'wear_level': 4}, format='json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(AuditLog.objects.filter(field_name='name').count(), 1)
+        self.assertEqual(AuditLog.objects.filter(field_name='description').count(), 1)
+        self.assertEqual(AuditLog.objects.filter(field_name='wear_level').count(), 1)
+
+        response = self.client.patch(
+            self._task_detail_url(sheet, task),
+            {'parts': [{'name': 'Filtre', 'unit_price': '9.90', 'quantity': 1}]}, format='json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(AuditLog.objects.filter(field_name='parts').count(), 1)
+
+        response = self.client.patch(
+            self._task_detail_url(sheet, task),
+            {'add_photos': [self.IMAGE_B64]}, format='json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(AuditLog.objects.filter(field_name='photos').count(), 1)
+
+    def test_delete_task_on_validated_sheet_creates_audit_log(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = self._make_validated_sheet()
+        task = InterventionTask.objects.create(sheet=sheet, type='done', name='À supprimer')
+        response = self.client.delete(self._task_detail_url(sheet, task))
+        self.assertEqual(response.status_code, 204)
+        log = AuditLog.objects.get(action='task_deleted')
+        self.assertEqual(log.author, self.garagiste)
+        self.assertFalse(InterventionTask.objects.filter(pk=task.pk).exists())
+
+    def test_patch_and_delete_task_on_open_sheet_creates_no_audit_log(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet, task = self._make_open_sheet_with_task(name='X')
+        response = self.client.patch(
+            self._task_detail_url(sheet, task), {'description': 'Y'}, format='json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(AuditLog.objects.exists())
+
+        sheet2, task2 = self._make_open_sheet_with_task(name='Z')
+        response = self.client.delete(self._task_detail_url(sheet2, task2))
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(AuditLog.objects.exists())
+
+    def test_audit_log_returns_sheet_and_task_logs(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = self._make_validated_sheet()
+        self.client.patch(self._detail_url(sheet), {'start_date': '2026-01-05'}, format='json')
+        task = InterventionTask.objects.create(sheet=sheet, type='done', name='Nettoyage', description='Avant')
+        self.client.patch(self._task_detail_url(sheet, task), {'description': 'Après'}, format='json')
+
+        response = self.client.get(self._audit_log_url(sheet))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data[0]['field_name'], 'description')
+        self.assertEqual(response.data[1]['field_name'], 'start_date')
+
+        self.client.force_authenticate(user=self.referent)
+        response = self.client.get(self._audit_log_url(sheet))
+        self.assertEqual(response.status_code, 200)
+
+        other_garagiste = User.objects.create_user(
+            username='garagiste-d@test.com', email='garagiste-d@test.com', password='pass',
+            phone='0600000014', first_name='Léa', last_name='GarD',
+        )
+        other_garagiste.actions.set([self.action_c])
+        other_garagiste.current_action = self.action_c
+        other_garagiste.save()
+        other_garagiste.groups.add(Group.objects.get(name='Garagiste'))
+        self.client.force_authenticate(user=other_garagiste)
+        response = self.client.get(self._audit_log_url(sheet))
+        self.assertEqual(response.status_code, 404)
+
+    def test_post_task_on_validated_sheet_creates_audit_log_and_task_record(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = self._make_validated_sheet()
+        response = self.client.post(self._tasks_url(sheet), {
+            'type': 'done', 'catalog_task': self.catalog_task_periodic.id,
+        }, format='json')
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(AuditLog.objects.filter(action='task_added').count(), 1)
+        record = VehicleTaskRecord.objects.get(vehicle=self.vehicle_a, catalog_task=self.catalog_task_periodic)
+        self.assertEqual(record.kilometer, sheet.start_mileage)
+
+        response = self.client.post(self._tasks_url(sheet), {
+            'type': 'done', 'catalog_task': self.catalog_task_no_periodicity.id,
+        }, format='json')
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(AuditLog.objects.filter(action='task_added').count(), 2)
+        self.assertFalse(
+            VehicleTaskRecord.objects.filter(vehicle=self.vehicle_a, catalog_task=self.catalog_task_no_periodicity).exists()
+        )
+
+        response = self.client.post(self._tasks_url(sheet), {'type': 'planned', 'name': 'Libre'}, format='json')
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(AuditLog.objects.filter(action='task_added').count(), 3)
+
+    def test_post_task_on_open_sheet_creates_no_audit_log_and_no_task_record(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = InterventionSheet.objects.create(
+            vehicle=self.vehicle_a, created_by=self.garagiste, start_mileage=10500,
+        )
+        response = self.client.post(self._tasks_url(sheet), {
+            'type': 'done', 'catalog_task': self.catalog_task_periodic.id,
+        }, format='json')
+        self.assertEqual(response.status_code, 201)
+        self.assertFalse(AuditLog.objects.exists())
+        self.assertFalse(VehicleTaskRecord.objects.exists())
+
+    def test_delete_only_occurrence_removes_vehicle_task_record(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = self._make_validated_sheet()
+        task = InterventionTask.objects.create(
+            sheet=sheet, type='done', catalog_task=self.catalog_task_periodic,
+        )
+        VehicleTaskRecord.objects.create(
+            vehicle=self.vehicle_a, catalog_task=self.catalog_task_periodic,
+            date=sheet.start_date, kilometer=sheet.start_mileage,
+        )
+        response = self.client.delete(self._task_detail_url(sheet, task))
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(
+            VehicleTaskRecord.objects.filter(vehicle=self.vehicle_a, catalog_task=self.catalog_task_periodic).exists()
+        )
+
+    def test_delete_recent_occurrence_falls_back_to_older_one(self):
+        self.client.force_authenticate(user=self.garagiste)
+        older_sheet = self._make_validated_sheet(start_mileage=9500, start_date=datetime.date(2025, 1, 1))
+        InterventionTask.objects.create(sheet=older_sheet, type='done', catalog_task=self.catalog_task_periodic)
+        recent_sheet = self._make_validated_sheet(start_mileage=10500, start_date=datetime.date(2026, 1, 1))
+        recent_task = InterventionTask.objects.create(
+            sheet=recent_sheet, type='done', catalog_task=self.catalog_task_periodic,
+        )
+        VehicleTaskRecord.objects.create(
+            vehicle=self.vehicle_a, catalog_task=self.catalog_task_periodic,
+            date=recent_sheet.start_date, kilometer=recent_sheet.start_mileage,
+        )
+        response = self.client.delete(self._task_detail_url(recent_sheet, recent_task))
+        self.assertEqual(response.status_code, 204)
+        record = VehicleTaskRecord.objects.get(vehicle=self.vehicle_a, catalog_task=self.catalog_task_periodic)
+        self.assertEqual(record.kilometer, older_sheet.start_mileage)

@@ -7,6 +7,7 @@ from rest_framework import viewsets, serializers
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied, NotFound
+from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
@@ -17,10 +18,15 @@ from .serializers import (
     TaskCatalogSerializer, MileageEntrySerializer, MileageCorrectionSerializer,
     InterventionSheetSerializer, MutationInterventionSheetSerializer,
     InterventionTaskSerializer, MutationInterventionTaskSerializer,
-    UpdateInterventionTaskSerializer,
+    UpdateInterventionTaskSerializer, AuditLogSerializer,
 )
 from .filters import TaskCatalogFilter, InterventionSheetFilter
 from .mixins import GarageMultiActionMixin
+from .audit import (
+    log_field_change, log_task_added, log_task_deleted, get_audit_logs_for_sheet,
+    format_parts, format_photo_ids,
+)
+from .task_records import sync_vehicle_task_record
 
 
 class TaskCatalogViewSet(viewsets.ReadOnlyModelViewSet):
@@ -114,6 +120,8 @@ class MileageHistoryViewSet(GarageMultiActionMixin, viewsets.ReadOnlyModelViewSe
 class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
     queryset = InterventionSheet.objects.select_related('vehicle', 'created_by').prefetch_related('tasks__parts').all()
     permission_classes = [IsAuthenticated]
+    filter_backends = [SearchFilter, DjangoFilterBackend]
+    search_fields = ['vehicle__imat', 'vehicle__brand', 'vehicle__modele', 'created_by__first_name', 'created_by__last_name']
     filterset_class = InterventionSheetFilter
 
     def get_serializer_class(self):
@@ -127,31 +135,80 @@ class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
                 and not request.user.has_perm('garage.manage_intervention'):
             raise PermissionDenied()
 
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        was_validated = instance.status == 'validated'
+        snapshot = {f: getattr(instance, f) for f in ('start_date', 'end_date')} if was_validated else {}
+        updated = serializer.save()
+        if was_validated:
+            for field, old in snapshot.items():
+                log_field_change(updated, field, old, getattr(updated, field), self.request.user)
+
     @action(detail=True, methods=['post'], url_path='tasks')
+    @transaction.atomic
     def tasks(self, request, pk=None):
         sheet = self.get_object()
         serializer = MutationInterventionTaskSerializer(data=request.data, context={'sheet': sheet})
         serializer.is_valid(raise_exception=True)
         task = serializer.save()
+        if sheet.status == 'validated':
+            log_task_added(task, request.user)
+            if task.type == 'done' and task.catalog_task_id:
+                sync_vehicle_task_record(sheet.vehicle, task.catalog_task)
         return Response(InterventionTaskSerializer(task, context=self.get_serializer_context()).data, status=201)
 
     @action(detail=True, methods=['patch', 'delete'], url_path=r'tasks/(?P<task_pk>[^/.]+)')
+    @transaction.atomic
     def task_detail(self, request, pk=None, task_pk=None):
         sheet = self.get_object()
-        if sheet.status != 'open':
-            raise PermissionDenied("Impossible de modifier une fiche validée.")
         task = get_object_or_404(InterventionTask, pk=task_pk, sheet=sheet)
+        was_validated = sheet.status == 'validated'
         if request.method == 'DELETE':
             content_type = ContentType.objects.get_for_model(InterventionTask)
             for photo in GaragePhoto.objects.filter(content_type=content_type, object_id=task.pk):
                 photo.image.delete(save=False)
                 photo.delete()
+            task_type, catalog_task = task.type, task.catalog_task
+            if was_validated:
+                log_task_deleted(task, request.user)
             task.delete()
+            if was_validated and task_type == 'done' and catalog_task is not None:
+                sync_vehicle_task_record(sheet.vehicle, catalog_task)
             return Response(status=204)
+        snapshot = {
+            'name': task.name, 'description': task.description, 'wear_level': task.wear_level,
+            'parts': list(task.parts.values('name', 'unit_price', 'quantity')),
+        } if was_validated else None
+        photo_ids_before = set(
+            GaragePhoto.objects.filter(content_type=ContentType.objects.get_for_model(InterventionTask), object_id=task.pk)
+            .values_list('id', flat=True)
+        ) if was_validated else set()
         serializer = UpdateInterventionTaskSerializer(task, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        if was_validated:
+            for field in ('name', 'description', 'wear_level'):
+                if field in serializer.validated_data:
+                    log_field_change(task, field, snapshot[field], getattr(task, field), request.user)
+            if 'parts' in serializer.validated_data:
+                new_parts = list(task.parts.values('name', 'unit_price', 'quantity'))
+                log_field_change(task, 'parts', format_parts(snapshot['parts']), format_parts(new_parts), request.user)
+            photo_ids_after = set(
+                GaragePhoto.objects.filter(content_type=ContentType.objects.get_for_model(InterventionTask), object_id=task.pk)
+                .values_list('id', flat=True)
+            )
+            if photo_ids_before != photo_ids_after:
+                log_field_change(
+                    task, 'photos', format_photo_ids(photo_ids_before), format_photo_ids(photo_ids_after),
+                    request.user,
+                )
         return Response(InterventionTaskSerializer(task, context=self.get_serializer_context()).data)
+
+    @action(detail=True, methods=['get'], url_path='audit-log')
+    def audit_log(self, request, pk=None):
+        sheet = self.get_object()
+        logs = get_audit_logs_for_sheet(sheet)
+        return Response(AuditLogSerializer(logs, many=True).data)
 
     @action(detail=True, methods=['post'], url_path='validate')
     def validate(self, request, pk=None):
