@@ -47,6 +47,8 @@ jobs:
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
           context: backend
+          build-args: |
+            VERSION=${{ env.VERSION }}
           push: true
           tags: ${{ steps.meta_back.outputs.tags }}
           labels: ${{ steps.meta_back.outputs.labels }}

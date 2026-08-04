@@ -9,5 +9,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=60s CMD curl -v -X GET -H
 RUN pip install --no-cache-dir -r requirements-postgres.txt
 
 FROM deps as build
+ARG VERSION=0.0.0-dev
+ENV VERSION=$VERSION
 COPY . .
 CMD ["bash", "entrypoint.sh"]
