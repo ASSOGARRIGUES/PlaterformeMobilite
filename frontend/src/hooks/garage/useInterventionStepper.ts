@@ -9,22 +9,10 @@ import {
   hasCriticalWear,
   unresolvedPlannedTasks,
   taskIdentity,
+  extractStepError,
 } from './interventionStepperUtils'
 
 type Section = 'done' | 'planned'
-
-/** Extrait un message d'erreur lisible d'une erreur de mutation (400 backend ou HttpError Refine). */
-function extractStepError(error: unknown): string {
-  const err = error as { response?: { data?: Record<string, unknown> }; message?: string }
-  const data = err?.response?.data
-  if (data && typeof data === 'object') {
-    const firstKey = Object.keys(data)[0]
-    const value = firstKey ? data[firstKey] : undefined
-    if (Array.isArray(value) && value.length) return String(value[0])
-    if (typeof value === 'string') return value
-  }
-  return err?.message ?? 'Une erreur est survenue.'
-}
 
 export function useInterventionStepper(sheetId: number) {
   const apiUrl = useApiUrl()

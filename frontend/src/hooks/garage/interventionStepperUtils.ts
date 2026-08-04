@@ -82,6 +82,7 @@ export function localTaskFromApiTask(
     photos: apiTask.photos.map((photo) => photo.url),
     serverId: apiTask.id,
     photoIds: apiTask.photos.map((photo) => photo.id),
+    sheetId: apiTask.sheet,
   }
 }
 
@@ -134,4 +135,17 @@ export function hasCriticalWear(tasks: LocalTask[], threshold?: number): boolean
   return tasks.some(
     (task) => task.isWearTask && task.wearLevel !== undefined && isWearLevelCritical(task.wearLevel, threshold),
   )
+}
+
+/** Extrait un message d'erreur lisible d'une erreur de mutation (400 backend ou HttpError Refine). */
+export function extractStepError(error: unknown): string {
+  const err = error as { response?: { data?: Record<string, unknown> }; message?: string }
+  const data = err?.response?.data
+  if (data && typeof data === 'object') {
+    const firstKey = Object.keys(data)[0]
+    const value = firstKey ? data[firstKey] : undefined
+    if (Array.isArray(value) && value.length) return String(value[0])
+    if (typeof value === 'string') return value
+  }
+  return err?.message ?? 'Une erreur est survenue.'
 }

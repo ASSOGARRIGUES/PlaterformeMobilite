@@ -4,6 +4,7 @@ import {
   localTaskToUpdatePayload,
   localTaskFromApiTask,
   hasCriticalWear,
+  unresolvedPlannedTasks,
 } from '../hooks/garage/interventionStepperUtils';
 import { LocalTask, InterventionTask } from '../types/garage';
 import { TaskCatalogItem } from '../components/garage/taskCardUtils';
@@ -92,6 +93,7 @@ describe('localTaskFromApiTask', () => {
     expect(local.wearLevel).toBe(4);
     expect(local.serverId).toBe(100);
     expect(local.periodicityLabel).toBeDefined();
+    expect(local.sheetId).toBe(1);
   });
 
   it('reconstructs a free task from its name', () => {
@@ -115,6 +117,62 @@ describe('localTaskFromApiTask', () => {
     const local = localTaskFromApiTask(apiTask, catalogById);
     expect(local.photos).toEqual(['http://s/x.png', 'http://s/y.png']);
     expect(local.photoIds).toEqual([55, 56]);
+  });
+});
+
+describe('unresolvedPlannedTasks', () => {
+  const catalogById = new Map<number, TaskCatalogItem>([
+    [7, { id: 7, name: 'Vidange', vehicle_types: ['voiture'], km_periodicity: 10000, is_wear_task: false } as TaskCatalogItem],
+  ]);
+
+  function makeApiTask(overrides: Record<string, unknown> = {}): InterventionTask {
+    return {
+      id: 1, sheet: 1, type: 'planned', catalog_task: 7, name: '', description: '',
+      wear_level: null, parts: [], photos: [],
+      ...overrides,
+    } as unknown as InterventionTask;
+  }
+
+  it('resolves a planned task when a later sheet has the matching done task (résolution rétroactive normale)', () => {
+    const sheets = [
+      { created_at: '2026-01-01T00:00:00Z', tasks: [makeApiTask({ id: 1, type: 'planned' })] },
+      { created_at: '2026-01-05T00:00:00Z', tasks: [makeApiTask({ id: 2, type: 'done' })] },
+    ];
+    expect(unresolvedPlannedTasks(sheets, catalogById)).toEqual([]);
+  });
+
+  it('does not resolve a planned task when the done task is on an earlier sheet (pas de résolution dans le passé)', () => {
+    const sheets = [
+      { created_at: '2026-01-01T00:00:00Z', tasks: [makeApiTask({ id: 2, type: 'done' })] },
+      { created_at: '2026-01-05T00:00:00Z', tasks: [makeApiTask({ id: 1, type: 'planned' })] },
+    ];
+    const pending = unresolvedPlannedTasks(sheets, catalogById);
+    expect(pending).toHaveLength(1);
+    expect(pending[0].catalogTaskId).toBe(7);
+  });
+
+  it('resolves a planned task added done in the same sheet (auto-résolution intra-fiche)', () => {
+    const sheets = [
+      {
+        created_at: '2026-01-01T00:00:00Z',
+        tasks: [makeApiTask({ id: 1, type: 'planned' }), makeApiTask({ id: 2, type: 'done' })],
+      },
+    ];
+    expect(unresolvedPlannedTasks(sheets, catalogById)).toEqual([]);
+  });
+
+  it('makes a resolved suggestion reappear when the resolving done task is removed', () => {
+    const sheetsWithDone = [
+      { created_at: '2026-01-01T00:00:00Z', tasks: [makeApiTask({ id: 1, type: 'planned' })] },
+      { created_at: '2026-01-05T00:00:00Z', tasks: [makeApiTask({ id: 2, type: 'done' })] },
+    ];
+    expect(unresolvedPlannedTasks(sheetsWithDone, catalogById)).toEqual([]);
+
+    const sheetsWithoutDone = [
+      { created_at: '2026-01-01T00:00:00Z', tasks: [makeApiTask({ id: 1, type: 'planned' })] },
+      { created_at: '2026-01-05T00:00:00Z', tasks: [] },
+    ];
+    expect(unresolvedPlannedTasks(sheetsWithoutDone, catalogById)).toHaveLength(1);
   });
 });
 

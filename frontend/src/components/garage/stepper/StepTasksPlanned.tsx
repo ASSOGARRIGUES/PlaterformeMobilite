@@ -13,6 +13,7 @@ type StepTasksPlannedProps = {
   tasks: LocalTask[]
   onAddTask: (task: LocalTask) => Promise<void>
   onUpdateTask: (task: LocalTask) => void
+  onCommitTask?: (task: LocalTask) => void
   onRemoveTask: (localId: string) => void
   isMutating: boolean
 }
@@ -22,6 +23,7 @@ export function StepTasksPlanned({
   tasks,
   onAddTask,
   onUpdateTask,
+  onCommitTask,
   onRemoveTask,
   isMutating,
 }: StepTasksPlannedProps) {
@@ -43,6 +45,7 @@ export function StepTasksPlanned({
           key={task.localId}
           task={task}
           onChange={(updated) => onUpdateTask(updated)}
+          onCommit={onCommitTask}
           onRemove={() => onRemoveTask(task.localId)}
         />
       ))}

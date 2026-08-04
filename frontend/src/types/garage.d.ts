@@ -18,6 +18,7 @@ type LocalTask = {
     photos: string[];             // URLs serveur (existantes) ou base64 data URLs (nouvelles)
     serverId?: number;            // id côté serveur dès que POST .../tasks/ a réussi (story 2.6)
     photoIds?: (number | null)[]; // aligné sur photos ; id GaragePhoto si URL serveur, null si base64 pas encore uploadé
+    sheetId?: number;             // fiche source (story 2.7), pour lier vers la fiche depuis PlannedTasksPanel
 };
 
 // ── Fiches d'intervention (story 2.6) ────────────────────────────────────────
@@ -46,3 +47,14 @@ type UpdateInterventionTaskPayload = Partial<{
     add_photos: string[];
     remove_photo_ids: number[];
 }>;
+
+// ── Traçabilité fiches validées (story 2.7) ──────────────────────────────────
+type AuditLogEntry = {
+    id: number;
+    author_display: string;
+    created_at: string;
+    action: string;
+    field_name: string;
+    old_value: string;
+    new_value: string;
+};
