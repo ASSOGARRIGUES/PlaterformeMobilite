@@ -378,6 +378,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/contract/{id}/renewal_history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_contract_renewal_history_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/contract/{id}/unarchive/": {
         parameters: {
             query?: never;
@@ -402,6 +418,231 @@ export interface paths {
             cookie?: never;
         };
         get: operations["api_contract_get_archived_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/garage/intervention/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Remplace le filtrage standard current_action pour les viewsets garage.
+         *     Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+         *     Sinon, filtrage standard par current_action.
+         */
+        get: operations["api_garage_intervention_list"];
+        put?: never;
+        /**
+         * @description Remplace le filtrage standard current_action pour les viewsets garage.
+         *     Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+         *     Sinon, filtrage standard par current_action.
+         */
+        post: operations["api_garage_intervention_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/garage/intervention/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Remplace le filtrage standard current_action pour les viewsets garage.
+         *     Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+         *     Sinon, filtrage standard par current_action.
+         */
+        get: operations["api_garage_intervention_retrieve"];
+        /**
+         * @description Remplace le filtrage standard current_action pour les viewsets garage.
+         *     Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+         *     Sinon, filtrage standard par current_action.
+         */
+        put: operations["api_garage_intervention_update"];
+        post?: never;
+        /**
+         * @description Remplace le filtrage standard current_action pour les viewsets garage.
+         *     Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+         *     Sinon, filtrage standard par current_action.
+         */
+        delete: operations["api_garage_intervention_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description Remplace le filtrage standard current_action pour les viewsets garage.
+         *     Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+         *     Sinon, filtrage standard par current_action.
+         */
+        patch: operations["api_garage_intervention_partial_update"];
+        trace?: never;
+    };
+    "/api/garage/intervention/{id}/tasks/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Remplace le filtrage standard current_action pour les viewsets garage.
+         *     Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+         *     Sinon, filtrage standard par current_action.
+         */
+        post: operations["api_garage_intervention_tasks_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/garage/intervention/{id}/tasks/{task_pk}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * @description Remplace le filtrage standard current_action pour les viewsets garage.
+         *     Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+         *     Sinon, filtrage standard par current_action.
+         */
+        delete: operations["api_garage_intervention_tasks_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description Remplace le filtrage standard current_action pour les viewsets garage.
+         *     Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+         *     Sinon, filtrage standard par current_action.
+         */
+        patch: operations["api_garage_intervention_tasks_partial_update"];
+        trace?: never;
+    };
+    "/api/garage/intervention/{id}/validate/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Remplace le filtrage standard current_action pour les viewsets garage.
+         *     Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+         *     Sinon, filtrage standard par current_action.
+         */
+        post: operations["api_garage_intervention_validate_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/garage/mileage/{vehicle_pk}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Remplace le filtrage standard current_action pour les viewsets garage.
+         *     Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+         *     Sinon, filtrage standard par current_action.
+         */
+        get: operations["api_garage_mileage_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/garage/mileage/{vehicle_pk}/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Remplace le filtrage standard current_action pour les viewsets garage.
+         *     Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+         *     Sinon, filtrage standard par current_action.
+         */
+        get: operations["api_garage_mileage_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/garage/mileage/{vehicle_pk}/correct/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Remplace le filtrage standard current_action pour les viewsets garage.
+         *     Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+         *     Sinon, filtrage standard par current_action.
+         */
+        post: operations["api_garage_mileage_correct_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/garage/task-catalog/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_garage_task_catalog_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/garage/task-catalog/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_garage_task_catalog_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -816,6 +1057,11 @@ export interface components {
          * @enum {string}
          */
         FuelTypeEnum: FuelTypeEnum;
+        GaragePhoto: {
+            id: number;
+            /** Format: uri */
+            url: string;
+        };
         InAppBroadcast: {
             readonly id: number;
             title: string;
@@ -826,6 +1072,78 @@ export interface components {
             readonly updated_at: string;
             active?: boolean;
             viewedBy?: number[];
+        };
+        InterventionSheet: {
+            readonly id: number;
+            readonly vehicle: components["schemas"]["Vehicle"];
+            readonly created_by: components["schemas"]["User"];
+            /** Format: int64 */
+            current_step?: number;
+            status?: components["schemas"]["InterventionSheetStatusEnum"];
+            /** Format: int64 */
+            start_mileage?: number | null;
+            /** Format: date */
+            start_date?: string | null;
+            /** Format: date */
+            end_date?: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+            readonly tasks: components["schemas"]["InterventionTask"][];
+        };
+        /**
+         * @description * `open` - Ouverte
+         *     * `validated` - Validée
+         * @enum {string}
+         */
+        InterventionSheetStatusEnum: InterventionSheetStatusEnum;
+        InterventionTask: {
+            readonly id: number;
+            readonly sheet: number;
+            type: components["schemas"]["InterventionTaskTypeEnum"];
+            catalog_task?: number | null;
+            /** @description Nom de la tâche libre (hors catalogue) — laisser vide si catalog_task est renseigné, le nom vient alors du catalogue */
+            name?: string;
+            description?: string;
+            wear_level?: number | null;
+            readonly parts: components["schemas"]["InterventionTaskPart"][];
+            readonly photos: components["schemas"]["GaragePhoto"][];
+        };
+        InterventionTaskPart: {
+            readonly id: number;
+            name: string;
+            /** Format: decimal */
+            unit_price: string;
+            /** Format: int64 */
+            quantity?: number;
+        };
+        /**
+         * @description * `done` - Réalisée
+         *     * `planned` - À prévoir
+         * @enum {string}
+         */
+        InterventionTaskTypeEnum: InterventionTaskTypeEnum;
+        MileageCorrection: {
+            entry: number;
+            value: number;
+            reason: string;
+        };
+        MileageEntry: {
+            readonly id: number;
+            readonly value: number;
+            /** Format: date */
+            readonly date: string;
+            readonly source: components["schemas"]["SourceEnum"];
+            /** @description Référence générique vers l'objet à l'origine de l'entrée (ex: id du contrat quand source est contract_start/contract_end) */
+            readonly source_id: number | null;
+            readonly author_display: string;
+            readonly beneficiary_display: string | null;
+            readonly is_corrected: boolean;
+            readonly corrects: number | null;
+            readonly correction_reason: string;
+            /** Format: date-time */
+            readonly created_at: string | null;
         };
         MutationContract: {
             readonly id: number;
@@ -955,6 +1273,36 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["InAppBroadcast"][];
         };
+        PaginatedInterventionSheetList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["InterventionSheet"][];
+        };
+        PaginatedMileageEntryList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["MileageEntry"][];
+        };
         PaginatedParkingList: {
             /** @example 123 */
             count: number;
@@ -984,6 +1332,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Payment"][];
+        };
+        PaginatedTaskCatalogList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=400&limit=100
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?offset=200&limit=100
+             */
+            previous?: string | null;
+            results: components["schemas"]["TaskCatalog"][];
         };
         PaginatedUserList: {
             /** @example 123 */
@@ -1106,6 +1469,25 @@ export interface components {
             readonly start_kilometer?: number;
             readonly max_kilometer?: number;
             readonly vehicle_kilometer?: number;
+        };
+        PatchedInterventionSheet: {
+            readonly id?: number;
+            readonly vehicle?: components["schemas"]["Vehicle"];
+            readonly created_by?: components["schemas"]["User"];
+            /** Format: int64 */
+            current_step?: number;
+            status?: components["schemas"]["InterventionSheetStatusEnum"];
+            /** Format: int64 */
+            start_mileage?: number | null;
+            /** Format: date */
+            start_date?: string | null;
+            /** Format: date */
+            end_date?: string | null;
+            /** Format: date-time */
+            readonly created_at?: string;
+            /** Format: date-time */
+            readonly updated_at?: string;
+            readonly tasks?: components["schemas"]["InterventionTask"][];
         };
         PatchedMutationContract: {
             readonly id?: number;
@@ -1272,6 +1654,39 @@ export interface components {
             /** Format: int64 */
             fleet_id: number;
             readonly action: components["schemas"]["Action"];
+        };
+        /**
+         * @description * `contract` - Contrat (historique)
+         *     * `contract_start` - Contrat — régularisation à la création
+         *     * `contract_end` - Contrat — clôture/retour
+         *     * `intervention` - Fiche d'intervention
+         *     * `inspection` - Fiche de contrôle
+         *     * `correction` - Correction
+         *     * `migration` - Migration initiale
+         *     * `creation` - Création du véhicule
+         *     * `manual_edit` - Modification manuelle
+         * @enum {string}
+         */
+        SourceEnum: SourceEnum;
+        TaskCatalog: {
+            readonly id: number;
+            name: string;
+            /** @description Types de véhicules concernés (ex: ["voiture", "scouter"]) */
+            vehicle_types?: unknown;
+            /**
+             * Format: int64
+             * @description Périodicité kilométrique (km)
+             */
+            km_periodicity?: number | null;
+            /**
+             * Format: int64
+             * @description Périodicité temporelle (mois)
+             */
+            month_periodicity?: number | null;
+            /** @description Si vrai, le dépassement déclenche le passage automatique en maintenance */
+            is_critical?: boolean;
+            /** @description Si vrai, la tâche est saisie avec un niveau d'usure /10 plutôt que simplement cochée comme faite */
+            is_wear_task?: boolean;
         };
         TokenObtainPair: {
             email: string;
@@ -2616,7 +3031,29 @@ export interface operations {
             };
         };
         responses: {
-            201: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Contract"];
+                };
+            };
+        };
+    };
+    api_contract_renewal_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this contract. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2669,6 +3106,376 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Contract"];
+                };
+            };
+        };
+    };
+    api_garage_intervention_list: {
+        parameters: {
+            query?: {
+                created_by?: number;
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+                /**
+                 * @description * `open` - Ouverte
+                 *     * `validated` - Validée
+                 */
+                status?: PathsApiGarageInterventionGetParametersQueryStatus;
+                vehicle?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedInterventionSheetList"];
+                };
+            };
+        };
+    };
+    api_garage_intervention_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_garage_intervention_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this intervention sheet. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterventionSheet"];
+                };
+            };
+        };
+    };
+    api_garage_intervention_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this intervention sheet. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_garage_intervention_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this intervention sheet. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_garage_intervention_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this intervention sheet. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_garage_intervention_tasks_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this intervention sheet. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["InterventionSheet"];
+                "application/x-www-form-urlencoded": components["schemas"]["InterventionSheet"];
+                "multipart/form-data": components["schemas"]["InterventionSheet"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterventionSheet"];
+                };
+            };
+        };
+    };
+    api_garage_intervention_tasks_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this intervention sheet. */
+                id: number;
+                task_pk: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_garage_intervention_tasks_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this intervention sheet. */
+                id: number;
+                task_pk: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedInterventionSheet"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedInterventionSheet"];
+                "multipart/form-data": components["schemas"]["PatchedInterventionSheet"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterventionSheet"];
+                };
+            };
+        };
+    };
+    api_garage_intervention_validate_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this intervention sheet. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["InterventionSheet"];
+                "application/x-www-form-urlencoded": components["schemas"]["InterventionSheet"];
+                "multipart/form-data": components["schemas"]["InterventionSheet"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterventionSheet"];
+                };
+            };
+        };
+    };
+    api_garage_mileage_list: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                vehicle_pk: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedMileageEntryList"];
+                };
+            };
+        };
+    };
+    api_garage_mileage_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this mileage entry. */
+                id: number;
+                vehicle_pk: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MileageEntry"];
+                };
+            };
+        };
+    };
+    api_garage_mileage_correct_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vehicle_pk: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MileageCorrection"];
+                "application/x-www-form-urlencoded": components["schemas"]["MileageCorrection"];
+                "multipart/form-data": components["schemas"]["MileageCorrection"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MileageEntry"];
+                };
+            };
+        };
+    };
+    api_garage_task_catalog_list: {
+        parameters: {
+            query?: {
+                /** @description Number of results to return per page. */
+                limit?: number;
+                /** @description The initial index from which to return the results. */
+                offset?: number;
+                /**
+                 * @description Types de véhicules concernés (ex: ["voiture", "scouter"])
+                 *
+                 *     * `voiture` - Voiture
+                 *     * `scouter` - Scooter
+                 */
+                vehicle_types?: PathsApiGarageTaskCatalogGetParametersQueryVehicle_types[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedTaskCatalogList"];
+                };
+            };
+        };
+    };
+    api_garage_task_catalog_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this task catalog. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskCatalog"];
                 };
             };
         };
@@ -3587,6 +4394,14 @@ export enum PathsApiContractGetParametersQueryStatus {
     pending = "pending",
     waiting = "waiting"
 }
+export enum PathsApiGarageInterventionGetParametersQueryStatus {
+    open = "open",
+    validated = "validated"
+}
+export enum PathsApiGarageTaskCatalogGetParametersQueryVehicle_types {
+    scouter = "scouter",
+    voiture = "voiture"
+}
 export enum PathsApiVehicleGetParametersQueryFuel_type {
     diesel = "diesel",
     electrique = "electrique",
@@ -3640,6 +4455,14 @@ export enum FuelTypeEnum {
     diesel = "diesel",
     electrique = "electrique"
 }
+export enum InterventionSheetStatusEnum {
+    open = "open",
+    validated = "validated"
+}
+export enum InterventionTaskTypeEnum {
+    done = "done",
+    planned = "planned"
+}
 export enum PaymentModeEnum {
     cash = "cash",
     check = "check",
@@ -3653,6 +4476,17 @@ export enum ReasonEnum {
     aided_contract = "aided_contract",
     job_seeking = "job_seeking",
     part_time = "part_time"
+}
+export enum SourceEnum {
+    contract = "contract",
+    contract_start = "contract_start",
+    contract_end = "contract_end",
+    intervention = "intervention",
+    inspection = "inspection",
+    correction = "correction",
+    migration = "migration",
+    creation = "creation",
+    manual_edit = "manual_edit"
 }
 export enum TransmissionEnum {
     manuelle = "manuelle",

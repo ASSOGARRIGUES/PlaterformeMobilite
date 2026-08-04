@@ -4,7 +4,7 @@ from django.db import connection
 from django.db.models import Q
 from django_filters.rest_framework import FilterSet
 from api.models import Vehicle
-from .models import TaskCatalog
+from .models import TaskCatalog, InterventionSheet
 
 
 class TaskCatalogFilter(FilterSet):
@@ -27,3 +27,14 @@ class TaskCatalogFilter(FilterSet):
     class Meta:
         model = TaskCatalog
         fields = ['vehicle_types']
+
+
+class InterventionSheetFilter(FilterSet):
+    class Meta:
+        model = InterventionSheet
+        fields = {
+            'vehicle': ['exact'],
+            'status': ['exact', 'in'],
+            'created_by': ['exact'],
+            'created_at': ['gte', 'lte'],
+        }

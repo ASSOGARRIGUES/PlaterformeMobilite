@@ -97,7 +97,7 @@ export function GarageBottomNav() {
             <UnstyledButton
               onClick={() => {
                 setFabOpen(false)
-                // TODO: navigate('/intervention/create') — Epic 2
+                navigate('/garage/intervention/create')
               }}
               style={{
                 display: 'flex',

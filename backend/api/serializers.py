@@ -35,9 +35,37 @@ class VehicleSerializer(DynamicDepthSerializer):
     parking = ParkingSerializer(read_only=True)
     action = ActionSerializer(read_only=True)
 
+    @transaction.atomic
     def create(self, validated_data):
+        from garage.models import MileageEntry
+
         validated_data['action'] = self.context['request'].user.current_action
-        return super().create(validated_data)
+        vehicle = super().create(validated_data)
+        MileageEntry.objects.create(
+            vehicle=vehicle,
+            value=vehicle.kilometer,
+            date=date.today(),
+            source='creation',
+            author=self.context['request'].user,
+        )
+        return vehicle
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        from garage.models import MileageEntry
+
+        new_kilometer = validated_data.pop('kilometer', None)
+        vehicle = super().update(instance, validated_data)
+        if new_kilometer is not None and new_kilometer != vehicle.kilometer:
+            MileageEntry.objects.create(
+                vehicle=vehicle,
+                value=new_kilometer,
+                date=date.today(),
+                source='manual_edit',
+                author=self.context['request'].user,
+            )
+            vehicle.refresh_from_db()
+        return vehicle
 
     class Meta:
         model = Vehicle
@@ -243,17 +271,29 @@ class ContractSerializer(serializers.ModelSerializer):
         model = Contract
         fields = '__all__'
 
+    @transaction.atomic
     def create(self, validated_data):
+        from garage.models import MileageEntry
+
         validated_data['created_by'] = self.context['request'].user
         validated_data['action'] = self.context['request'].user.current_action
-        if not 'start_kilometer' in validated_data:
+        has_start_kilometer = 'start_kilometer' in validated_data
+        if not has_start_kilometer:
             validated_data['start_kilometer'] = validated_data['vehicle'].kilometer
         contract = super().create(validated_data)
         contract.vehicle.status = 'rented'
-        #if the start_kilometer is provided, we update the vehicle kilometer
-        if 'start_kilometer' in validated_data:
-            contract.vehicle.kilometer = validated_data['start_kilometer']
         contract.vehicle.save()
+        # si le km de départ a été renseigné explicitement, on trace une entrée
+        # d'historique ; Vehicle.kilometer est synchronisé par le signal associé
+        if has_start_kilometer:
+            MileageEntry.objects.create(
+                vehicle=contract.vehicle,
+                value=validated_data['start_kilometer'],
+                date=contract.start_date,
+                source='contract_start',
+                source_id=contract.id,
+                author=self.context['request'].user,
+            )
         return contract
 
     def validate_vehicle(self, value):
@@ -311,6 +351,8 @@ class RenewContractSerializer(MutationContractSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
+        from garage.models import MileageEntry
+
         source = self.context['source_contract']
         end_serializer = self.context['end_serializer']
 
@@ -318,11 +360,21 @@ class RenewContractSerializer(MutationContractSerializer):
         source.ended_at = timezone.now()
         end_serializer.save()
 
+        MileageEntry.objects.create(
+            vehicle=source.vehicle,
+            value=source.end_kilometer,
+            date=source.ended_at.date(),
+            source='contract_end',
+            source_id=source.id,
+            author=self.context['request'].user,
+        )
+
         validated_data['status'] = 'pending'
         validated_data['renewed_from'] = source
         validated_data.setdefault('start_kilometer', source.end_kilometer)
 
-        # super().create() gère created_by, action, vehicle.status='rented' et vehicle.kilometer
+        # super().create() gère created_by, action, vehicle.status='rented' et trace
+        # la MileageEntry contract_start ; Vehicle.kilometer suit via le signal
         return super().create(validated_data)
 
 

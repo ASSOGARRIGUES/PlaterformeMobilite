@@ -22,7 +22,7 @@ import BeneficiaryShow from "./pages/beneficiary/BeneficiaryShow";
 import VehicleShow from "./pages/vehicle/VehicleShow";
 import { ModalsProvider } from "@mantine/modals";
 import Dashboard from "./pages/dashboard/Dashboard";
-import {IconAddressBook, IconCar, IconDashboard, IconTool} from "@tabler/icons-react";
+import {IconAddressBook, IconCar, IconClipboardList, IconDashboard, IconTool} from "@tabler/icons-react";
 import ContractIcon from "./assets/contract.svg";
 import ContractShow from "./pages/contract/ContractShow";
 import ContractForm from "./pages/contract/ContractForm";
@@ -37,6 +37,7 @@ import 'mantine-datatable/styles.css';
 import {Layout} from "./components/layout";
 import '@mantine/dates/styles.css';
 import '@mantine/notifications/styles.css';
+import '@mantine/charts/styles.css';
 import {useNotificationProvider} from "./providers/notificationProvider";
 import {BugReporterProvider} from "./context/BugReporterProvider";
 import logSaver from "./logSaver";
@@ -48,6 +49,10 @@ import VehicleTransfer from "./pages/vehicle/VehicleTransfer";
 import {ErrorComponent} from "./components/ErrorComponent";
 import VehicleReview from "./pages/VehicleReview";
 import GarageDashboard from "./pages/garage/GarageDashboard";
+import InterventionCreate from "./pages/garage/intervention/InterventionCreate";
+import InterventionStepper from "./pages/garage/intervention/InterventionStepper";
+import InterventionList from "./pages/garage/intervention/InterventionList";
+import InterventionEditStepperRoute from "./pages/garage/intervention/InterventionEditStepper";
 
 const SentryRoutes = Sentry.withSentryRouting(Routes);
 
@@ -150,6 +155,16 @@ function App() {
                                     icon: <IconTool />,
                                     permKey: true,
                                 },
+                            },
+                            {
+                                name: "garage_intervention",
+                                list: "garage/intervention/",
+                                show: "garage/intervention/:id",
+                                meta: {
+                                    label: "Interventions",
+                                    icon: <IconClipboardList />,
+                                    permKey: 'garage.view_interventionsheet',
+                                },
                             }
                         ]}
                         options={{
@@ -219,6 +234,10 @@ function App() {
                                     </Route>
                                     <Route path="/garage">
                                         <Route index element={<GarageDashboard />} />
+                                        <Route path="intervention" element={<InterventionList />} />
+                                        <Route path="intervention/create" element={<InterventionCreate />} />
+                                        <Route path="intervention/:id" element={<InterventionStepper />} />
+                                        <Route path="intervention/:id/edit" element={<InterventionEditStepperRoute />} />
                                     </Route>
                                     <Route path={"/buglist"} element={<BugList/>} />
                                     <Route path="*" element={<ErrorComponent />} />
