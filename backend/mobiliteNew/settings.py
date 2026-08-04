@@ -38,13 +38,25 @@ PROD = getenv("PROD", "False") == "True"
 
 BASE_URL = getenv("BASE_URL", "http://localhost:8000")
 
+# Endpoints hit repeatedly by infra (Docker HEALTHCHECK, uptime monitors) rather
+# than real user traffic: tracing them at full rate just buries actual requests.
+SENTRY_UNTRACED_PATH_PREFIXES = ("/status/",)
+
+
+def _sentry_traces_sampler(sampling_context):
+    path = sampling_context.get("wsgi_environ", {}).get("PATH_INFO", "")
+    if path.startswith(SENTRY_UNTRACED_PATH_PREFIXES):
+        return 0.0
+    return 1.0
+
+
 if getenv("SENTRY_DSN"):
     sentry_sdk.init(
         dsn=getenv("SENTRY_DSN"),
         environment="production" if PROD else "development",
         release=getenv("VERSION", "0.0.0-dev"),
         integrations=[DjangoIntegration()],
-        traces_sample_rate=1.0,
+        traces_sampler=_sentry_traces_sampler,
         send_default_pii=False,
         ignore_errors=[Http404, PermissionDenied],
     )
@@ -248,7 +260,7 @@ DBBACKUP_STORAGE_OPTIONS = {'location': os.path.join(BASE_DIR, 'db_backups')}
 ADMINS = [("Simon", "simon.galand43@gmail.com")]
 
 CRONJOBS = [
-    ('0 22 */ * *', 'core.crons.dbBackup')
+    ('0 22 * * *', 'core.crons.dbBackup')
 ]
 
 
