@@ -17,6 +17,8 @@ from os import getenv
 from dotenv import load_dotenv
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
 
 
 load_dotenv(".env")
@@ -44,6 +46,7 @@ if getenv("SENTRY_DSN"):
         integrations=[DjangoIntegration()],
         traces_sample_rate=0.1,
         send_default_pii=False,
+        ignore_errors=[Http404, PermissionDenied],
     )
 
 ALLOWED_HOSTS = ["*"]
