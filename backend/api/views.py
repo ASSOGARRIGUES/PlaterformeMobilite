@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.db.models import Q
@@ -83,7 +83,7 @@ class ArchivableModelViewSet(viewsets.ModelViewSet):
     # action for archive get
     @action(detail=False, methods=['get'])
     def get_archived(self, request):
-        queryset = self.queryset.filter(archived=True)
+        queryset = self.get_queryset().filter(archived=True)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -356,7 +356,7 @@ class ContractViewSet(ArchivableModelViewSet):
                 serializer.save()
                 contract.status = 'over'
                 contract.vehicle.kilometer = contract.end_kilometer
-                contract.ended_at = datetime.now()
+                contract.ended_at = timezone.now()
                 contract.vehicle.status = 'available'
                 contract.save()
                 contract.vehicle.save()
@@ -470,6 +470,7 @@ class ParkingViewSet(viewsets.ModelViewSet):
 ###################
 
 class VehicleStatsViewSet(viewsets.ViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
     @extend_schema(
     responses={200: serializers.DictField()}
     )
@@ -488,6 +489,7 @@ class VehicleStatsViewSet(viewsets.ViewSet):
 
 
 class ContractStatsViewSet(viewsets.ViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
     @extend_schema(
     responses={200: serializers.DictField()}
     )
