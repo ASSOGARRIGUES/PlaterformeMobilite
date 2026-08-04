@@ -33,7 +33,7 @@ const ContractDateFilter: ColumnFilter<Contract> = (accessor, value, setValue) =
                 onChange={setDateRange}
             />
             <Button
-                disabled={!dateRange}
+                disabled={!dateRange[0] && !dateRange[1]}
                 variant="light"
                 onClick={() => {
                     setDateRange([null, null]);
