@@ -263,7 +263,7 @@ class ContractSerializer(serializers.ModelSerializer):
 
     def validate_referent(self, value):
         action = self.context['request'].user.current_action
-        if value.current_action != action:
+        if not value.actions.filter(pk=action.pk).exists():
             raise serializers.ValidationError("Le référent selectionné n'a pas accès à l'action "+action.name)
         return value
 
