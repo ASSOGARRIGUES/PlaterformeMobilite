@@ -44,7 +44,7 @@ if getenv("SENTRY_DSN"):
         environment="production" if PROD else "development",
         release=getenv("VERSION", "0.0.0-dev"),
         integrations=[DjangoIntegration()],
-        traces_sample_rate=0.1,
+        traces_sample_rate=1.0,
         send_default_pii=False,
         ignore_errors=[Http404, PermissionDenied],
     )
@@ -230,7 +230,8 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
-    ]
+    ],
+    'EXCEPTION_HANDLER': 'mobiliteNew.sentry_handler.sentry_user_context_exception_handler',
 }
 
 SIMPLE_JWT = {
