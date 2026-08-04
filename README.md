@@ -139,6 +139,15 @@ docker-compose up -d
 
 Migrations and initial data are applied automatically by `entrypoint.sh`.
 
+### Frontend static asset caching
+
+`frontend/webserver/default.conf` sets explicit `Cache-Control` headers for the frontend build output served by nginx:
+
+- `/assets/*` (Vite's hashed JS/CSS bundles — filename changes on every build): `public, max-age=31536000, immutable`.
+- Everything else, including `index.html` (which references the hashed bundle names): `no-cache`, forcing revalidation on every request.
+
+Without this, nginx serves static files with no `Cache-Control`/`Expires` header, only `Last-Modified`/`ETag`. Browsers then apply RFC 7234 heuristic caching — freshness is estimated as roughly 10% of the time since `Last-Modified`. Since `index.html` doesn't change between deploys, this heuristic freshness window grows the longer a release has been live, so a browser tab can keep serving a stale `index.html` (and therefore the old JS bundle) for weeks without ever revalidating. A hard reload (bypasses HTTP cache) always shows the new version; a normal reload may not.
+
 ---
 
 ## Architecture
