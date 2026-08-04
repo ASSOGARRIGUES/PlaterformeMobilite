@@ -15,6 +15,8 @@ from datetime import timedelta
 from pathlib import Path
 from os import getenv
 from dotenv import load_dotenv
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 
 load_dotenv(".env")
@@ -33,6 +35,16 @@ DEBUG = getenv("DEBUG", "False") == "True"
 PROD = getenv("PROD", "False") == "True"
 
 BASE_URL = getenv("BASE_URL", "http://localhost:8000")
+
+if getenv("SENTRY_DSN"):
+    sentry_sdk.init(
+        dsn=getenv("SENTRY_DSN"),
+        environment="production" if PROD else "development",
+        release=getenv("VERSION", "0.0.0-dev"),
+        integrations=[DjangoIntegration()],
+        traces_sample_rate=0.1,
+        send_default_pii=False,
+    )
 
 ALLOWED_HOSTS = ["*"]
 CSRF_TRUSTED_ORIGINS = ["http://localhost:5173", getenv("URL_CSRF", "http://localhost:8000")] if DEBUG and not PROD else [getenv("URL_CSRF", "http://localhost:8000")]
