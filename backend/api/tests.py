@@ -781,6 +781,18 @@ class PaymentViewSetTest(BaseAPITest):
         self.assertEqual(r.data['nb_payments'], 2)
         self.assertFalse(r.data['is_payed'])
 
+    def test_get_participation_pdf_for_garrigues_action(self):
+        garrigues_action = make_action('Garrigues')
+        parking = make_parking(action=garrigues_action)
+        user = make_user('garrigues@test.com', action=garrigues_action)
+        v = make_vehicle(garrigues_action, parking, fleet_id=42)
+        b = make_beneficiary(garrigues_action, email='garrigues-b@test.com')
+        contract = make_contract(v, b, user, garrigues_action, price=500, contract_status='over')
+        payment = make_payment(contract, amount=100)
+        r = self.client.get(f'/api/contract/{contract.pk}/payment/{payment.pk}/get_participation_pdf/')
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(r['Content-Type'], 'application/pdf')
+
     def test_summary_is_payed_true_when_fully_paid(self):
         self.contract.status = 'payed'
         self.contract.save()
