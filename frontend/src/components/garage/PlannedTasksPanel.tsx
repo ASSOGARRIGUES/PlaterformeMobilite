@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
-import { useList } from '@refinedev/core'
-import { Center, Loader, Stack, Text } from '@mantine/core'
+import { useGo, useList } from '@refinedev/core'
+import { ActionIcon, Box, Center, Loader, Stack, Text, Tooltip } from '@mantine/core'
+import { IconExternalLink } from '@tabler/icons-react'
 import { VehicleTypeEnum } from '../../types/schema.d'
 import { InterventionSheet } from '../../types/garage'
 import { TaskCatalogItem } from './taskCardUtils'
@@ -17,6 +18,7 @@ const noop = () => undefined
 
 /** Liste consolidée "à prévoir" (FR-4.7) des fiches validées — lecture seule (AC5). */
 export function PlannedTasksPanel({ vehicleId, vehicleType }: PlannedTasksPanelProps) {
+  const go = useGo()
   const { data: catalogData } = useList<TaskCatalogItem>({
     resource: 'garage/task-catalog',
     filters: [{ field: 'vehicle_types', operator: 'eq', value: vehicleType }],
@@ -57,7 +59,23 @@ export function PlannedTasksPanel({ vehicleId, vehicleType }: PlannedTasksPanelP
   return (
     <Stack>
       {tasks.map((task) => (
-        <TaskCard key={task.localId} task={task} readOnly onChange={noop} onRemove={noop} />
+        <Box key={task.localId} pos="relative">
+          <TaskCard task={task} readOnly onChange={noop} onRemove={noop} />
+          {task.sheetId != null && (
+            <Tooltip label="Voir la fiche source">
+              <ActionIcon
+                pos="absolute"
+                top={8}
+                right={8}
+                variant="subtle"
+                onClick={() => go({ to: `/garage/intervention/${task.sheetId}` })}
+                aria-label="Voir la fiche source"
+              >
+                <IconExternalLink size={18} />
+              </ActionIcon>
+            </Tooltip>
+          )}
+        </Box>
       ))}
     </Stack>
   )

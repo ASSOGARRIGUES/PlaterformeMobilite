@@ -1,4 +1,4 @@
-import {useShow} from "@refinedev/core";
+import {useGo, useShow} from "@refinedev/core";
 import {Beneficiary} from "../../types/beneficiary";
 import {useMemo} from "react";
 import {CompleteContract} from "../../types/contract";
@@ -19,14 +19,20 @@ import ContractEditButton from "../../components/contract/ContractEditButton";
 import {humanizeDate} from "../../constants";
 import ContractSearchTooltip from "../../components/contract/ContractSearchTooltip";
 import VehicleActions from "../../components/Vehicle/VehicleActions";
-import {DataTableColumn} from "mantine-datatable";
+import {DataTableColumn, DataTableRowClickHandler} from "mantine-datatable";
 import {Show} from "../../components/forkedFromRefine/Show";
 import {useMediaQuery} from "@mantine/hooks";
 import {ErrorComponent} from "../../components/ErrorComponent";
 import CanAccess from "../../components/CanAccess";
 import MileageHistoryChart from "../../components/garage/MileageHistoryChart";
 import {PlannedTasksPanel} from "../../components/garage/PlannedTasksPanel";
-import {IconHistory, IconFileText, IconClipboardList} from "@tabler/icons-react";
+import {IconHistory, IconFileText, IconClipboardList, IconTool} from "@tabler/icons-react";
+import {InterventionStatusBadge} from "../../components/garage/intervention/InterventionStatusBadge";
+import InterventionStatusFilter from "../../components/garage/intervention/filters/InterventionStatusFilter";
+import InterventionDateFilter from "../../components/garage/intervention/filters/InterventionDateFilter";
+import SearchableDataTable, {SearchableDataTableColumn} from "../../components/SearchableDataTable";
+import {InterventionSheet} from "../../types/garage";
+import {humanizeFirstName, humanizeNumber} from "../../constants";
 
 const VehicleShow = (props: any) => {
 
@@ -35,6 +41,11 @@ const VehicleShow = (props: any) => {
 
     const { queryResult: showResponse } = useShow<Vehicle>()
     const vehicle  = showResponse.data?.data;
+    const go = useGo();
+
+    const interventionRowClickHandler: DataTableRowClickHandler<InterventionSheet> = ({record}) => {
+        go({to: `/garage/intervention/${record.id}`});
+    }
 
     const editModalForm = useContractModalForm({action: "edit"});
     const {modal: { show: showEditModal}} = editModalForm;
@@ -92,6 +103,38 @@ const VehicleShow = (props: any) => {
         [],
     );
 
+    const interventionColumns = useMemo<SearchableDataTableColumn<InterventionSheet>[]>(
+        () => [
+            {
+                accessor: 'status',
+                title: 'Statut',
+                sortable: true,
+                textAlignment: 'center',
+                render: (sheet) => <InterventionStatusBadge status={sheet.status} />,
+                filter: InterventionStatusFilter,
+            },
+            {
+                accessor: 'created_at',
+                title: 'Date',
+                sortable: true,
+                render: (sheet) => humanizeDate(sheet.created_at),
+                filter: InterventionDateFilter,
+            },
+            {
+                accessor: 'start_mileage',
+                title: 'Kilométrage',
+                render: (sheet) => (sheet.start_mileage != null ? `${humanizeNumber(sheet.start_mileage)} km` : '—'),
+            },
+            {
+                accessor: 'created_by',
+                title: 'Garagiste',
+                render: (sheet) =>
+                    sheet.created_by ? `${humanizeFirstName(sheet.created_by.first_name)} ${sheet.created_by.last_name}` : '—',
+            },
+        ],
+        [],
+    );
+
     // If the vehicle is not found, show an error
     if(showResponse.error?.statusCode === 404) return <ErrorComponent errorMessage={"Le vehicule n'existe pas ou n'est pas accessible"}/>;
 
@@ -118,6 +161,9 @@ const VehicleShow = (props: any) => {
                             </CanAccess>
                             <CanAccess permKey="garage.view_vehicle">
                                 <Tabs.Tab leftSection={<IconClipboardList size={18}/>} value="planned-tasks">À prévoir</Tabs.Tab>
+                            </CanAccess>
+                            <CanAccess permKey="garage.view_vehicle">
+                                <Tabs.Tab leftSection={<IconTool size={18}/>} value="interventions">Interventions</Tabs.Tab>
                             </CanAccess>
                         </Tabs.List>
 
@@ -156,6 +202,26 @@ const VehicleShow = (props: any) => {
                                     <PlannedTasksPanel
                                         vehicleId={vehicle.id}
                                         vehicleType={vehicle.type!}
+                                    />
+                                )}
+                            </Tabs.Panel>
+                        </CanAccess>
+
+                        <CanAccess permKey="garage.view_vehicle">
+                            <Tabs.Panel value="interventions" style={{flex: "1 1 auto", display: "flex", flexDirection: "column", paddingRight:20, paddingLeft:20, paddingTop:10}}>
+                                {vehicle && (
+                                    <SearchableDataTable
+                                        resource="garage/intervention"
+                                        searchPlaceHolder="Rechercher une intervention"
+                                        columns={interventionColumns}
+                                        withReloadIcon
+                                        withArchivedSwitch={false}
+                                        permanentFilters={[{field: "vehicle", operator: "eq", value: vehicle.id}]}
+                                        syncWithLocation={false}
+                                        defaultSortedColumn="created_at"
+                                        defaultSortedDirection="desc"
+                                        style={{flex: "auto", minHeight:0}}
+                                        onRowClick={interventionRowClickHandler}
                                     />
                                 )}
                             </Tabs.Panel>
