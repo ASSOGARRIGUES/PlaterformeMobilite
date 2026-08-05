@@ -50,6 +50,10 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
+        devOptions: {
+          enabled: true,
+          type: 'module',
+        },
         includeAssets: ['favicon.ico', 'favicon.png'],
         manifest: {
           name: 'Plateforme Mobilité',

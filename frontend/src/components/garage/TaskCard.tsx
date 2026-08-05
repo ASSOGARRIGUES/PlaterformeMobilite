@@ -29,6 +29,11 @@ type TaskCardProps = {
   onCommit?: (task: LocalTask) => void
   onRemove: () => void
   readOnly?: boolean
+  /** Ouvre la carte dès le montage (tâche qui vient d'être ajoutée) pour inciter à remplir les détails */
+  defaultExpanded?: boolean
+  /** Mode contrôlé (grille desktop 2 colonnes) : synchronise l'ouverture avec `onToggleExpanded` au lieu de l'état interne */
+  expanded?: boolean
+  onToggleExpanded?: () => void
 }
 
 function readAsBase64(file: File): Promise<string> {
@@ -40,8 +45,19 @@ function readAsBase64(file: File): Promise<string> {
   })
 }
 
-export function TaskCard({ task, onChange, onCommit, onRemove, readOnly = false }: TaskCardProps) {
-  const [expanded, setExpanded] = useState(false)
+export function TaskCard({
+  task,
+  onChange,
+  onCommit,
+  onRemove,
+  readOnly = false,
+  defaultExpanded = false,
+  expanded: expandedProp,
+  onToggleExpanded,
+}: TaskCardProps) {
+  const [internalExpanded, setInternalExpanded] = useState(defaultExpanded)
+  const expanded = expandedProp ?? internalExpanded
+  const toggleExpanded = onToggleExpanded ?? (() => setInternalExpanded((e) => !e))
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
 
   const commit = (updated: LocalTask) => {
@@ -78,19 +94,23 @@ export function TaskCard({ task, onChange, onCommit, onRemove, readOnly = false 
   }
 
   return (
-    <Paper shadow="sm" radius={4} p="md">
-      <UnstyledButton onClick={() => setExpanded((e) => !e)} style={{ width: '100%' }}>
+    <Paper shadow="sm" radius={4} p="md" withBorder>
+      <UnstyledButton onClick={toggleExpanded} style={{ width: '100%' }}>
         <Group justify="space-between" wrap="nowrap">
-          <Group gap="xs" wrap="nowrap">
-            <IconTool size={20} stroke={2} />
-            <Text fw={500}>{task.name}</Text>
+          <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+            <Group gap="xs" wrap="nowrap">
+              <IconTool size={20} stroke={2} style={{ flexShrink: 0 }} />
+              <Text fw={500} truncate="end">
+                {task.name}
+              </Text>
+            </Group>
             {task.periodicityLabel && (
-              <Badge variant="light" color="cyan">
+              <Badge variant="light" color="cyan" style={{ alignSelf: 'flex-start', marginLeft: 28 }}>
                 {task.periodicityLabel}
               </Badge>
             )}
-          </Group>
-          <Group gap="xs" wrap="nowrap">
+          </Stack>
+          <Group gap="xs" wrap="nowrap" style={{ flexShrink: 0 }}>
             {!readOnly && (
               <ActionIcon
                 variant="subtle"

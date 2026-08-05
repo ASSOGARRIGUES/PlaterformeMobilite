@@ -2,7 +2,14 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useBack } from '@refinedev/core'
 import { Button, Center, Loader } from '@mantine/core'
-import { IconArrowRight } from '@tabler/icons-react'
+import {
+  IconArrowRight,
+  IconCalendar,
+  IconCalendarTime,
+  IconClipboardCheck,
+  IconGauge,
+  IconTool,
+} from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import { useInterventionStepper } from '../../../hooks/garage/useInterventionStepper'
 import { StepMileage } from '../../../components/garage/stepper/StepMileage'
@@ -10,11 +17,16 @@ import { StepTasksDone } from '../../../components/garage/stepper/StepTasksDone'
 import { StepTasksPlanned } from '../../../components/garage/stepper/StepTasksPlanned'
 import { StepDatesValidate } from '../../../components/garage/stepper/StepDatesValidate'
 import { InterventionStepperShell } from '../../../components/garage/stepper/InterventionStepperShell'
+import { InterventionSidePanel } from '../../../components/garage/stepper/InterventionSidePanel'
 import { MaintenanceWarningModal } from '../../../components/garage/MaintenanceWarningModal'
 import { SaveButton } from '../../../components/SaveButton'
 import { InterventionShow } from './InterventionShow'
 
-const STEP_LABELS = ['Kilométrage', 'Tâches réalisées', 'À prévoir', 'Dates & validation']
+// Même découpage 5 étapes sur mobile et desktop (cf. story 2.8 + revue mobile/desktop) : "Récapitulatif"
+// est une sous-vue locale de l'étape modèle 3 (cf. `recapView` ci-dessous) — le modèle persisté
+// (current_step) reste sur 4 étapes.
+const STEP_LABELS = ['Kilométrage', 'Tâches réalisées', 'À prévoir', 'Dates', 'Récapitulatif']
+const STEP_ICONS = [IconGauge, IconTool, IconCalendar, IconCalendarTime, IconClipboardCheck]
 
 const InterventionStepper = () => {
   const { id } = useParams<{ id: string }>()
@@ -29,6 +41,8 @@ const InterventionStepper = () => {
     doneTasks,
     plannedTasks,
     suggestions,
+    history,
+    catalogById,
     activeStep,
     goToStep,
     addTask,
@@ -43,6 +57,9 @@ const InterventionStepper = () => {
   const [startDate, setStartDate] = useState<Date | null>(null)
   const [endDate, setEndDate] = useState<Date | null>(null)
   const [maxReachedStep, setMaxReachedStep] = useState(activeStep)
+  // Sous-vue locale de l'étape modèle 3 (Dates/Récapitulatif) — `current_step` persisté
+  // ne dépasse jamais 4 (cf. commentaire STEP_LABELS ci-dessus)
+  const [recapView, setRecapView] = useState(false)
 
   // Préremplissage des champs à partir de la fiche chargée (une fois).
   // La date de départ est par défaut la date de création de la fiche.
@@ -58,6 +75,12 @@ const InterventionStepper = () => {
     setMaxReachedStep((prev) => Math.max(prev, activeStep))
   }, [activeStep])
 
+  useEffect(() => {
+    if (activeStep !== 3) setRecapView(false)
+  }, [activeStep])
+
+  const viewStep = activeStep === 3 && recapView ? 4 : activeStep
+
   if (isLoading || !sheet || !vehicle) {
     return (
       <Center h="60vh">
@@ -72,14 +95,20 @@ const InterventionStepper = () => {
 
   const mileageInvalid = mileage === '' || mileage < vehicle.kilometer
 
+  const validateWithDates = () =>
+    validateSheet({
+      start_date: dayjs(startDate).format('YYYY-MM-DD'),
+      end_date: endDate ? dayjs(endDate).format('YYYY-MM-DD') : undefined,
+    })
+
   const footer = (
     <>
-      {activeStep > 0 ? (
+      {viewStep > 0 ? (
         <Button
           variant="default"
           style={{ minHeight: 48 }}
           disabled={isSavingStep || isMutating}
-          onClick={() => goToStep(activeStep - 1)}
+          onClick={() => (viewStep === 4 ? setRecapView(false) : goToStep(activeStep - 1))}
         >
           Retour
         </Button>
@@ -87,7 +116,7 @@ const InterventionStepper = () => {
         <span />
       )}
 
-      {activeStep === 0 && (
+      {viewStep === 0 && (
         <Button
           style={{ minHeight: 48 }}
           rightSection={<IconArrowRight size={16} />}
@@ -97,7 +126,7 @@ const InterventionStepper = () => {
           Suivant
         </Button>
       )}
-      {(activeStep === 1 || activeStep === 2) && (
+      {(viewStep === 1 || viewStep === 2) && (
         <Button
           style={{ minHeight: 48 }}
           rightSection={<IconArrowRight size={16} />}
@@ -107,20 +136,33 @@ const InterventionStepper = () => {
           Suivant
         </Button>
       )}
-      {activeStep === 3 && (
-        <SaveButton
-          disabled={!startDate || isSavingStep || isMutating}
-          onClick={() =>
-            validateSheet({
-              start_date: dayjs(startDate).format('YYYY-MM-DD'),
-              end_date: endDate ? dayjs(endDate).format('YYYY-MM-DD') : undefined,
-            })
-          }
+      {viewStep === 3 && (
+        <Button
+          style={{ minHeight: 48 }}
+          rightSection={<IconArrowRight size={16} />}
+          disabled={isSavingStep || isMutating}
+          onClick={() => setRecapView(true)}
         >
-          Valider
+          Vérifier
+        </Button>
+      )}
+      {viewStep === 4 && (
+        <SaveButton disabled={!startDate || isSavingStep || isMutating} onClick={validateWithDates}>
+          Valider l&apos;intervention
         </SaveButton>
       )}
     </>
+  )
+
+  const sidePanel = (
+    <InterventionSidePanel
+      vehicle={vehicle}
+      plannedTasks={plannedTasks}
+      suggestions={suggestions}
+      history={history}
+      catalogById={catalogById}
+      activeStep={viewStep}
+    />
   )
 
   return (
@@ -130,18 +172,28 @@ const InterventionStepper = () => {
         onBack={back}
         stepError={stepError}
         stepLabels={STEP_LABELS}
-        activeStep={activeStep}
+        stepIcons={STEP_ICONS}
+        activeStep={viewStep}
         onStepClick={(step) => {
           if (isSavingStep || isMutating) return
           if (activeStep === 0 && mileageInvalid) return
-          if (step <= maxReachedStep) goToStep(step)
+          if (step === 4) {
+            if (maxReachedStep < 3) return
+            setRecapView(true)
+            if (activeStep !== 3) goToStep(3)
+            return
+          }
+          if (step > maxReachedStep) return
+          setRecapView(false)
+          if (step !== activeStep) goToStep(step)
         }}
-        isStepLoading={(step) => step === activeStep && isSavingStep}
+        isStepLoading={(step) => step === viewStep && isSavingStep}
         footer={footer}
+        sidePanel={sidePanel}
       >
-        {activeStep === 0 && <StepMileage vehicle={vehicle} value={mileage} onChange={setMileage} />}
+        {viewStep === 0 && <StepMileage vehicle={vehicle} value={mileage} onChange={setMileage} />}
 
-        {activeStep === 1 && (
+        {viewStep === 1 && (
           <StepTasksDone
             vehicle={vehicle}
             tasks={doneTasks}
@@ -153,7 +205,7 @@ const InterventionStepper = () => {
           />
         )}
 
-        {activeStep === 2 && (
+        {viewStep === 2 && (
           <StepTasksPlanned
             vehicle={vehicle}
             tasks={plannedTasks}
@@ -164,7 +216,7 @@ const InterventionStepper = () => {
           />
         )}
 
-        {activeStep === 3 && (
+        {viewStep === 3 && (
           <StepDatesValidate
             startDate={startDate}
             endDate={endDate}
@@ -174,6 +226,21 @@ const InterventionStepper = () => {
             startMileage={sheet.start_mileage ?? (mileage === '' ? null : mileage)}
             doneTasks={doneTasks}
             plannedTasks={plannedTasks}
+            mode="dates"
+          />
+        )}
+
+        {viewStep === 4 && (
+          <StepDatesValidate
+            startDate={startDate}
+            endDate={endDate}
+            onStartDate={setStartDate}
+            onEndDate={setEndDate}
+            vehicleImat={vehicle.imat}
+            startMileage={sheet.start_mileage ?? (mileage === '' ? null : mileage)}
+            doneTasks={doneTasks}
+            plannedTasks={plannedTasks}
+            mode="recap"
           />
         )}
       </InterventionStepperShell>

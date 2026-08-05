@@ -15,7 +15,6 @@ import {
   Text,
   Title,
   Tooltip,
-  useMantineTheme,
 } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import { IconAlertTriangle, IconEdit } from '@tabler/icons-react'
@@ -27,6 +26,7 @@ import { TaskCard } from '../../../components/garage/TaskCard'
 import { InterventionStatusBadge } from '../../../components/garage/intervention/InterventionStatusBadge'
 import CanAccess from '../../../components/CanAccess'
 import { InterventionSheet } from '../../../types/garage'
+import { WORKSHOP_LAYOUT_QUERY } from '../../../hooks/garage/breakpoints'
 
 const noop = () => undefined
 
@@ -38,8 +38,7 @@ export function InterventionShow({ sheetId }: InterventionShowProps) {
   const go = useGo()
   const getToPath = useGetToPath()
   const { select } = useResource()
-  const theme = useMantineTheme()
-  const smallerThanMd = useMediaQuery(`(max-width: ${theme.breakpoints.md})`)
+  const isWorkshopLayout = useMediaQuery(WORKSHOP_LAYOUT_QUERY, false)
 
   const { sheet, vehicle, isLoading } = useInterventionSheetShow(sheetId)
 
@@ -90,7 +89,7 @@ export function InterventionShow({ sheetId }: InterventionShowProps) {
     { k: 'Fin', v: sheet.end_date ? humanizeDate(sheet.end_date) : '—' },
     { k: 'Tâches', v: `${doneTasks.length} faites · ${plannedTasks.length} à prévoir` },
   ]
-  const statCols = smallerThanMd ? 2 : 4
+  const statCols = isWorkshopLayout ? 4 : 2
 
   return (
     <Stack style={{ height: '100%' }} gap="md">
@@ -166,7 +165,7 @@ export function InterventionShow({ sheetId }: InterventionShowProps) {
         </SimpleGrid>
       </Paper>
 
-      <SimpleGrid cols={smallerThanMd ? 1 : 2} spacing="md">
+      <SimpleGrid cols={isWorkshopLayout ? 2 : 1} spacing="md">
         <Paper shadow="sm" p="lg" radius="md">
           <Group justify="space-between" mb="sm">
             <Text fw={700}>Tâches réalisées</Text>

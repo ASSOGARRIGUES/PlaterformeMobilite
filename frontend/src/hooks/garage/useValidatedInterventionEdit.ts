@@ -65,6 +65,16 @@ export function useValidatedInterventionEdit(sheetId: number) {
     .filter((s) => s.id !== sheetId && sheet != null && s.created_at > sheet.created_at)
     .sort((a, b) => (a.created_at > b.created_at ? -1 : 1))[0]
 
+  // Fiches validées du véhicule hors fiche courante — carte "Historique" du panneau latéral desktop
+  // (story 2.8), réutilise siblingData déjà chargé (pas de nouvel appel réseau, cf. Tâche 3.5)
+  const history = useMemo(
+    () =>
+      (siblingData?.data ?? [])
+        .filter((s) => s.id !== sheetId && s.status === 'validated')
+        .sort((a, b) => (a.created_at > b.created_at ? -1 : 1)),
+    [siblingData, sheetId],
+  )
+
   const { mutateAsync: customMutate, isLoading: isMutating } = useCustomMutation<InterventionTask>()
   const { mutateAsync: updateSheet } = useUpdate()
 
@@ -99,8 +109,8 @@ export function useValidatedInterventionEdit(sheetId: number) {
       const rebuilt = { ...localTaskFromApiTask(response.data, catalogById), type: section }
       const setter = section === 'done' ? setDoneTasks : setPlannedTasks
       const syncedSetter = section === 'done' ? setSyncedDoneTasks : setSyncedPlannedTasks
-      setter((prev) => [...prev, rebuilt])
-      syncedSetter((prev) => [...prev, { ...rebuilt }])
+      setter((prev) => [rebuilt, ...prev])
+      syncedSetter((prev) => [{ ...rebuilt }, ...prev])
       invalidate({ resource: 'garage/intervention', invalidates: ['list', 'detail'] })
     } catch (error) {
       setStepError(extractStepError(error))
@@ -189,6 +199,8 @@ export function useValidatedInterventionEdit(sheetId: number) {
     persistTask,
     removeTask,
     moreRecentSheet,
+    history,
+    catalogById,
     stepError,
     activeStep,
     goToStep: setActiveStep,

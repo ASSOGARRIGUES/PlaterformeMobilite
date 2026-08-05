@@ -28,6 +28,9 @@ export function StepTasksPlanned({
   isMutating,
 }: StepTasksPlannedProps) {
   const [pickerOpen, setPickerOpen] = useState(false)
+  // Ouvre automatiquement la carte de la dernière tâche ajoutée, pour inciter à remplir les détails.
+  // Les nouvelles tâches sont ajoutées en tête de liste, donc "premier élément après un ajout" suffit à l'identifier.
+  const [hasAdded, setHasAdded] = useState(false)
 
   const existingCatalogTaskIds = tasks
     .map((task) => task.catalogTaskId)
@@ -40,13 +43,14 @@ export function StepTasksPlanned({
           Aucune tâche à prévoir pour le moment.
         </Text>
       )}
-      {tasks.map((task) => (
+      {tasks.map((task, index) => (
         <TaskCard
           key={task.localId}
           task={task}
           onChange={(updated) => onUpdateTask(updated)}
           onCommit={onCommitTask}
           onRemove={() => onRemoveTask(task.localId)}
+          defaultExpanded={hasAdded && index === 0}
         />
       ))}
       {isMutating && (
@@ -71,6 +75,7 @@ export function StepTasksPlanned({
         onClose={() => setPickerOpen(false)}
         onPick={(task) => {
           if (isMutating) return
+          setHasAdded(true)
           void onAddTask({ ...task, type: 'planned' })
         }}
       />

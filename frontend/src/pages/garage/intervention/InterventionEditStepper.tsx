@@ -2,16 +2,27 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useGo } from '@refinedev/core'
 import { Alert, Button, Center, Loader, NumberInput, Tooltip } from '@mantine/core'
-import { IconAlertTriangle, IconArrowRight } from '@tabler/icons-react'
+import {
+  IconAlertTriangle,
+  IconArrowRight,
+  IconCalendar,
+  IconCalendarTime,
+  IconClipboardCheck,
+  IconGauge,
+  IconTool,
+} from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import { useValidatedInterventionEdit } from '../../../hooks/garage/useValidatedInterventionEdit'
 import { StepTasksDone } from '../../../components/garage/stepper/StepTasksDone'
 import { StepTasksPlanned } from '../../../components/garage/stepper/StepTasksPlanned'
 import { StepDatesValidate } from '../../../components/garage/stepper/StepDatesValidate'
 import { InterventionStepperShell } from '../../../components/garage/stepper/InterventionStepperShell'
+import { InterventionSidePanel } from '../../../components/garage/stepper/InterventionSidePanel'
 import { humanizeDate } from '../../../constants'
 
-const STEP_LABELS = ['Kilométrage', 'Tâches réalisées', 'À prévoir', 'Dates & récapitulatif']
+// Même découpage 5 étapes sur mobile et desktop que InterventionStepper (cohérence de chrome)
+const STEP_LABELS = ['Kilométrage', 'Tâches réalisées', 'À prévoir', 'Dates', 'Récapitulatif']
+const STEP_ICONS = [IconGauge, IconTool, IconCalendar, IconCalendarTime, IconClipboardCheck]
 
 type InterventionEditStepperProps = {
   sheetId: number
@@ -32,6 +43,8 @@ export function InterventionEditStepper({ sheetId }: InterventionEditStepperProp
     persistTask,
     removeTask,
     moreRecentSheet,
+    history,
+    catalogById,
     stepError,
     activeStep,
     goToStep,
@@ -39,6 +52,8 @@ export function InterventionEditStepper({ sheetId }: InterventionEditStepperProp
 
   const [startDate, setStartDate] = useState<Date | null>(null)
   const [endDate, setEndDate] = useState<Date | null>(null)
+  // Sous-vue locale de l'étape 3 (Dates/Récapitulatif) — même pattern que InterventionStepper
+  const [recapView, setRecapView] = useState(false)
 
   useEffect(() => {
     if (!sheet) return
@@ -46,6 +61,12 @@ export function InterventionEditStepper({ sheetId }: InterventionEditStepperProp
     setEndDate(sheet.end_date ? dayjs(sheet.end_date).toDate() : null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet?.id])
+
+  useEffect(() => {
+    if (activeStep !== 3) setRecapView(false)
+  }, [activeStep])
+
+  const viewStep = activeStep === 3 && recapView ? 4 : activeStep
 
   if (isLoading || !sheet || !vehicle) {
     return (
@@ -66,15 +87,19 @@ export function InterventionEditStepper({ sheetId }: InterventionEditStepperProp
 
   const footer = (
     <>
-      {activeStep > 0 ? (
-        <Button variant="default" style={{ minHeight: 48 }} onClick={() => goToStep(activeStep - 1)}>
+      {viewStep > 0 ? (
+        <Button
+          variant="default"
+          style={{ minHeight: 48 }}
+          onClick={() => (viewStep === 4 ? setRecapView(false) : goToStep(activeStep - 1))}
+        >
           Retour
         </Button>
       ) : (
         <span />
       )}
 
-      {activeStep < 3 ? (
+      {viewStep < 3 && (
         <Button
           style={{ minHeight: 48 }}
           rightSection={<IconArrowRight size={16} />}
@@ -82,12 +107,28 @@ export function InterventionEditStepper({ sheetId }: InterventionEditStepperProp
         >
           Suivant
         </Button>
-      ) : (
+      )}
+      {viewStep === 3 && (
+        <Button style={{ minHeight: 48 }} rightSection={<IconArrowRight size={16} />} onClick={() => setRecapView(true)}>
+          Vérifier
+        </Button>
+      )}
+      {viewStep === 4 && (
         <Button style={{ minHeight: 48 }} onClick={goBack}>
           Terminer
         </Button>
       )}
     </>
+  )
+
+  const sidePanel = (
+    <InterventionSidePanel
+      vehicle={vehicle}
+      plannedTasks={plannedTasks}
+      history={history}
+      catalogById={catalogById}
+      activeStep={viewStep}
+    />
   )
 
   return (
@@ -98,17 +139,27 @@ export function InterventionEditStepper({ sheetId }: InterventionEditStepperProp
       stepError={stepError}
       extraAlert={extraAlert}
       stepLabels={STEP_LABELS}
-      activeStep={activeStep}
-      onStepClick={goToStep}
+      stepIcons={STEP_ICONS}
+      activeStep={viewStep}
+      onStepClick={(step) => {
+        if (step === 4) {
+          setRecapView(true)
+          if (activeStep !== 3) goToStep(3)
+          return
+        }
+        setRecapView(false)
+        if (step !== activeStep) goToStep(step)
+      }}
       footer={footer}
+      sidePanel={sidePanel}
     >
-      {activeStep === 0 && (
+      {viewStep === 0 && (
         <Tooltip label="Pour corriger le kilométrage, utilisez la correction kilométrique depuis la fiche véhicule">
           <NumberInput label="Kilométrage" value={sheet.start_mileage ?? undefined} disabled thousandSeparator=" " />
         </Tooltip>
       )}
 
-      {activeStep === 1 && (
+      {viewStep === 1 && (
         <StepTasksDone
           vehicle={vehicle}
           tasks={doneTasks}
@@ -121,7 +172,7 @@ export function InterventionEditStepper({ sheetId }: InterventionEditStepperProp
         />
       )}
 
-      {activeStep === 2 && (
+      {viewStep === 2 && (
         <StepTasksPlanned
           vehicle={vehicle}
           tasks={plannedTasks}
@@ -133,7 +184,7 @@ export function InterventionEditStepper({ sheetId }: InterventionEditStepperProp
         />
       )}
 
-      {activeStep === 3 && (
+      {viewStep === 3 && (
         <StepDatesValidate
           startDate={startDate}
           endDate={endDate}
@@ -149,6 +200,27 @@ export function InterventionEditStepper({ sheetId }: InterventionEditStepperProp
           startMileage={sheet.start_mileage ?? null}
           doneTasks={doneTasks}
           plannedTasks={plannedTasks}
+          mode="dates"
+        />
+      )}
+
+      {viewStep === 4 && (
+        <StepDatesValidate
+          startDate={startDate}
+          endDate={endDate}
+          onStartDate={(value) => {
+            setStartDate(value)
+            updateSheetField('start_date', value ? dayjs(value).format('YYYY-MM-DD') : null)
+          }}
+          onEndDate={(value) => {
+            setEndDate(value)
+            updateSheetField('end_date', value ? dayjs(value).format('YYYY-MM-DD') : null)
+          }}
+          vehicleImat={vehicle.imat}
+          startMileage={sheet.start_mileage ?? null}
+          doneTasks={doneTasks}
+          plannedTasks={plannedTasks}
+          mode="recap"
         />
       )}
     </InterventionStepperShell>

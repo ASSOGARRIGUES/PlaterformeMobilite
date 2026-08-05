@@ -1,5 +1,19 @@
-import { useState } from 'react'
-import { ActionIcon, Badge, Box, Button, Collapse, Group, Image, Loader, Stack, Text, UnstyledButton } from '@mantine/core'
+import { useEffect, useRef, useState } from 'react'
+import {
+  ActionIcon,
+  Badge,
+  Box,
+  Button,
+  Collapse,
+  Group,
+  Image,
+  Loader,
+  SimpleGrid,
+  Stack,
+  Text,
+  UnstyledButton,
+} from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
 import { IconBulb, IconChevronDown, IconPlus, IconTool } from '@tabler/icons-react'
 import { components } from '../../../types/schema'
 import { LocalTask } from '../../../types/garage'
@@ -7,6 +21,7 @@ import { TaskCard } from '../TaskCard'
 import { TaskPicker } from '../TaskPicker'
 import { PhotoLightbox } from '../PhotoLightbox'
 import { computePartsSubtotal } from '../taskCardUtils'
+import { WIDE_TASK_GRID_QUERY } from '../../../hooks/garage/breakpoints'
 
 type Vehicle = components['schemas']['Vehicle']
 
@@ -135,10 +150,51 @@ export function StepTasksDone({
 }: StepTasksDoneProps) {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [suggestionsOpen, setSuggestionsOpen] = useState(true)
+  const isWideGrid = useMediaQuery(WIDE_TASK_GRID_QUERY, false)
+  // Ouvre automatiquement la carte de la dernière tâche ajoutée, pour inciter à remplir les détails.
+  // Les nouvelles tâches sont ajoutées en tête de liste (cf. useInterventionStepper/useValidatedInterventionEdit),
+  // donc "premier élément du tableau après un ajout" suffit à identifier la nouvelle tâche, sans suivre son id.
+  const [hasAdded, setHasAdded] = useState(false)
+  const addTask = (task: LocalTask) => {
+    setHasAdded(true)
+    void onAddTask(task)
+  }
+
+  // Grille 2 colonnes (≥1500px) : les deux tâches d'une même ligne s'ouvrent/se ferment ensemble
+  // (sinon la carte encore fermée s'étire vide pour matcher la hauteur de sa voisine ouverte).
+  const isPairedGrid = isWideGrid
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
+  const toggleRow = (row: number) =>
+    setExpandedRows((prev) => {
+      const next = new Set(prev)
+      if (next.has(row)) next.delete(row)
+      else next.add(row)
+      return next
+    })
+  const previousTaskCount = useRef(tasks.length)
+  useEffect(() => {
+    if (tasks.length > previousTaskCount.current) {
+      // Nouvelle tâche toujours en tête (index 0) → toujours la ligne 0
+      setExpandedRows((prev) => new Set(prev).add(0))
+    }
+    previousTaskCount.current = tasks.length
+  }, [tasks.length])
 
   const existingCatalogTaskIds = tasks
     .map((task) => task.catalogTaskId)
     .filter((id): id is number => id !== undefined)
+
+  const addButton = (
+    <Button
+      variant="light"
+      size="xs"
+      leftSection={<IconPlus size={14} stroke={2} />}
+      onClick={() => setPickerOpen(true)}
+      disabled={isMutating}
+    >
+      Ajouter une tâche
+    </Button>
+  )
 
   return (
     <Stack gap="md">
@@ -179,9 +235,7 @@ export function StepTasksDone({
                   key={suggestion.localId}
                   suggestion={suggestion}
                   disabled={isMutating}
-                  onAdd={() =>
-                    void onAddTask({ ...suggestion, localId: crypto.randomUUID(), serverId: undefined, type: 'done' })
-                  }
+                  onAdd={() => addTask({ ...suggestion, localId: crypto.randomUUID(), serverId: undefined, type: 'done' })}
                 />
               ))}
             </Stack>
@@ -190,16 +244,26 @@ export function StepTasksDone({
       )}
 
       <Group
-        gap={8}
-        style={{ padding: '10px 2px', borderBottom: '1px solid var(--mantine-color-gray-3)' }}
+        justify="space-between"
+        style={{
+          padding: '10px 2px',
+          borderBottom: '1px solid var(--mantine-color-gray-3)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 1,
+          background: 'var(--mantine-color-body)',
+        }}
       >
-        <IconTool size={16} color="var(--mantine-color-cyan-7)" />
-        <Text fw={700} size="sm">
-          Tâches réalisées
-        </Text>
-        <Text c="dimmed" fw={600} size="sm">
-          ({tasks.length})
-        </Text>
+        <Group gap={8}>
+          <IconTool size={16} color="var(--mantine-color-cyan-7)" />
+          <Text fw={700} size="sm">
+            Tâches réalisées
+          </Text>
+          <Text c="dimmed" fw={600} size="sm">
+            ({tasks.length})
+          </Text>
+        </Group>
+        {addButton}
       </Group>
 
       {tasks.length === 0 && (
@@ -207,29 +271,35 @@ export function StepTasksDone({
           Aucune tâche réalisée pour le moment.
         </Text>
       )}
-      {tasks.map((task) => (
-        <TaskCard
-          key={task.localId}
-          task={task}
-          onChange={(updated) => onUpdateTask(updated)}
-          onCommit={onCommitTask}
-          onRemove={() => onRemoveTask(task.localId)}
-        />
-      ))}
+      <SimpleGrid cols={isWideGrid ? 2 : 1} spacing="md">
+        {tasks.map((task, index) =>
+          isPairedGrid ? (
+            <TaskCard
+              key={task.localId}
+              task={task}
+              onChange={(updated) => onUpdateTask(updated)}
+              onCommit={onCommitTask}
+              onRemove={() => onRemoveTask(task.localId)}
+              expanded={expandedRows.has(Math.floor(index / 2))}
+              onToggleExpanded={() => toggleRow(Math.floor(index / 2))}
+            />
+          ) : (
+            <TaskCard
+              key={task.localId}
+              task={task}
+              onChange={(updated) => onUpdateTask(updated)}
+              onCommit={onCommitTask}
+              onRemove={() => onRemoveTask(task.localId)}
+              defaultExpanded={hasAdded && index === 0}
+            />
+          ),
+        )}
+      </SimpleGrid>
       {isMutating && (
         <Group justify="center" py="xs">
           <Loader size="sm" />
         </Group>
       )}
-      <Button
-        variant="light"
-        leftSection={<IconPlus size={18} stroke={2} />}
-        onClick={() => setPickerOpen(true)}
-        disabled={isMutating}
-        style={{ minHeight: 48 }}
-      >
-        Ajouter une tâche
-      </Button>
 
       <TaskPicker
         vehicleType={vehicle.type!}
@@ -239,7 +309,7 @@ export function StepTasksDone({
         onPick={(task) => {
           if (isMutating) return
           setPickerOpen(false)
-          void onAddTask(task)
+          addTask(task)
         }}
       />
     </Stack>

@@ -2,6 +2,7 @@ import {
   LocalTask,
   LocalTaskPart,
   InterventionTask,
+  InterventionSheet,
   CreateInterventionTaskPayload,
   UpdateInterventionTaskPayload,
 } from '../../types/garage'
@@ -135,6 +136,72 @@ export function hasCriticalWear(tasks: LocalTask[], threshold?: number): boolean
   return tasks.some(
     (task) => task.isWearTask && task.wearLevel !== undefined && isWearLevelCritical(task.wearLevel, threshold),
   )
+}
+
+export type SidePanelCardVisibility = {
+  vehicle: boolean
+  upcoming: boolean
+  history: boolean
+}
+
+/**
+ * Visibilité des cards du panneau latéral desktop (story 2.8) selon l'étape active desktop
+ * (0=Kilométrage, 1=Tâches réalisées, 2=À prévoir, 3=Dates, 4=Récapitulatif). Cf. table Dev Notes.
+ * Pas de card "coût pièces" dans le panneau — le total pièces n'apparaît que sur l'écran Récapitulatif.
+ */
+export function sidePanelCardVisibility(desktopStep: number): SidePanelCardVisibility {
+  return {
+    vehicle: true,
+    upcoming: desktopStep === 0 || desktopStep === 1,
+    history: desktopStep === 0 || desktopStep === 1,
+  }
+}
+
+export type HistorySummary = {
+  id: number
+  date: string
+  mileage: number | null
+  taskNames: string
+  partsCost: number
+}
+
+/**
+ * Résumés d'historique pour le panneau latéral desktop (story 2.8), dédupliqués par tâche catalogue :
+ * une tâche déjà réalisée sur une fiche plus récente n'est plus listée sur les fiches plus anciennes
+ * (ex. "Bougies" faites deux fois ne doit apparaître que sur l'occurrence la plus récente). Une fiche
+ * dont toutes les tâches réalisées sont ainsi supersédées est retirée de la liste retournée.
+ * `sheets` doit être trié du plus récent au plus ancien.
+ */
+export function dedupedHistorySummaries(
+  sheets: InterventionSheet[],
+  catalogById: Map<number, TaskCatalogItem>,
+): HistorySummary[] {
+  const seen = new Set<string>()
+  const summaries: HistorySummary[] = []
+  sheets.forEach((sheet) => {
+    const doneTasks = sheet.tasks.filter((task) => task.type === 'done')
+    const kept = doneTasks.filter((task) => {
+      const identity = taskIdentity(localTaskFromApiTask(task, catalogById))
+      return identity == null || !seen.has(identity)
+    })
+    doneTasks.forEach((task) => {
+      const identity = taskIdentity(localTaskFromApiTask(task, catalogById))
+      if (identity != null) seen.add(identity)
+    })
+    if (doneTasks.length > 0 && kept.length === 0) return
+    const partsCost = doneTasks.reduce(
+      (total, task) => total + task.parts.reduce((sum, part) => sum + Number(part.unit_price) * (part.quantity ?? 1), 0),
+      0,
+    )
+    summaries.push({
+      id: sheet.id,
+      date: sheet.start_date ?? sheet.created_at,
+      mileage: sheet.start_mileage ?? null,
+      taskNames: kept.map((task) => localTaskFromApiTask(task, catalogById).name).join(', ') || 'Aucune tâche réalisée',
+      partsCost,
+    })
+  })
+  return summaries
 }
 
 /** Extrait un message d'erreur lisible d'une erreur de mutation (400 backend ou HttpError Refine). */

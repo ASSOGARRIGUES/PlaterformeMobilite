@@ -5,8 +5,10 @@ import {
   localTaskFromApiTask,
   hasCriticalWear,
   unresolvedPlannedTasks,
+  sidePanelCardVisibility,
+  dedupedHistorySummaries,
 } from '../hooks/garage/interventionStepperUtils';
-import { LocalTask, InterventionTask } from '../types/garage';
+import { LocalTask, InterventionTask, InterventionSheet } from '../types/garage';
 import { TaskCatalogItem } from '../components/garage/taskCardUtils';
 
 function makeLocalTask(overrides: Partial<LocalTask> = {}): LocalTask {
@@ -188,5 +190,87 @@ describe('hasCriticalWear', () => {
 
   it('honours a custom threshold', () => {
     expect(hasCriticalWear([makeLocalTask({ isWearTask: true, wearLevel: 5 })], 6)).toBe(true);
+  });
+});
+
+describe('sidePanelCardVisibility', () => {
+  it('always shows the vehicle card', () => {
+    [0, 1, 2, 3, 4].forEach((step) => expect(sidePanelCardVisibility(step).vehicle).toBe(true));
+  });
+
+  it('shows upcoming and history only on Kilométrage (0) and Tâches réalisées (1)', () => {
+    [0, 1].forEach((step) => {
+      expect(sidePanelCardVisibility(step).upcoming).toBe(true);
+      expect(sidePanelCardVisibility(step).history).toBe(true);
+    });
+    [2, 3, 4].forEach((step) => {
+      expect(sidePanelCardVisibility(step).upcoming).toBe(false);
+      expect(sidePanelCardVisibility(step).history).toBe(false);
+    });
+  });
+
+  it('shows only the vehicle card on À prévoir (2) and Dates (3)', () => {
+    [2, 3].forEach((step) => {
+      const visibility = sidePanelCardVisibility(step);
+      expect(visibility).toEqual({ vehicle: true, upcoming: false, history: false });
+    });
+  });
+});
+
+describe('dedupedHistorySummaries', () => {
+  const catalogById = new Map<number, TaskCatalogItem>([
+    [7, { id: 7, name: 'Bougies', vehicle_types: ['voiture'], km_periodicity: 30000, is_wear_task: false } as TaskCatalogItem],
+    [8, { id: 8, name: 'Vidange', vehicle_types: ['voiture'], km_periodicity: 10000, is_wear_task: false } as TaskCatalogItem],
+  ]);
+
+  function makeSheet(overrides: Partial<InterventionSheet> & { id: number; created_at: string }): InterventionSheet {
+    return {
+      vehicle: {} as InterventionSheet['vehicle'],
+      created_by: {} as InterventionSheet['created_by'],
+      updated_at: overrides.created_at,
+      tasks: [],
+      ...overrides,
+    } as InterventionSheet;
+  }
+
+  function makeDoneTask(id: number, catalogTaskId: number): InterventionTask {
+    return { id, sheet: 1, type: 'done', catalog_task: catalogTaskId, name: '', description: '', wear_level: null, parts: [], photos: [] } as unknown as InterventionTask;
+  }
+
+  it('keeps a single occurrence of a task done on several sheets, on the most recent one', () => {
+    const sheets = [
+      makeSheet({ id: 2, created_at: '2026-02-01T00:00:00Z', tasks: [makeDoneTask(1, 7)] }),
+      makeSheet({ id: 1, created_at: '2026-01-01T00:00:00Z', tasks: [makeDoneTask(2, 7)] }),
+    ];
+    const summaries = dedupedHistorySummaries(sheets, catalogById);
+    expect(summaries).toHaveLength(1);
+    expect(summaries[0].id).toBe(2);
+    expect(summaries[0].taskNames).toBe('Bougies');
+  });
+
+  it('drops a sheet entirely when all its done tasks are superseded by a more recent sheet', () => {
+    const sheets = [
+      makeSheet({ id: 2, created_at: '2026-02-01T00:00:00Z', tasks: [makeDoneTask(1, 7), makeDoneTask(2, 8)] }),
+      makeSheet({ id: 1, created_at: '2026-01-01T00:00:00Z', tasks: [makeDoneTask(3, 7)] }),
+    ];
+    const summaries = dedupedHistorySummaries(sheets, catalogById);
+    expect(summaries.map((s) => s.id)).toEqual([2]);
+  });
+
+  it('keeps a sheet if at least one of its done tasks is not superseded', () => {
+    const sheets = [
+      makeSheet({ id: 2, created_at: '2026-02-01T00:00:00Z', tasks: [makeDoneTask(1, 7)] }),
+      makeSheet({ id: 1, created_at: '2026-01-01T00:00:00Z', tasks: [makeDoneTask(2, 7), makeDoneTask(3, 8)] }),
+    ];
+    const summaries = dedupedHistorySummaries(sheets, catalogById);
+    expect(summaries.map((s) => s.id)).toEqual([2, 1]);
+    expect(summaries[1].taskNames).toBe('Vidange');
+  });
+
+  it('keeps a sheet with no done tasks at all', () => {
+    const sheets = [makeSheet({ id: 1, created_at: '2026-01-01T00:00:00Z', tasks: [] })];
+    const summaries = dedupedHistorySummaries(sheets, catalogById);
+    expect(summaries).toHaveLength(1);
+    expect(summaries[0].taskNames).toBe('Aucune tâche réalisée');
   });
 });

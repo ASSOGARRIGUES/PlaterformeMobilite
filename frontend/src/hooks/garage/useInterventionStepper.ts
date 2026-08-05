@@ -59,17 +59,26 @@ export function useInterventionStepper(sheetId: number) {
   const warningConfirmedRef = useRef(false)
   const initializedRef = useRef(false)
 
+  // Fiches validées précédentes (hors fiche courante) — réutilisées pour les suggestions ET
+  // pour la carte "Historique" du panneau latéral desktop (story 2.8, pas de nouvel appel réseau)
+  const previousSheets = useMemo(
+    () => (validatedData?.data ?? []).filter((previous) => previous.id !== sheetId),
+    [validatedData, sheetId],
+  )
+  const history = useMemo(
+    () => [...previousSheets].sort((a, b) => (a.created_at > b.created_at ? -1 : 1)),
+    [previousSheets],
+  )
+
   // Suggestions "à prévoir" (AC4) : tâches encore en attente, exclues si déjà cochées "faites" dans la session en cours
   const suggestions = useMemo<LocalTask[]>(() => {
-    if (!validatedData) return []
-    const previousSheets = validatedData.data.filter((previous) => previous.id !== sheetId)
     const pending = unresolvedPlannedTasks(previousSheets, catalogById)
     const doneIdentities = new Set(doneTasks.map(taskIdentity).filter((identity): identity is string => identity != null))
     return pending.filter((task) => {
       const identity = taskIdentity(task)
       return identity == null || !doneIdentities.has(identity)
     })
-  }, [validatedData, catalogById, sheetId, doneTasks])
+  }, [previousSheets, catalogById, doneTasks])
 
   // Initialisation unique depuis sheet.tasks une fois la fiche ET le catalogue chargés (AC3)
   useEffect(() => {
@@ -101,8 +110,8 @@ export function useInterventionStepper(sheetId: number) {
       const rebuilt = { ...localTaskFromApiTask(response.data, catalogById), type: section }
       const setter = section === 'done' ? setDoneTasks : setPlannedTasks
       const syncSetter = section === 'done' ? setSyncedDoneTasks : setSyncedPlannedTasks
-      setter((prev) => [...prev, rebuilt])
-      syncSetter((prev) => [...prev, rebuilt])
+      setter((prev) => [rebuilt, ...prev])
+      syncSetter((prev) => [rebuilt, ...prev])
     } catch (error) {
       setStepError(extractStepError(error))
     }
@@ -255,6 +264,7 @@ export function useInterventionStepper(sheetId: number) {
     doneTasks,
     plannedTasks,
     suggestions,
+    history,
     catalogById,
     activeStep,
     goToStep,

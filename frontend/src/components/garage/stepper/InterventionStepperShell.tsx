@@ -1,9 +1,12 @@
 import { ReactNode } from 'react'
 import { useMediaQuery } from '@mantine/hooks'
-import { ActionIcon, Alert, Group, Loader, Paper, ScrollArea, Stepper, Text, Title } from '@mantine/core'
+import { ActionIcon, Alert, Group, Loader, Paper, ScrollArea, Stepper, Text, Title, useMantineTheme } from '@mantine/core'
 import { IconAlertCircle, IconArrowLeft, IconCalendar, IconCheck, IconClipboardCheck, IconGauge, IconTool } from '@tabler/icons-react'
+import { WORKSHOP_LAYOUT_QUERY } from '../../../hooks/garage/breakpoints'
 
 export const INTERVENTION_STEP_ICONS = [IconGauge, IconTool, IconCalendar, IconClipboardCheck]
+
+export type InterventionStepIcon = typeof IconGauge
 
 type InterventionStepperShellProps = {
   title: ReactNode
@@ -12,10 +15,13 @@ type InterventionStepperShellProps = {
   stepError: string | null
   extraAlert?: ReactNode
   stepLabels: string[]
+  stepIcons?: InterventionStepIcon[]
   activeStep: number
   onStepClick: (step: number) => void
   isStepLoading?: (step: number) => boolean
   footer: ReactNode
+  /** Panneau de contexte véhicule (story 2.8) — desktop uniquement (≥1100px), non monté sous ce seuil (arbitrage 8, AC8). */
+  sidePanel?: ReactNode
   children: ReactNode
 }
 
@@ -28,13 +34,18 @@ export function InterventionStepperShell({
   stepError,
   extraAlert,
   stepLabels,
+  stepIcons = INTERVENTION_STEP_ICONS,
   activeStep,
   onStepClick,
   isStepLoading,
   footer,
+  sidePanel,
   children,
 }: InterventionStepperShellProps) {
-  const isDesktop = useMediaQuery('(min-width: 769px)')
+  const theme = useMantineTheme()
+  const isWorkshopLayout = useMediaQuery(WORKSHOP_LAYOUT_QUERY, false)
+  const isDesktop = useMediaQuery(`(min-width: ${theme.breakpoints.sm})`, false)
+  const showSidePanel = !!sidePanel && isWorkshopLayout
   const stepIconSize = isDesktop ? 40 : 30
 
   return (
@@ -43,12 +54,12 @@ export function InterventionStepperShell({
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        maxWidth: 800,
+        maxWidth: showSidePanel ? 1400 : 800,
         margin: '0 auto',
         width: '100%',
       }}
     >
-      <Group gap="xs" p="md" style={{ flexShrink: 0 }}>
+      <Group gap="xs" px="xs" py="md" style={{ flexShrink: 0 }}>
         <ActionIcon variant="subtle" onClick={onBack} aria-label="Retour">
           <IconArrowLeft size={20} />
         </ActionIcon>
@@ -84,7 +95,7 @@ export function InterventionStepperShell({
               separator: { marginInline: 4 },
             }}
           >
-            {INTERVENTION_STEP_ICONS.map((Icon, index) => (
+            {stepIcons.map((StepIcon, index) => (
               <Stepper.Step
                 key={stepLabels[index]}
                 aria-label={stepLabels[index]}
@@ -92,7 +103,7 @@ export function InterventionStepperShell({
                   isStepLoading?.(index) ? (
                     <Loader size={stepIconSize * 0.55} color="cyan" />
                   ) : (
-                    <Icon size={stepIconSize * 0.55} />
+                    <StepIcon size={stepIconSize * 0.55} />
                   )
                 }
                 completedIcon={<IconCheck size={stepIconSize * 0.55} />}
@@ -112,9 +123,29 @@ export function InterventionStepperShell({
           </Text>
         </div>
 
-        <ScrollArea style={{ flex: 1, minHeight: 0 }} p="md">
-          {children}
-        </ScrollArea>
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
+          <ScrollArea style={{ flex: 1, minHeight: 0 }} p="md" scrollbarSize={isWorkshopLayout ? 11 : 4}>
+            {children}
+          </ScrollArea>
+
+          {showSidePanel && (
+            <div
+              style={{
+                width: 340,
+                flexShrink: 0,
+                minHeight: 0,
+                borderLeft: '1px solid var(--mantine-color-gray-2)',
+                background: 'var(--mantine-color-gray-0)',
+                padding: '22px 20px',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+            >
+              {sidePanel}
+            </div>
+          )}
+        </div>
 
         <Group
           justify="space-between"
