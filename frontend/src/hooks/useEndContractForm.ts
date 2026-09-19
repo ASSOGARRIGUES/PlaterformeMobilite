@@ -100,8 +100,13 @@ const useEndContractForm = (): UseEndContractFormType => {
     }
 
     const formSubmit = form.onSubmit(async (values) => {
-        await onFinish(values);
-         closeModal();
+        try {
+            await onFinish(values);
+            closeModal();
+        } catch (e) {
+            // erreur déjà remontée par le data provider (ex: session expirée) ;
+            // on évite juste l'UnhandledRejection et on laisse la modale ouverte
+        }
     })
 
     const modal = {visible: modaVisible, title: modalTitle, close: closeModal, show: showModal, submit: formSubmit};
