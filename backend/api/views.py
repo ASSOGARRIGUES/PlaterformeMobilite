@@ -113,7 +113,7 @@ class VehicleViewSet(ArchivableModelViewSet):
     filterset_class = VehicleFilter
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().select_related('action', 'parking').prefetch_related('parking__actions')
         user_currect_action = self.request.user.current_action
         if user_currect_action:
             return queryset.filter(action=user_currect_action)
@@ -202,7 +202,7 @@ class BeneficiaryViewSet(ArchivableModelViewSet):
     }
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().select_related('action')
         user_currect_action = self.request.user.current_action
         if user_currect_action:
             return queryset.filter(action=user_currect_action)
