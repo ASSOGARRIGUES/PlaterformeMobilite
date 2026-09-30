@@ -1,8 +1,9 @@
 import { Divider, Group, List, Paper, Stack, Text } from '@mantine/core'
 import { DatePickerInput } from '@mantine/dates'
 import { humanizeDate, humanizeNumber } from '../../../constants'
-import { LocalTask } from '../../../types/garage'
+import { LocalTask, MileageEntry } from '../../../types/garage'
 import { computePartsSubtotal } from '../taskCardUtils'
+import { MileageNotAppliedAlert } from './MileageNotAppliedAlert'
 
 type StepDatesValidateProps = {
   startDate: Date | null
@@ -15,6 +16,8 @@ type StepDatesValidateProps = {
   plannedTasks: LocalTask[]
   /** 'dates' : étape "Dates". 'recap' : étape "Récapitulatif". Deux vues séparées du même contenu. */
   mode: 'dates' | 'recap'
+  /** Relevé postérieur à la date de début : affiche l'encart "kilométrage non mis à jour" (création uniquement). */
+  moreRecentEntry?: MileageEntry | null
 }
 
 export function StepDatesValidate({
@@ -27,6 +30,7 @@ export function StepDatesValidate({
   doneTasks,
   plannedTasks,
   mode,
+  moreRecentEntry,
 }: StepDatesValidateProps) {
   const showDates = mode === 'dates'
   const showRecap = mode === 'recap'
@@ -55,6 +59,8 @@ export function StepDatesValidate({
           />
         </>
       )}
+
+      {moreRecentEntry && <MileageNotAppliedAlert moreRecentEntry={moreRecentEntry} />}
 
       {showRecap && (
         <Paper shadow="xs" radius={4} p="md" withBorder>

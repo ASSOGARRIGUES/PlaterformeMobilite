@@ -225,17 +225,35 @@ class MutationInterventionSheetSerializer(serializers.ModelSerializer):
                     'vehicle': "Une fiche d'intervention est déjà ouverte pour ce véhicule."
                 })
 
+        start_date = attrs.get('start_date')
+        effective_start_date = start_date if start_date is not None else (self.instance.start_date if self.instance else None)
+
         start_mileage = attrs.get('start_mileage')
         if start_mileage is not None:
             vehicle = attrs.get('vehicle') or (self.instance.vehicle if self.instance else None)
-            if vehicle is not None and start_mileage < vehicle.kilometer:
-                raise serializers.ValidationError({
-                    'start_mileage': f"Le kilométrage ({start_mileage}) ne peut pas être inférieur "
-                                      f"au kilométrage actuel du véhicule ({vehicle.kilometer})."
-                })
+            if vehicle is not None:
+                from garage.models import MileageEntry
+                reference = None
+                if effective_start_date is not None:
+                    reference = (
+                        MileageEntry.objects
+                        .filter(vehicle=vehicle, date__lte=effective_start_date)
+                        .order_by('-date', '-id')
+                        .first()
+                    )
+                if reference is not None:
+                    reference_km = reference.value
+                    reference_label = f"au kilométrage relevé le {reference.date:%d/%m/%Y}"
+                else:
+                    reference_km = vehicle.kilometer
+                    reference_label = "au kilométrage actuel du véhicule"
+                if start_mileage < reference_km:
+                    raise serializers.ValidationError({
+                        'start_mileage': f"Le kilométrage ({start_mileage}) ne peut pas être inférieur "
+                                          f"{reference_label} ({reference_km})."
+                    })
 
         today = timezone.now().date()
-        start_date = attrs.get('start_date')
         if start_date is not None and start_date > today:
             raise serializers.ValidationError({
                 'start_date': "La date de début ne peut pas être postérieure à aujourd'hui."
@@ -245,7 +263,6 @@ class MutationInterventionSheetSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 'end_date': "La date de fin ne peut pas être postérieure à aujourd'hui."
             })
-        effective_start_date = start_date if start_date is not None else (self.instance.start_date if self.instance else None)
         effective_end_date = end_date if end_date is not None else (self.instance.end_date if self.instance else None)
         if (
             (start_date is not None or end_date is not None)

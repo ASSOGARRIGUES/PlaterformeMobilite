@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { useBack } from '@refinedev/core'
+import { useBack, useList } from '@refinedev/core'
 import { Button, Center, Loader } from '@mantine/core'
 import {
   IconArrowRight,
@@ -21,6 +21,7 @@ import { InterventionSidePanel } from '../../../components/garage/stepper/Interv
 import { MaintenanceWarningModal } from '../../../components/garage/MaintenanceWarningModal'
 import { SaveButton } from '../../../components/SaveButton'
 import { InterventionShow } from './InterventionShow'
+import { MileageEntry } from '../../../types/garage'
 
 // Même découpage 5 étapes sur mobile et desktop (cf. story 2.8 + revue mobile/desktop) : "Récapitulatif"
 // est une sous-vue locale de l'étape modèle 3 (cf. `recapView` ci-dessous) — le modèle persisté
@@ -81,6 +82,19 @@ const InterventionStepper = () => {
 
   const viewStep = activeStep === 3 && recapView ? 4 : activeStep
 
+  // Dernier relevé du véhicule (le modèle est trié par -date, -id) : si sa date est postérieure
+  // à la date de début, le relevé créé à la validation ne mettra pas à jour Vehicle.kilometer.
+  const { data: latestMileageData } = useList<MileageEntry>({
+    resource: `garage/mileage/${vehicle?.id}`,
+    pagination: { pageSize: 1 },
+    queryOptions: { enabled: !!vehicle },
+  })
+  const latestMileageEntry = latestMileageData?.data[0]
+  const moreRecentEntry =
+    latestMileageEntry && startDate && dayjs(latestMileageEntry.date).isAfter(startDate, 'day')
+      ? latestMileageEntry
+      : null
+
   if (isLoading || !sheet || !vehicle) {
     return (
       <Center h="60vh">
@@ -93,7 +107,7 @@ const InterventionStepper = () => {
     return <InterventionShow sheetId={sheetId} />
   }
 
-  const mileageInvalid = mileage === '' || mileage < vehicle.kilometer
+  const mileageInvalid = mileage === '' || mileage < 0 || !startDate
 
   const validateWithDates = () =>
     validateSheet({
@@ -121,7 +135,9 @@ const InterventionStepper = () => {
           style={{ minHeight: 48 }}
           rightSection={<IconArrowRight size={16} />}
           disabled={mileageInvalid || isSavingStep || isMutating}
-          onClick={() => goToStep(1, { start_mileage: Number(mileage) })}
+          onClick={() =>
+            goToStep(1, { start_mileage: Number(mileage), start_date: dayjs(startDate).format('YYYY-MM-DD') })
+          }
         >
           Suivant
         </Button>
@@ -191,7 +207,16 @@ const InterventionStepper = () => {
         footer={footer}
         sidePanel={sidePanel}
       >
-        {viewStep === 0 && <StepMileage vehicle={vehicle} value={mileage} onChange={setMileage} />}
+        {viewStep === 0 && (
+          <StepMileage
+            vehicle={vehicle}
+            value={mileage}
+            onChange={setMileage}
+            startDate={startDate}
+            onStartDate={setStartDate}
+            moreRecentEntry={moreRecentEntry}
+          />
+        )}
 
         {viewStep === 1 && (
           <StepTasksDone
@@ -227,6 +252,7 @@ const InterventionStepper = () => {
             doneTasks={doneTasks}
             plannedTasks={plannedTasks}
             mode="dates"
+            moreRecentEntry={moreRecentEntry}
           />
         )}
 
@@ -241,6 +267,7 @@ const InterventionStepper = () => {
             doneTasks={doneTasks}
             plannedTasks={plannedTasks}
             mode="recap"
+            moreRecentEntry={moreRecentEntry}
           />
         )}
       </InterventionStepperShell>

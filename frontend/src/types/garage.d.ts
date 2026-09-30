@@ -48,6 +48,16 @@ type UpdateInterventionTaskPayload = Partial<{
     remove_photo_ids: number[];
 }>;
 
+// ── Synchronisation kilométrage véhicule (story 2.9) ─────────────────────────
+// Le schéma OpenAPI ne reflète pas la clé "warnings" ajoutée à la réponse
+// custom de InterventionSheetViewSet.validate() (cf. Dev Notes 2.9).
+type InterventionValidateWarning = {
+    code: string;
+    message: string;
+    more_recent_entry: { value: number; date: string };
+};
+type ValidateInterventionResponse = InterventionSheet & { warnings: InterventionValidateWarning[] };
+
 // ── Traçabilité fiches validées (story 2.7) ──────────────────────────────────
 type AuditLogEntry = {
     id: number;

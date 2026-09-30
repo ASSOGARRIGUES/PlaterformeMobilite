@@ -1,4 +1,5 @@
 import datetime
+from django.utils import timezone
 
 from django.test import TestCase, RequestFactory
 from django.contrib.auth.models import Group
@@ -1171,3 +1172,161 @@ class InterventionSheetAPITestCase(APITestCase):
         self.assertEqual(response.status_code, 204)
         record = VehicleTaskRecord.objects.get(vehicle=self.vehicle_a, catalog_task=self.catalog_task_periodic)
         self.assertEqual(record.kilometer, older_sheet.start_mileage)
+
+    # ── Story 2.9 : synchronisation kilométrage — saisies hors ordre chronologique ──
+
+    def test_validate_sheet_with_more_recent_entry_returns_warning_and_does_not_update_vehicle(self):
+        self.client.force_authenticate(user=self.garagiste)
+        MileageEntry.objects.create(
+            vehicle=self.vehicle_a, value=10800, date=datetime.date(2026, 1, 10),
+            source='manual', author=self.garagiste,
+        )
+        self.vehicle_a.kilometer = 10800
+        self.vehicle_a.save(update_fields=['kilometer'])
+
+        sheet = InterventionSheet.objects.create(
+            vehicle=self.vehicle_a, created_by=self.garagiste,
+            start_mileage=10800, start_date=datetime.date(2026, 1, 5),
+        )
+        response = self.client.post(self._validate_url(sheet))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['warnings']), 1)
+        warning = response.data['warnings'][0]
+        self.assertEqual(warning['code'], 'mileage_not_applied')
+        self.assertEqual(warning['more_recent_entry']['value'], 10800)
+        self.assertEqual(warning['more_recent_entry']['date'], '2026-01-10')
+
+        self.vehicle_a.refresh_from_db()
+        self.assertEqual(self.vehicle_a.kilometer, 10800)
+
+    def test_validate_past_sheet_without_end_date_does_not_roll_back_vehicle_kilometer(self):
+        self.client.force_authenticate(user=self.garagiste)
+        MileageEntry.objects.create(
+            vehicle=self.vehicle_a, value=10000, date=datetime.date(2025, 6, 1),
+            source='manual', author=self.garagiste,
+        )
+        MileageEntry.objects.create(
+            vehicle=self.vehicle_a, value=12000, date=datetime.date(2025, 9, 1),
+            source='manual', author=self.garagiste,
+        )
+        self.vehicle_a.refresh_from_db()
+        self.assertEqual(self.vehicle_a.kilometer, 12000)
+
+        sheet = InterventionSheet.objects.create(
+            vehicle=self.vehicle_a, created_by=self.garagiste,
+            start_mileage=11000, start_date=datetime.date(2025, 7, 1),
+        )
+        response = self.client.post(self._validate_url(sheet))
+        self.assertEqual(response.status_code, 200)
+
+        entry = MileageEntry.objects.get(vehicle=self.vehicle_a, source='intervention')
+        self.assertEqual(entry.date, datetime.date(2025, 7, 1))
+        self.vehicle_a.refresh_from_db()
+        self.assertEqual(self.vehicle_a.kilometer, 12000)
+        self.assertEqual(len(response.data['warnings']), 1)
+        self.assertEqual(response.data['warnings'][0]['more_recent_entry']['value'], 12000)
+
+    def test_validate_sheet_without_mileage_history_returns_no_warning(self):
+        self.client.force_authenticate(user=self.garagiste)
+        self.assertFalse(MileageEntry.objects.filter(vehicle=self.vehicle_a).exists())
+        sheet = InterventionSheet.objects.create(
+            vehicle=self.vehicle_a, created_by=self.garagiste,
+            start_mileage=10500, start_date=datetime.date(2025, 7, 1),
+        )
+        response = self.client.post(self._validate_url(sheet))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['warnings'], [])
+        self.vehicle_a.refresh_from_db()
+        self.assertEqual(self.vehicle_a.kilometer, 10500)
+
+    def test_validate_sheet_chronological_order_returns_no_warning(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = InterventionSheet.objects.create(
+            vehicle=self.vehicle_a, created_by=self.garagiste, start_mileage=10500,
+        )
+        response = self.client.post(self._validate_url(sheet))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['warnings'], [])
+        self.vehicle_a.refresh_from_db()
+        self.assertEqual(self.vehicle_a.kilometer, 10500)
+
+    def test_patch_start_mileage_consistent_with_historical_entry_in_the_past_succeeds(self):
+        self.client.force_authenticate(user=self.garagiste)
+        MileageEntry.objects.create(
+            vehicle=self.vehicle_a, value=9500, date=datetime.date(2025, 6, 1),
+            source='manual', author=self.garagiste,
+        )
+        # Entrée plus récente : porte vehicle.kilometer au-dessus de la référence historique
+        # (2025-06-15), pour que le test discrimine bien l'ancien comportement (comparaison
+        # au kilométrage courant) du nouveau (comparaison à la référence historique).
+        MileageEntry.objects.create(
+            vehicle=self.vehicle_a, value=10800, date=datetime.date(2026, 1, 15),
+            source='manual', author=self.garagiste,
+        )
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+        response = self.client.patch(
+            self._detail_url(sheet),
+            {'start_mileage': 9700, 'start_date': '2025-06-15'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 200)
+        sheet.refresh_from_db()
+        self.assertEqual(sheet.start_mileage, 9700)
+
+    def test_patch_start_mileage_below_historical_entry_returns_400(self):
+        self.client.force_authenticate(user=self.garagiste)
+        MileageEntry.objects.create(
+            vehicle=self.vehicle_a, value=9500, date=datetime.date(2025, 6, 1),
+            source='manual', author=self.garagiste,
+        )
+        MileageEntry.objects.create(
+            vehicle=self.vehicle_a, value=10800, date=datetime.date(2026, 1, 15),
+            source='manual', author=self.garagiste,
+        )
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+        response = self.client.patch(
+            self._detail_url(sheet),
+            {'start_mileage': 9400, 'start_date': '2025-06-15'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('start_mileage', response.data)
+
+    def test_patch_start_mileage_without_prior_history_falls_back_to_vehicle_kilometer(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+        response = self.client.patch(
+            self._detail_url(sheet),
+            {'start_mileage': 9000, 'start_date': '2025-06-15'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('start_mileage', response.data)
+
+        response = self.client.patch(
+            self._detail_url(sheet),
+            {'start_mileage': 10500, 'start_date': '2025-06-15'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_patch_start_mileage_today_behaves_as_before(self):
+        self.client.force_authenticate(user=self.garagiste)
+        # Entrée historique alignée sur vehicle.kilometer : avec start_date = aujourd'hui, la
+        # référence historique est la dernière entrée, donc identique au kilométrage courant.
+        MileageEntry.objects.create(
+            vehicle=self.vehicle_a, value=10000, date=datetime.date(2025, 1, 1),
+            source='manual', author=self.garagiste,
+        )
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+        today = timezone.now().date().isoformat()
+        response = self.client.patch(
+            self._detail_url(sheet), {'start_mileage': 9000, 'start_date': today}, format='json',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('start_mileage', response.data)
+
+        response = self.client.patch(
+            self._detail_url(sheet), {'start_mileage': 10500, 'start_date': today}, format='json',
+        )
+        self.assertEqual(response.status_code, 200)

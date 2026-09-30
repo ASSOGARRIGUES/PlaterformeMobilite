@@ -224,15 +224,40 @@ class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
             sheet.status = 'validated'
             sheet.save(update_fields=['status'])
 
-            entry_date = sheet.end_date or timezone.now().date()
-            MileageEntry.objects.create(
+            # Le kilométrage saisi est celui à l'entrée du véhicule : le relevé est daté à la date
+            # de début (et non de fin), sans quoi une fiche antidatée sans date de fin serait datée
+            # d'aujourd'hui et ferait reculer Vehicle.kilometer.
+            mileage_date = sheet.start_date or timezone.now().date()
+            task_date = sheet.end_date or timezone.now().date()
+            mileage_entry = MileageEntry.objects.create(
                 vehicle=sheet.vehicle,
                 value=sheet.start_mileage,
-                date=entry_date,
+                date=mileage_date,
                 source='intervention',
                 source_id=sheet.id,
                 author=request.user,
             )
+
+            more_recent_entry = (
+                MileageEntry.objects
+                .filter(vehicle=sheet.vehicle)
+                .exclude(pk=mileage_entry.pk)
+                .order_by('-date', '-id')
+                .first()
+            )
+            warnings = []
+            if more_recent_entry and (more_recent_entry.date, more_recent_entry.id) > (mileage_date, mileage_entry.id):
+                warnings.append({
+                    'code': 'mileage_not_applied',
+                    'message': f"Le kilométrage du véhicule n'a pas été mis à jour : une saisie plus récente "
+                               f"({more_recent_entry.value} km au {more_recent_entry.date:%d/%m/%Y}) existe déjà. "
+                               f"Si l'une des deux valeurs est erronée, corrigez-la depuis l'historique kilométrique "
+                               f"du véhicule.",
+                    'more_recent_entry': {
+                        'value': more_recent_entry.value,
+                        'date': more_recent_entry.date.isoformat(),
+                    },
+                })
 
             done_tasks = sheet.tasks.filter(type='done', catalog_task__isnull=False).filter(
                 Q(catalog_task__km_periodicity__isnull=False) | Q(catalog_task__month_periodicity__isnull=False)
@@ -241,7 +266,9 @@ class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
                 VehicleTaskRecord.objects.update_or_create(
                     vehicle=sheet.vehicle,
                     catalog_task=task.catalog_task,
-                    defaults={'date': entry_date, 'kilometer': sheet.start_mileage},
+                    defaults={'date': task_date, 'kilometer': sheet.start_mileage},
                 )
 
-        return Response(InterventionSheetSerializer(sheet, context=self.get_serializer_context()).data)
+        data = InterventionSheetSerializer(sheet, context=self.get_serializer_context()).data
+        data['warnings'] = warnings
+        return Response(data)

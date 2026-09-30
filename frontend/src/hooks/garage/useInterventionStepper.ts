@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useShow, useList, useCustomMutation, useUpdate, useGo, useInvalidate, useApiUrl } from '@refinedev/core'
-import { InterventionSheet, InterventionTask, LocalTask, PatchInterventionPayload } from '../../types/garage'
+import { showNotification } from '@mantine/notifications'
+import { InterventionSheet, InterventionTask, LocalTask, PatchInterventionPayload, ValidateInterventionResponse } from '../../types/garage'
 import { TaskCatalogItem } from '../../components/garage/taskCardUtils'
 import {
   localTaskToCreatePayload,
@@ -95,6 +96,7 @@ export function useInterventionStepper(sheetId: number) {
   }, [sheet, catalogData, catalogById])
 
   const { mutateAsync: customMutate, isLoading: isMutating } = useCustomMutation<InterventionTask>()
+  const { mutateAsync: customMutateValidate } = useCustomMutation<ValidateInterventionResponse>()
   const { mutateAsync: updateSheet, isLoading: isSavingStep } = useUpdate()
 
   /** Création immédiate d'une tâche (POST minimal) dès la sélection dans le TaskPicker. */
@@ -225,13 +227,24 @@ export function useInterventionStepper(sheetId: number) {
         id: sheetId,
         values: { current_step: 4, ...sheetValues },
       })
-      await customMutate({
+      const { data } = await customMutateValidate({
         url: `${apiUrl}/garage/intervention/${sheetId}/validate/`,
         method: 'post',
         values: {},
       })
       invalidate({ resource: 'garage/intervention', invalidates: ['list', 'detail'] })
       invalidate({ resource: 'vehicle', id: vehicle.id, invalidates: ['detail'] })
+      // Filet de sécurité : l'encart du formulaire prévient déjà ce cas, mais un relevé peut
+      // avoir été saisi entre-temps.
+      const warning = data?.warnings?.[0]
+      if (warning) {
+        showNotification({
+          color: 'orange',
+          title: 'Kilométrage du véhicule non mis à jour',
+          message: warning.message,
+          autoClose: false,
+        })
+      }
       go({ to: `/vehicle/${vehicle.id}` })
     } catch (error) {
       setStepError(extractStepError(error))
