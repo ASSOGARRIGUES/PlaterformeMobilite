@@ -488,6 +488,27 @@ export interface paths {
         patch: operations["api_garage_intervention_partial_update"];
         trace?: never;
     };
+    "/api/garage/intervention/{id}/audit-log/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Remplace le filtrage standard current_action pour les viewsets garage.
+         *     Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+         *     Sinon, filtrage standard par current_action.
+         */
+        get: operations["api_garage_intervention_audit_log_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/garage/intervention/{id}/tasks/": {
         parameters: {
             query?: never;
@@ -3113,16 +3134,22 @@ export interface operations {
     api_garage_intervention_list: {
         parameters: {
             query?: {
+                created_at__gte?: string;
+                created_at__lte?: string;
                 created_by?: number;
                 /** @description Number of results to return per page. */
                 limit?: number;
                 /** @description The initial index from which to return the results. */
                 offset?: number;
+                /** @description A search term. */
+                search?: string;
                 /**
                  * @description * `open` - Ouverte
                  *     * `validated` - Validée
                  */
                 status?: PathsApiGarageInterventionGetParametersQueryStatus;
+                /** @description Les valeurs multiples doivent être séparées par des virgules. */
+                status__in?: string[];
                 vehicle?: number;
             };
             header?: never;
@@ -3241,6 +3268,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    api_garage_intervention_audit_log_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this intervention sheet. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterventionSheet"];
+                };
             };
         };
     };

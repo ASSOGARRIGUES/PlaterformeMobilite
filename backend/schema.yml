@@ -1787,6 +1787,16 @@ paths:
         Sinon, filtrage standard par current_action.
       parameters:
       - in: query
+        name: created_at__gte
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: created_at__lte
+        schema:
+          type: string
+          format: date-time
+      - in: query
         name: created_by
         schema:
           type: integer
@@ -1802,6 +1812,12 @@ paths:
         description: The initial index from which to return the results.
         schema:
           type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
       - in: query
         name: status
         schema:
@@ -1812,6 +1828,15 @@ paths:
         description: |-
           * `open` - Ouverte
           * `validated` - Validée
+      - in: query
+        name: status__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
       - in: query
         name: vehicle
         schema:
@@ -1931,6 +1956,32 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/garage/intervention/{id}/audit-log/:
+    get:
+      operationId: api_garage_intervention_audit_log_retrieve
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this intervention sheet.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterventionSheet'
+          description: ''
   /api/garage/intervention/{id}/tasks/:
     post:
       operationId: api_garage_intervention_tasks_create
