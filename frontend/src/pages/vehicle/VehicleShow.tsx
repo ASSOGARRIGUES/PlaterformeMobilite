@@ -4,7 +4,7 @@ import {useEffect, useMemo, useRef, useState} from "react";
 import {CompleteContract} from "../../types/contract";
 import {Vehicle} from "../../types/vehicle";
 import VehicleBadge from "../../components/Vehicle/VehicleBadge";
-import {Badge, Group, Paper, Stack, Tabs, Title, useMantineTheme} from "@mantine/core";
+import {Badge, Group, Paper, Stack, Tabs, Text, Title, useMantineTheme} from "@mantine/core";
 import ContractTable from "../../components/contract/ContractTable";
 import BeneficiaryBadge from "../../components/beneficiary/BeneficiaryBadge";
 import VehicleCard from "../../components/Vehicle/VehicleCard";
@@ -21,7 +21,7 @@ import ContractSearchTooltip from "../../components/contract/ContractSearchToolt
 import VehicleActions from "../../components/Vehicle/VehicleActions";
 import {DataTableColumn} from "mantine-datatable";
 import {Show} from "../../components/forkedFromRefine/Show";
-import {useMediaQuery} from "@mantine/hooks";
+import {useHeadroom, useMediaQuery} from "@mantine/hooks";
 import {ErrorComponent} from "../../components/ErrorComponent";
 import CanAccess from "../../components/CanAccess";
 import MileageHistoryChart from "../../components/garage/MileageHistoryChart";
@@ -31,11 +31,18 @@ import useAccessControl from "../../hooks/useAccessControl";
 import {MaintenanceTab} from "../../components/garage/maintenance/MaintenanceTab";
 import {maintenanceBadge} from "../../components/garage/maintenance/maintenanceUtils";
 import {MaintenanceInfoLine} from "../../components/garage/maintenance/MaintenanceInfoLine";
+import VehicleMobileHeader from "../../components/Vehicle/VehicleMobileHeader";
 
 const VehicleShow = (props: any) => {
 
     const theme = useMantineTheme();
     const smallerThanMd = useMediaQuery(`(max-width: ${theme.breakpoints.md})`);
+    const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`, false, {getInitialValueInEffect: false});
+    // Même état que le header de l'application (layout) : épinglé hors mode standalone, il recouvre le haut de l'écran
+    const headerPinned = useHeadroom({fixedAt: 52});
+    const isStandalone = useMediaQuery('(display-mode: standalone)', false);
+    // En standalone, le layout superpose une bande safe-area fixe : les onglets collants se placent dessous
+    const stickyTop = isStandalone ? "env(safe-area-inset-top)" : headerPinned ? 52 : 0;
 
     const { queryResult: showResponse } = useShow<Vehicle>()
     const vehicle  = showResponse.data?.data;
@@ -143,26 +150,46 @@ const VehicleShow = (props: any) => {
             <ContractModal {...editModalForm}/>
             <EndContractModal {...endModalForm}/>
 
-            <Stack style={{height:"100%"}}>
+            <Stack style={{height:"100%"}} gap={isMobile ? "xs" : undefined}>
 
-                <Show title={<Title><VehicleBadge vehicle={vehicle} noLink noColor/> </Title>} wrapperProps={{flex:"none"}} contentProps={{style:{padding:0}}}/>
+                {isMobile ? (
+                    <>
+                        <Show
+                            title={<Text fw={700} truncate><VehicleBadge vehicle={vehicle} noLink noColor/></Text>}
+                            wrapperProps={{flex:"none", p:"xs", style:{minWidth:0}}}
+                            headerProps={{wrap:"nowrap"}}
+                            hideButtonText
+                            contentProps={{style:{padding:0}}}
+                        />
+                        <VehicleMobileHeader
+                            vehicle={vehicle}
+                            infoFooter={canViewGarage && maintenance ? (close) => (
+                                <MaintenanceInfoLine summary={maintenance} onClick={() => {close(); goToMaintenanceTab();}}/>
+                            ) : undefined}
+                        />
+                    </>
+                ) : (
+                    <>
+                        <Show title={<Title><VehicleBadge vehicle={vehicle} noLink noColor/> </Title>} wrapperProps={{flex:"none"}} contentProps={{style:{padding:0}}}/>
 
-                <Group grow style={{alignItems:"stretch"}}>
-                    <VehicleCard
-                        vehicle={vehicle}
-                        withEdit
-                        style={{flexGrow:2, maxWidth:"100%"}}
-                        footer={canViewGarage && maintenance ? (
-                            <MaintenanceInfoLine summary={maintenance} onClick={goToMaintenanceTab}/>
-                        ) : undefined}
-                    />
-                    <VehicleActions vehicle={vehicle} style={{flexGrow:1, maxWidth:"100%"}}/>
-                </Group>
+                        <Group grow style={{alignItems:"stretch"}}>
+                            <VehicleCard
+                                vehicle={vehicle}
+                                withEdit
+                                style={{flexGrow:2, maxWidth:"100%"}}
+                                footer={canViewGarage && maintenance ? (
+                                    <MaintenanceInfoLine summary={maintenance} onClick={goToMaintenanceTab}/>
+                                ) : undefined}
+                            />
+                            <VehicleActions vehicle={vehicle} style={{flexGrow:1, maxWidth:"100%"}}/>
+                        </Group>
+                    </>
+                )}
 
                 {/* L'onglet Entretien grandit avec son contenu (la page défile) ; les autres onglets restent à la hauteur de l'écran */}
-                <Paper ref={tabsRef} shadow="sm" p="md" style={{flex: activeTab === 'maintenance' ? "0 0 auto" : "auto", minHeight:(smallerThanMd ? "100vh" : 0), display: "flex", flexDirection: "column"}}>
+                <Paper ref={tabsRef} shadow="sm" p={isMobile ? "xs" : "md"} style={{flex: activeTab === 'maintenance' ? "0 0 auto" : "auto", minHeight:(smallerThanMd ? "100vh" : 0), display: "flex", flexDirection: "column"}}>
                     <Tabs variant="outline" value={activeTab} onChange={setChosenTab} keepMounted={false} style={{display: "flex", flexDirection: "column", flex: "1 1 auto"}}>
-                        <Tabs.List>
+                        <Tabs.List grow={isMobile} style={isMobile ? {position: "sticky", top: stickyTop, transition: "top 200ms ease", zIndex: 10, backgroundColor: "white"} : undefined}>
                             <CanAccess permKey="garage.view_vehicle">
                                 <Tabs.Tab
                                     leftSection={<IconTool size={18}/>}
@@ -175,7 +202,7 @@ const VehicleShow = (props: any) => {
                             </CanAccess>
                             <Tabs.Tab leftSection={<IconFileText size={18}/>} value="contracts">Contrats</Tabs.Tab>
                             <CanAccess permKey="garage.view_vehicle">
-                                <Tabs.Tab leftSection={<IconHistory size={18}/>} value="mileage">Historique kilométrique</Tabs.Tab>
+                                <Tabs.Tab leftSection={<IconHistory size={18}/>} value="mileage">{isMobile ? "Km" : "Historique kilométrique"}</Tabs.Tab>
                             </CanAccess>
                         </Tabs.List>
 
