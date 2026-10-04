@@ -246,5 +246,10 @@ SPECTACULAR_SETTINGS = {
         'BugSeverityEnum': 'bugtracker.models.Bug.SEVERITY_CHOICES',
         'BugTypeEnum': 'bugtracker.models.Bug.TYPE_CHOICES',
         'BugStatusEnum': 'bugtracker.models.Bug.STATUS_CHOICES',
+        'SourceEnum': 'garage.models.MileageEntry.SOURCE_CHOICES',
+        'InterventionSheetStatusEnum': 'garage.models.InterventionSheet.STATUS_CHOICES',
+        'MaintenanceStatusEnum': 'garage.alerts.TASK_STATUS_CHOICES',
+        'MaintenanceSourceEnum': 'garage.alerts.PLANNING_SOURCE_CHOICES',
+        'MaintenanceAxisEnum': 'garage.alerts.AXIS_CHOICES',
     }
 }

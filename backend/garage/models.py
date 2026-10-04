@@ -9,12 +9,33 @@ from django.db import models
 
 
 class TaskCatalog(models.Model):
+    # Clés traduites en icônes Tabler côté front (components/garage/maintenance/taskIcons.ts)
+    ICON_CHOICES = [
+        ('tool', 'Outil (par défaut)'),
+        ('oil', 'Huile'),
+        ('filter', 'Filtre'),
+        ('air', 'Air'),
+        ('belt', 'Courroie / distribution'),
+        ('brake', 'Freins'),
+        ('tire', 'Pneus'),
+        ('spark', 'Allumage'),
+        ('bearing', 'Roulements'),
+        ('steering', 'Direction / train'),
+        ('battery', 'Batterie'),
+        ('light', 'Éclairage'),
+        ('engine', 'Moteur'),
+        ('body', 'Carrosserie'),
+    ]
+
     name = models.CharField(max_length=100)
+    icon = models.CharField(max_length=20, choices=ICON_CHOICES, default='tool', help_text="Icône affichée dans l'onglet Entretien")
     vehicle_types = models.JSONField(default=list, help_text="Types de véhicules concernés (ex: [\"voiture\", \"scouter\"])")
     km_periodicity = models.PositiveIntegerField(null=True, blank=True, help_text="Périodicité kilométrique (km)")
     month_periodicity = models.PositiveIntegerField(null=True, blank=True, help_text="Périodicité temporelle (mois)")
     is_critical = models.BooleanField(default=False, help_text="Si vrai, le dépassement déclenche le passage automatique en maintenance")
     is_wear_task = models.BooleanField(default=False, help_text="Si vrai, la tâche est saisie avec un niveau d'usure /10 plutôt que simplement cochée comme faite")
+    soon_km = models.PositiveIntegerField(null=True, blank=True, help_text="Seuil « bientôt » (km) : la tâche passe « À prévoir » quand il reste N km ou moins")
+    soon_months = models.PositiveIntegerField(null=True, blank=True, help_text="Seuil « bientôt » (mois) : la tâche passe « À prévoir » quand il reste N mois ou moins")
     archived = models.BooleanField(default=False)
 
     class Meta:
@@ -22,6 +43,21 @@ class TaskCatalog(models.Model):
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        errors = {}
+        for soon_field, periodicity_field, unit in (
+            ('soon_km', 'km_periodicity', 'km'),
+            ('soon_months', 'month_periodicity', 'mois'),
+        ):
+            soon, periodicity = getattr(self, soon_field), getattr(self, periodicity_field)
+            if soon and periodicity and soon >= periodicity:
+                errors[soon_field] = (
+                    f"Le seuil « bientôt » ({soon} {unit}) doit être strictement inférieur "
+                    f"à la périodicité ({periodicity} {unit})."
+                )
+        if errors:
+            raise ValidationError(errors)
 
 
 class MaintenanceConfig(models.Model):
@@ -156,6 +192,13 @@ class InterventionSheet(models.Model):
         permissions = [
             ('manage_intervention', "Peut créer et gérer les fiches d'intervention"),
         ]
+        constraints = [
+            models.CheckConstraint(
+                check=~models.Q(status='validated')
+                | models.Q(start_mileage__isnull=False, start_date__isnull=False),
+                name='validated_sheet_has_start_mileage_and_date',
+            ),
+        ]
 
     def __str__(self):
         return f"Fiche d'intervention {self.vehicle} ({self.status})"
@@ -214,25 +257,6 @@ class GaragePhoto(models.Model):
 
     def __str__(self):
         return f"Photo {self.content_type} #{self.object_id}"
-
-
-class VehicleTaskRecord(models.Model):
-    vehicle = models.ForeignKey(
-        'api.Vehicle',
-        on_delete=models.CASCADE,
-        related_name='task_records'
-    )
-    catalog_task = models.ForeignKey(TaskCatalog, on_delete=models.CASCADE)
-    date = models.DateField()
-    kilometer = models.PositiveIntegerField()
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['vehicle', 'catalog_task'], name='unique_vehicle_task_record')
-        ]
-
-    def __str__(self):
-        return f"{self.vehicle} — {self.catalog_task} ({self.date})"
 
 
 class AuditLog(models.Model):

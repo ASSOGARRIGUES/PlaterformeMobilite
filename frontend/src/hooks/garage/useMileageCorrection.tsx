@@ -63,6 +63,8 @@ export const useMileageCorrection = (vehicleId: number) => {
                             onSuccess: () => {
                                 invalidate({ resource: `garage/mileage/${vehicleId}`, invalidates: ["list"] });
                                 invalidate({ resource: "vehicle", id: vehicleId, invalidates: ["detail"] });
+                                // Une correction modifie sheet.start_mileage, donc les échéances km (story 2.11)
+                                invalidate({ resource: "garage/maintenance", id: vehicleId, invalidates: ["detail"] });
                                 closeAllModals();
                             },
                         });

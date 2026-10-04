@@ -3,7 +3,6 @@ import {
   localTaskToCreatePayload,
   localTaskToUpdatePayload,
   localTaskFromApiTask,
-  hasCriticalWear,
   unresolvedPlannedTasks,
   sidePanelCardVisibility,
   dedupedHistorySummaries,
@@ -175,21 +174,6 @@ describe('unresolvedPlannedTasks', () => {
       { created_at: '2026-01-05T00:00:00Z', tasks: [] },
     ];
     expect(unresolvedPlannedTasks(sheetsWithoutDone, catalogById)).toHaveLength(1);
-  });
-});
-
-describe('hasCriticalWear', () => {
-  it('returns false when no wear task is critical', () => {
-    expect(hasCriticalWear([makeLocalTask({ isWearTask: true, wearLevel: 8 })])).toBe(false);
-    expect(hasCriticalWear([makeLocalTask({ isWearTask: false })])).toBe(false);
-  });
-
-  it('returns true when a wear task is at or below the default threshold', () => {
-    expect(hasCriticalWear([makeLocalTask({ isWearTask: true, wearLevel: 3 })])).toBe(true);
-  });
-
-  it('honours a custom threshold', () => {
-    expect(hasCriticalWear([makeLocalTask({ isWearTask: true, wearLevel: 5 })], 6)).toBe(true);
   });
 });
 

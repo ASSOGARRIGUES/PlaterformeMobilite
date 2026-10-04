@@ -1,6 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import viewsets, serializers
@@ -10,23 +9,23 @@ from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from api.views import MUTATION_ACTION
 from api.models import Vehicle, Contract
-from .models import TaskCatalog, MileageEntry, InterventionSheet, InterventionTask, VehicleTaskRecord, GaragePhoto
+from .models import TaskCatalog, MileageEntry, InterventionSheet, InterventionTask, GaragePhoto
 from .serializers import (
     TaskCatalogSerializer, MileageEntrySerializer, MileageCorrectionSerializer,
     InterventionSheetSerializer, MutationInterventionSheetSerializer,
     InterventionTaskSerializer, MutationInterventionTaskSerializer,
-    UpdateInterventionTaskSerializer, AuditLogSerializer,
+    UpdateInterventionTaskSerializer, AuditLogSerializer, MaintenanceSummarySerializer,
 )
 from .filters import TaskCatalogFilter, InterventionSheetFilter
 from .mixins import GarageMultiActionMixin
+from .alerts import get_config, load_maintenance_data, compute_maintenance_summary
 from .audit import (
     log_field_change, log_task_added, log_task_deleted, get_audit_logs_for_sheet,
     format_parts, format_photo_ids,
 )
-from .task_records import sync_vehicle_task_record
 
 
 class TaskCatalogViewSet(viewsets.ReadOnlyModelViewSet):
@@ -108,6 +107,14 @@ class MileageHistoryViewSet(GarageMultiActionMixin, viewsets.ReadOnlyModelViewSe
             original.is_corrected = True
             original.save(update_fields=['is_corrected'])
 
+            # Le km d'une fiche validée ne se corrige que par ici : la fiche suit la correction,
+            # sinon l'échéance km de ses tâches reste calculée sur la valeur erronée.
+            root = original
+            while root.corrects_id:
+                root = root.corrects
+            if root.source == 'intervention' and root.source_id:
+                InterventionSheet.objects.filter(pk=root.source_id).update(start_mileage=correction.value)
+
             latest = MileageEntry.objects.filter(
                 vehicle_id=vehicle_pk, is_corrected=False
             ).order_by('-date', '-id').first()
@@ -153,8 +160,6 @@ class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
         task = serializer.save()
         if sheet.status == 'validated':
             log_task_added(task, request.user)
-            if task.type == 'done' and task.catalog_task_id:
-                sync_vehicle_task_record(sheet.vehicle, task.catalog_task)
         return Response(InterventionTaskSerializer(task, context=self.get_serializer_context()).data, status=201)
 
     @action(detail=True, methods=['patch', 'delete'], url_path=r'tasks/(?P<task_pk>[^/.]+)')
@@ -168,12 +173,9 @@ class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
             for photo in GaragePhoto.objects.filter(content_type=content_type, object_id=task.pk):
                 photo.image.delete(save=False)
                 photo.delete()
-            task_type, catalog_task = task.type, task.catalog_task
             if was_validated:
                 log_task_deleted(task, request.user)
             task.delete()
-            if was_validated and task_type == 'done' and catalog_task is not None:
-                sync_vehicle_task_record(sheet.vehicle, catalog_task)
             return Response(status=204)
         snapshot = {
             'name': task.name, 'description': task.description, 'wear_level': task.wear_level,
@@ -220,6 +222,8 @@ class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
                 raise serializers.ValidationError("Cette fiche est déjà validée.")
             if sheet.start_mileage is None:
                 raise serializers.ValidationError("Le kilométrage de départ est requis avant de valider la fiche.")
+            if sheet.start_date is None:
+                raise serializers.ValidationError("La date de début est requise avant de valider la fiche.")
 
             sheet.status = 'validated'
             sheet.save(update_fields=['status'])
@@ -227,8 +231,7 @@ class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
             # Le kilométrage saisi est celui à l'entrée du véhicule : le relevé est daté à la date
             # de début (et non de fin), sans quoi une fiche antidatée sans date de fin serait datée
             # d'aujourd'hui et ferait reculer Vehicle.kilometer.
-            mileage_date = sheet.start_date or timezone.now().date()
-            task_date = sheet.end_date or timezone.now().date()
+            mileage_date = sheet.start_date
             mileage_entry = MileageEntry.objects.create(
                 vehicle=sheet.vehicle,
                 value=sheet.start_mileage,
@@ -259,16 +262,29 @@ class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
                     },
                 })
 
-            done_tasks = sheet.tasks.filter(type='done', catalog_task__isnull=False).filter(
-                Q(catalog_task__km_periodicity__isnull=False) | Q(catalog_task__month_periodicity__isnull=False)
-            )
-            for task in done_tasks:
-                VehicleTaskRecord.objects.update_or_create(
-                    vehicle=sheet.vehicle,
-                    catalog_task=task.catalog_task,
-                    defaults={'date': task_date, 'kilometer': sheet.start_mileage},
-                )
-
         data = InterventionSheetSerializer(sheet, context=self.get_serializer_context()).data
         data['warnings'] = warnings
         return Response(data)
+
+
+class MaintenanceViewSet(viewsets.ViewSet):
+    """Synthèse d'entretien par tâche d'un véhicule (story 2.10). Calcul : garage/alerts.py."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        parameters=[OpenApiParameter('id', int, OpenApiParameter.PATH, description="Identifiant du véhicule")],
+        responses=MaintenanceSummarySerializer,
+    )
+    def retrieve(self, request, pk=None):
+        user = request.user
+        if not user.has_perm('garage.view_vehicle'):
+            raise PermissionDenied()
+        try:
+            vehicle = Vehicle.objects.get(pk=pk)
+        except (Vehicle.DoesNotExist, ValueError):
+            raise NotFound()
+        if not user.actions.filter(pk=vehicle.action_id).exists():
+            raise PermissionDenied()
+        data = load_maintenance_data([vehicle])
+        summary = compute_maintenance_summary(data, vehicle, timezone.localdate(), get_config())
+        return Response(MaintenanceSummarySerializer(summary, context={'request': request}).data)

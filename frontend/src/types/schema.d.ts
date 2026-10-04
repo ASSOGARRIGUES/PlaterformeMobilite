@@ -577,6 +577,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/garage/maintenance/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Synthèse d'entretien par tâche d'un véhicule (story 2.10). Calcul : garage/alerts.py. */
+        get: operations["api_garage_maintenance_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/garage/mileage/{vehicle_pk}/": {
         parameters: {
             query?: never;
@@ -1083,6 +1100,24 @@ export interface components {
             /** Format: uri */
             url: string;
         };
+        /**
+         * @description * `tool` - Outil (par défaut)
+         *     * `oil` - Huile
+         *     * `filter` - Filtre
+         *     * `air` - Air
+         *     * `belt` - Courroie / distribution
+         *     * `brake` - Freins
+         *     * `tire` - Pneus
+         *     * `spark` - Allumage
+         *     * `bearing` - Roulements
+         *     * `steering` - Direction / train
+         *     * `battery` - Batterie
+         *     * `light` - Éclairage
+         *     * `engine` - Moteur
+         *     * `body` - Carrosserie
+         * @enum {string}
+         */
+        IconEnum: IconEnum;
         InAppBroadcast: {
             readonly id: number;
             title: string;
@@ -1145,6 +1180,125 @@ export interface components {
          * @enum {string}
          */
         InterventionTaskTypeEnum: InterventionTaskTypeEnum;
+        /**
+         * @description * `km` - Kilométrage
+         *     * `months` - Durée
+         * @enum {string}
+         */
+        MaintenanceAxisEnum: MaintenanceAxisEnum;
+        MaintenanceCounts: {
+            overdue: number;
+            to_plan: number;
+            up_to_date: number;
+            not_recorded: number;
+            other_work: number;
+            sheets: number;
+        };
+        MaintenanceKmAxis: {
+            lifespan: number;
+            due: number;
+            remaining: number;
+            /** Format: double */
+            progress: number;
+            soon: number | null;
+        };
+        MaintenanceMonthsAxis: {
+            lifespan: number;
+            /** Format: date */
+            due: string;
+            remaining_days: number;
+            /** Format: double */
+            progress: number;
+            soon: number | null;
+        };
+        MaintenanceOtherWork: {
+            key: string;
+            catalog_task_id: number | null;
+            name: string;
+            icon: (components["schemas"]["IconEnum"] | components["schemas"]["NullEnum"]) | null;
+            sheet_id: number;
+            task_id: number;
+            /** Format: date */
+            date: string;
+            km: number | null;
+            wear_level: number | null;
+        };
+        MaintenancePeriodicity: {
+            km: number | null;
+            months: number | null;
+        };
+        MaintenanceRealization: {
+            sheet_id: number;
+            task_id: number;
+            /** Format: date */
+            date: string;
+            km: number | null;
+            wear_level: number | null;
+        };
+        MaintenanceSheet: {
+            id: number;
+            status: components["schemas"]["InterventionSheetStatusEnum"];
+            /** Format: date */
+            start_date: string | null;
+            /** Format: date */
+            end_date: string | null;
+            start_mileage: number | null;
+            created_by_display: string;
+            done_count: number;
+            planned_count: number;
+        };
+        MaintenanceSignalement: {
+            task_id: number;
+            sheet_id: number;
+            /** Format: date */
+            sheet_date: string;
+            catalog_task_id: number | null;
+            name: string;
+            description: string;
+            source: components["schemas"]["MaintenanceSourceEnum"];
+            readonly photos: string[];
+        };
+        /**
+         * @description * `echeance` - Échéance
+         *     * `signalement` - Signalement
+         *     * `usure` - Usure
+         * @enum {string}
+         */
+        MaintenanceSourceEnum: MaintenanceSourceEnum;
+        /**
+         * @description * `overdue` - En retard
+         *     * `to_plan` - À prévoir
+         *     * `up_to_date` - À jour
+         *     * `not_recorded` - Jamais enregistrée
+         * @enum {string}
+         */
+        MaintenanceStatusEnum: MaintenanceStatusEnum;
+        MaintenanceSummary: {
+            vehicle_id: number;
+            current_km: number;
+            /** Format: date */
+            today: string;
+            tasks: components["schemas"]["MaintenanceTask"][];
+            signalements: components["schemas"]["MaintenanceSignalement"][];
+            other_work: components["schemas"]["MaintenanceOtherWork"][];
+            sheets: components["schemas"]["MaintenanceSheet"][];
+            counts: components["schemas"]["MaintenanceCounts"];
+        };
+        MaintenanceTask: {
+            catalog_task_id: number;
+            name: string;
+            icon: components["schemas"]["IconEnum"];
+            periodicity: components["schemas"]["MaintenancePeriodicity"];
+            is_critical: boolean;
+            is_wear_task: boolean;
+            status: components["schemas"]["MaintenanceStatusEnum"];
+            source: (components["schemas"]["MaintenanceSourceEnum"] | components["schemas"]["NullEnum"]) | null;
+            last_realization: components["schemas"]["MaintenanceRealization"] | null;
+            km: components["schemas"]["MaintenanceKmAxis"] | null;
+            months: components["schemas"]["MaintenanceMonthsAxis"] | null;
+            main_axis: (components["schemas"]["MaintenanceAxisEnum"] | components["schemas"]["NullEnum"]) | null;
+            signalements: components["schemas"]["MaintenanceSignalement"][];
+        };
         MileageCorrection: {
             entry: number;
             value: number;
@@ -3400,6 +3554,28 @@ export interface operations {
             };
         };
     };
+    api_garage_maintenance_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identifiant du véhicule */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceSummary"];
+                };
+            };
+        };
+    };
     api_garage_mileage_list: {
         parameters: {
             query?: {
@@ -4504,6 +4680,22 @@ export enum FuelTypeEnum {
     diesel = "diesel",
     electrique = "electrique"
 }
+export enum IconEnum {
+    tool = "tool",
+    oil = "oil",
+    filter = "filter",
+    air = "air",
+    belt = "belt",
+    brake = "brake",
+    tire = "tire",
+    spark = "spark",
+    bearing = "bearing",
+    steering = "steering",
+    battery = "battery",
+    light = "light",
+    engine = "engine",
+    body = "body"
+}
 export enum InterventionSheetStatusEnum {
     open = "open",
     validated = "validated"
@@ -4511,6 +4703,21 @@ export enum InterventionSheetStatusEnum {
 export enum InterventionTaskTypeEnum {
     done = "done",
     planned = "planned"
+}
+export enum MaintenanceAxisEnum {
+    km = "km",
+    months = "months"
+}
+export enum MaintenanceSourceEnum {
+    echeance = "echeance",
+    signalement = "signalement",
+    usure = "usure"
+}
+export enum MaintenanceStatusEnum {
+    overdue = "overdue",
+    to_plan = "to_plan",
+    up_to_date = "up_to_date",
+    not_recorded = "not_recorded"
 }
 export enum PaymentModeEnum {
     cash = "cash",

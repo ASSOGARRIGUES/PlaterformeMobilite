@@ -68,6 +68,21 @@ export function InterventionEditStepper({ sheetId }: InterventionEditStepperProp
 
   const viewStep = activeStep === 3 && recapView ? 4 : activeStep
 
+  // Une date refusée par le serveur (ex : date de début effacée) est rétablie à l'écran
+  const onStartDate = async (value: Date | null) => {
+    const previous = startDate
+    setStartDate(value)
+    const saved = await updateSheetField('start_date', value ? dayjs(value).format('YYYY-MM-DD') : null)
+    if (!saved) setStartDate(previous)
+  }
+
+  const onEndDate = async (value: Date | null) => {
+    const previous = endDate
+    setEndDate(value)
+    const saved = await updateSheetField('end_date', value ? dayjs(value).format('YYYY-MM-DD') : null)
+    if (!saved) setEndDate(previous)
+  }
+
   if (isLoading || !sheet || !vehicle) {
     return (
       <Center h="60vh">
@@ -188,14 +203,8 @@ export function InterventionEditStepper({ sheetId }: InterventionEditStepperProp
         <StepDatesValidate
           startDate={startDate}
           endDate={endDate}
-          onStartDate={(value) => {
-            setStartDate(value)
-            updateSheetField('start_date', value ? dayjs(value).format('YYYY-MM-DD') : null)
-          }}
-          onEndDate={(value) => {
-            setEndDate(value)
-            updateSheetField('end_date', value ? dayjs(value).format('YYYY-MM-DD') : null)
-          }}
+          onStartDate={onStartDate}
+          onEndDate={onEndDate}
           vehicleImat={vehicle.imat}
           startMileage={sheet.start_mileage ?? null}
           doneTasks={doneTasks}
@@ -208,14 +217,8 @@ export function InterventionEditStepper({ sheetId }: InterventionEditStepperProp
         <StepDatesValidate
           startDate={startDate}
           endDate={endDate}
-          onStartDate={(value) => {
-            setStartDate(value)
-            updateSheetField('start_date', value ? dayjs(value).format('YYYY-MM-DD') : null)
-          }}
-          onEndDate={(value) => {
-            setEndDate(value)
-            updateSheetField('end_date', value ? dayjs(value).format('YYYY-MM-DD') : null)
-          }}
+          onStartDate={onStartDate}
+          onEndDate={onEndDate}
           vehicleImat={vehicle.imat}
           startMileage={sheet.start_mileage ?? null}
           doneTasks={doneTasks}

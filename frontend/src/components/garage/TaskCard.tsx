@@ -134,7 +134,7 @@ export function TaskCard({
           {task.isWearTask && task.type === 'done' && (
             <Stack gap={4}>
               <Text size="sm">
-                Niveau d'usure :{' '}
+                État de la pièce posée :{' '}
                 <Text
                   span
                   fw={600}

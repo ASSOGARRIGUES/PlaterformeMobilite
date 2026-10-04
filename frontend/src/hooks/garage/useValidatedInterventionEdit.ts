@@ -78,6 +78,7 @@ export function useValidatedInterventionEdit(sheetId: number) {
   const { mutateAsync: customMutate, isLoading: isMutating } = useCustomMutation<InterventionTask>()
   const { mutateAsync: updateSheet } = useUpdate()
 
+  /** Renvoie false si le serveur refuse la valeur, pour que l'appelant rétablisse l'affichage. */
   const updateSheetField = async (field: 'start_date' | 'end_date', value: string | null) => {
     setStepError(null)
     try {
@@ -87,8 +88,10 @@ export function useValidatedInterventionEdit(sheetId: number) {
         values: { [field]: value },
         successNotification: false,
       })
+      return true
     } catch (error) {
       setStepError(extractStepError(error))
+      return false
     }
   }
 
@@ -157,7 +160,9 @@ export function useValidatedInterventionEdit(sheetId: number) {
       setter((prev) => prev.map((task) => (task.localId === localId ? rebuilt : task)))
       syncedSetter((prev) => prev.map((task) => (task.localId === localId ? rebuilt : task)))
     } catch (error) {
-      // conserve l'ancienne valeur locale, ne pas appliquer le patch optimiste
+      // rétablit la dernière valeur connue du serveur (ex : usure refusée) au lieu de garder la valeur locale rejetée
+      const setter = section === 'done' ? setDoneTasks : setPlannedTasks
+      setter((prev) => prev.map((task) => (task.localId === localId ? synced : task)))
       setStepError(extractStepError(error))
     }
   }

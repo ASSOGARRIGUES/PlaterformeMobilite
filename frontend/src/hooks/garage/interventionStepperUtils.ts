@@ -6,7 +6,7 @@ import {
   CreateInterventionTaskPayload,
   UpdateInterventionTaskPayload,
 } from '../../types/garage'
-import { TaskCatalogItem, periodicityLabel, isWearLevelCritical } from '../../components/garage/taskCardUtils'
+import { TaskCatalogItem, periodicityLabel } from '../../components/garage/taskCardUtils'
 
 /** Payload minimal de création (POST .../tasks/) — parts/photos passent toujours par le PATCH ensuite */
 export function localTaskToCreatePayload(task: LocalTask): CreateInterventionTaskPayload {
@@ -129,13 +129,6 @@ export function unresolvedPlannedTasks(
       })
   })
   return pending
-}
-
-/** Vrai si au moins une tâche d'usure est ≤ au seuil critique (stopgap frontend, story 2.5). */
-export function hasCriticalWear(tasks: LocalTask[], threshold?: number): boolean {
-  return tasks.some(
-    (task) => task.isWearTask && task.wearLevel !== undefined && isWearLevelCritical(task.wearLevel, threshold),
-  )
 }
 
 export type SidePanelCardVisibility = {

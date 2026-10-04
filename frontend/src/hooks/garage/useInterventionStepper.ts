@@ -7,7 +7,6 @@ import {
   localTaskToCreatePayload,
   localTaskToUpdatePayload,
   localTaskFromApiTask,
-  hasCriticalWear,
   unresolvedPlannedTasks,
   taskIdentity,
   extractStepError,
@@ -55,9 +54,6 @@ export function useInterventionStepper(sheetId: number) {
   const [syncedPlannedTasks, setSyncedPlannedTasks] = useState<LocalTask[]>([])
   const [activeStep, setActiveStep] = useState(0)
   const [stepError, setStepError] = useState<string | null>(null)
-  const [warningOpen, setWarningOpen] = useState(false)
-  const [pendingTransition, setPendingTransition] = useState<{ nextStep: number; sheetValues: PatchInterventionPayload } | null>(null)
-  const warningConfirmedRef = useRef(false)
   const initializedRef = useRef(false)
 
   // Fiches validées précédentes (hors fiche courante) — réutilisées pour les suggestions ET
@@ -200,21 +196,15 @@ export function useInterventionStepper(sheetId: number) {
         values: { current_step: nextStep + 1, ...sheetValues },
         successNotification: false,
       })
-      warningConfirmedRef.current = false
       setActiveStep(nextStep)
     } catch (error) {
       setStepError(extractStepError(error))
     }
   }
 
-  /** Transition d'étape (avant/arrière). Ouvre MaintenanceWarningModal en quittant l'étape 2 si usure critique (AC7). */
+  /** Transition d'étape (avant/arrière). Une usure refusée par le backend bloque la transition via stepError (story 2.10). */
   const goToStep = async (nextStep: number, sheetValues: PatchInterventionPayload = {}) => {
     setStepError(null)
-    if (activeStep === 1 && hasCriticalWear(doneTasks) && !warningConfirmedRef.current) {
-      setPendingTransition({ nextStep, sheetValues })
-      setWarningOpen(true)
-      return
-    }
     await performTransition(nextStep, sheetValues)
   }
 
@@ -251,23 +241,6 @@ export function useInterventionStepper(sheetId: number) {
     }
   }
 
-  const warningModalProps = {
-    opened: warningOpen,
-    vehicleImat: vehicle?.imat ?? '',
-    cause: 'Une usure critique a été relevée sur une ou plusieurs tâches réalisées. Le véhicule devrait passer en maintenance.',
-    onConfirm: async () => {
-      warningConfirmedRef.current = true
-      setWarningOpen(false)
-      const pending = pendingTransition
-      setPendingTransition(null)
-      if (pending) await performTransition(pending.nextStep, pending.sheetValues)
-    },
-    onCancel: () => {
-      setWarningOpen(false)
-      setPendingTransition(null)
-    },
-  }
-
   return {
     sheet,
     vehicle,
@@ -285,7 +258,6 @@ export function useInterventionStepper(sheetId: number) {
     updateTask,
     removeTask,
     validateSheet,
-    warningModalProps,
     stepError,
   }
 }

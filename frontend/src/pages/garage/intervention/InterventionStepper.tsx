@@ -18,7 +18,6 @@ import { StepTasksPlanned } from '../../../components/garage/stepper/StepTasksPl
 import { StepDatesValidate } from '../../../components/garage/stepper/StepDatesValidate'
 import { InterventionStepperShell } from '../../../components/garage/stepper/InterventionStepperShell'
 import { InterventionSidePanel } from '../../../components/garage/stepper/InterventionSidePanel'
-import { MaintenanceWarningModal } from '../../../components/garage/MaintenanceWarningModal'
 import { SaveButton } from '../../../components/SaveButton'
 import { InterventionShow } from './InterventionShow'
 import { MileageEntry } from '../../../types/garage'
@@ -50,7 +49,6 @@ const InterventionStepper = () => {
     updateTask,
     removeTask,
     validateSheet,
-    warningModalProps,
     stepError,
   } = useInterventionStepper(sheetId)
 
@@ -271,8 +269,6 @@ const InterventionStepper = () => {
           />
         )}
       </InterventionStepperShell>
-
-      <MaintenanceWarningModal {...warningModalProps} />
     </>
   )
 }

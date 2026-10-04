@@ -2124,6 +2124,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/InterventionSheet'
           description: ''
+  /api/garage/maintenance/{id}/:
+    get:
+      operationId: api_garage_maintenance_retrieve
+      description: 'Synthèse d''entretien par tâche d''un véhicule (story 2.10). Calcul
+        : garage/alerts.py.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Identifiant du véhicule
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceSummary'
+          description: ''
   /api/garage/mileage/{vehicle_pk}/:
     get:
       operationId: api_garage_mileage_list
@@ -3630,6 +3654,38 @@ components:
       required:
       - id
       - url
+    IconEnum:
+      enum:
+      - tool
+      - oil
+      - filter
+      - air
+      - belt
+      - brake
+      - tire
+      - spark
+      - bearing
+      - steering
+      - battery
+      - light
+      - engine
+      - body
+      type: string
+      description: |-
+        * `tool` - Outil (par défaut)
+        * `oil` - Huile
+        * `filter` - Filtre
+        * `air` - Air
+        * `belt` - Courroie / distribution
+        * `brake` - Freins
+        * `tire` - Pneus
+        * `spark` - Allumage
+        * `bearing` - Roulements
+        * `steering` - Direction / train
+        * `battery` - Batterie
+        * `light` - Éclairage
+        * `engine` - Moteur
+        * `body` - Carrosserie
     InAppBroadcast:
       type: object
       properties:
@@ -3797,6 +3853,334 @@ components:
       description: |-
         * `done` - Réalisée
         * `planned` - À prévoir
+    MaintenanceAxisEnum:
+      enum:
+      - km
+      - months
+      type: string
+      description: |-
+        * `km` - Kilométrage
+        * `months` - Durée
+    MaintenanceCounts:
+      type: object
+      properties:
+        overdue:
+          type: integer
+        to_plan:
+          type: integer
+        up_to_date:
+          type: integer
+        not_recorded:
+          type: integer
+        other_work:
+          type: integer
+        sheets:
+          type: integer
+      required:
+      - not_recorded
+      - other_work
+      - overdue
+      - sheets
+      - to_plan
+      - up_to_date
+    MaintenanceKmAxis:
+      type: object
+      properties:
+        lifespan:
+          type: integer
+        due:
+          type: integer
+        remaining:
+          type: integer
+        progress:
+          type: number
+          format: double
+        soon:
+          type: integer
+          nullable: true
+      required:
+      - due
+      - lifespan
+      - progress
+      - remaining
+      - soon
+    MaintenanceMonthsAxis:
+      type: object
+      properties:
+        lifespan:
+          type: integer
+        due:
+          type: string
+          format: date
+        remaining_days:
+          type: integer
+        progress:
+          type: number
+          format: double
+        soon:
+          type: integer
+          nullable: true
+      required:
+      - due
+      - lifespan
+      - progress
+      - remaining_days
+      - soon
+    MaintenanceOtherWork:
+      type: object
+      properties:
+        key:
+          type: string
+        catalog_task_id:
+          type: integer
+          nullable: true
+        name:
+          type: string
+        icon:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/IconEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        sheet_id:
+          type: integer
+        task_id:
+          type: integer
+        date:
+          type: string
+          format: date
+        km:
+          type: integer
+          nullable: true
+        wear_level:
+          type: integer
+          nullable: true
+      required:
+      - catalog_task_id
+      - date
+      - icon
+      - key
+      - km
+      - name
+      - sheet_id
+      - task_id
+      - wear_level
+    MaintenancePeriodicity:
+      type: object
+      properties:
+        km:
+          type: integer
+          nullable: true
+        months:
+          type: integer
+          nullable: true
+      required:
+      - km
+      - months
+    MaintenanceRealization:
+      type: object
+      properties:
+        sheet_id:
+          type: integer
+        task_id:
+          type: integer
+        date:
+          type: string
+          format: date
+        km:
+          type: integer
+          nullable: true
+        wear_level:
+          type: integer
+          nullable: true
+      required:
+      - date
+      - km
+      - sheet_id
+      - task_id
+      - wear_level
+    MaintenanceSheet:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          $ref: '#/components/schemas/InterventionSheetStatusEnum'
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        end_date:
+          type: string
+          format: date
+          nullable: true
+        start_mileage:
+          type: integer
+          nullable: true
+        created_by_display:
+          type: string
+        done_count:
+          type: integer
+        planned_count:
+          type: integer
+      required:
+      - created_by_display
+      - done_count
+      - end_date
+      - id
+      - planned_count
+      - start_date
+      - start_mileage
+      - status
+    MaintenanceSignalement:
+      type: object
+      properties:
+        task_id:
+          type: integer
+        sheet_id:
+          type: integer
+        sheet_date:
+          type: string
+          format: date
+        catalog_task_id:
+          type: integer
+          nullable: true
+        name:
+          type: string
+        description:
+          type: string
+        source:
+          $ref: '#/components/schemas/MaintenanceSourceEnum'
+        photos:
+          type: array
+          items:
+            type: string
+            format: uri
+          readOnly: true
+      required:
+      - catalog_task_id
+      - description
+      - name
+      - photos
+      - sheet_date
+      - sheet_id
+      - source
+      - task_id
+    MaintenanceSourceEnum:
+      enum:
+      - echeance
+      - signalement
+      - usure
+      type: string
+      description: |-
+        * `echeance` - Échéance
+        * `signalement` - Signalement
+        * `usure` - Usure
+    MaintenanceStatusEnum:
+      enum:
+      - overdue
+      - to_plan
+      - up_to_date
+      - not_recorded
+      type: string
+      description: |-
+        * `overdue` - En retard
+        * `to_plan` - À prévoir
+        * `up_to_date` - À jour
+        * `not_recorded` - Jamais enregistrée
+    MaintenanceSummary:
+      type: object
+      properties:
+        vehicle_id:
+          type: integer
+        current_km:
+          type: integer
+        today:
+          type: string
+          format: date
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaintenanceTask'
+        signalements:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaintenanceSignalement'
+        other_work:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaintenanceOtherWork'
+        sheets:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaintenanceSheet'
+        counts:
+          $ref: '#/components/schemas/MaintenanceCounts'
+      required:
+      - counts
+      - current_km
+      - other_work
+      - sheets
+      - signalements
+      - tasks
+      - today
+      - vehicle_id
+    MaintenanceTask:
+      type: object
+      properties:
+        catalog_task_id:
+          type: integer
+        name:
+          type: string
+        icon:
+          $ref: '#/components/schemas/IconEnum'
+        periodicity:
+          $ref: '#/components/schemas/MaintenancePeriodicity'
+        is_critical:
+          type: boolean
+        is_wear_task:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/MaintenanceStatusEnum'
+        source:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/MaintenanceSourceEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        last_realization:
+          allOf:
+          - $ref: '#/components/schemas/MaintenanceRealization'
+          nullable: true
+        km:
+          allOf:
+          - $ref: '#/components/schemas/MaintenanceKmAxis'
+          nullable: true
+        months:
+          allOf:
+          - $ref: '#/components/schemas/MaintenanceMonthsAxis'
+          nullable: true
+        main_axis:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/MaintenanceAxisEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        signalements:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaintenanceSignalement'
+      required:
+      - catalog_task_id
+      - icon
+      - is_critical
+      - is_wear_task
+      - km
+      - last_realization
+      - main_axis
+      - months
+      - name
+      - periodicity
+      - signalements
+      - source
+      - status
     MileageCorrection:
       type: object
       properties:

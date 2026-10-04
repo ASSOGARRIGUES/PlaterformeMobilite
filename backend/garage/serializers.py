@@ -7,6 +7,7 @@ from rest_framework import serializers
 from api.models import Contract, Vehicle
 from api.serializers import VehicleSerializer, UserSerializer
 from .models import TaskCatalog, MileageEntry, InterventionSheet, InterventionTask, InterventionTaskPart, GaragePhoto, AuditLog
+from .alerts import get_config, TASK_STATUS_CHOICES, PLANNING_SOURCE_CHOICES, AXIS_CHOICES
 
 
 class TaskCatalogSerializer(serializers.ModelSerializer):
@@ -105,6 +106,18 @@ class InterventionTaskSerializer(serializers.ModelSerializer):
         read_only_fields = ['sheet']
 
 
+def _validate_posed_wear(task_type, catalog_task, wear_level):
+    """Une pièce posée (tâche d'usure réalisée) ne peut pas être sous le seuil d'alerte d'usure."""
+    if task_type != 'done' or catalog_task is None or not catalog_task.is_wear_task or wear_level is None:
+        return
+    threshold = get_config().wear_alert_threshold
+    if wear_level < threshold:
+        raise serializers.ValidationError({
+            'wear_level': f"Une pièce à {wear_level}/10 ne peut pas être posée : l'état minimum accepté "
+                          f"est {threshold}/10 (seuil d'alerte d'usure)."
+        })
+
+
 class MutationInterventionTaskSerializer(serializers.ModelSerializer):
     parts = InterventionTaskPartSerializer(many=True, required=False)
     photos = serializers.ListField(child=Base64ImageField(), required=False, write_only=True)
@@ -116,6 +129,7 @@ class MutationInterventionTaskSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if not attrs.get('catalog_task') and not (attrs.get('name') or '').strip():
             raise serializers.ValidationError({'name': "Le nom est requis pour une tâche libre."})
+        _validate_posed_wear(attrs.get('type'), attrs.get('catalog_task'), attrs.get('wear_level'))
         return attrs
 
     def create(self, validated_data):
@@ -143,6 +157,8 @@ class UpdateInterventionTaskSerializer(serializers.Serializer):
     def validate(self, attrs):
         if 'name' in attrs and not attrs['name'].strip() and not self.instance.catalog_task:
             raise serializers.ValidationError({'name': "Le nom est requis pour une tâche libre."})
+        if 'wear_level' in attrs:
+            _validate_posed_wear(self.instance.type, self.instance.catalog_task, attrs['wear_level'])
         return attrs
 
     def update(self, instance, validated_data):
@@ -218,6 +234,17 @@ class MutationInterventionSheetSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     'current_step': "L'étape d'une fiche validée ne peut pas être modifiée."
                 })
+            # `'start_date' in attrs` et non `effective_start_date` : ce dernier traite un None
+            # explicite comme « non fourni » et ne détecterait pas l'effacement.
+            if (
+                self.instance.status == 'validated'
+                and 'start_date' in attrs
+                and attrs['start_date'] is None
+            ):
+                raise serializers.ValidationError({
+                    'start_date': "La date de début d'une fiche validée ne peut pas être effacée : "
+                                  "elle date les tâches réalisées."
+                })
         else:
             vehicle = attrs.get('vehicle')
             if vehicle is not None and InterventionSheet.objects.filter(vehicle=vehicle, status='open').exists():
@@ -280,3 +307,109 @@ class MutationInterventionSheetSerializer(serializers.ModelSerializer):
         validated_data['status'] = 'open'
         validated_data['current_step'] = 1
         return super().create(validated_data)
+
+
+# ── Synthèse d'entretien (story 2.10) — sérialiseurs de réponse uniquement ────
+
+class MaintenanceKmAxisSerializer(serializers.Serializer):
+    lifespan = serializers.IntegerField()
+    due = serializers.IntegerField()
+    remaining = serializers.IntegerField()
+    progress = serializers.FloatField()
+    soon = serializers.IntegerField(allow_null=True)
+
+
+class MaintenanceMonthsAxisSerializer(serializers.Serializer):
+    lifespan = serializers.IntegerField()
+    due = serializers.DateField()
+    remaining_days = serializers.IntegerField()
+    progress = serializers.FloatField()
+    soon = serializers.IntegerField(allow_null=True)
+
+
+class MaintenanceRealizationSerializer(serializers.Serializer):
+    sheet_id = serializers.IntegerField()
+    task_id = serializers.IntegerField()
+    date = serializers.DateField()
+    km = serializers.IntegerField(allow_null=True)
+    wear_level = serializers.IntegerField(allow_null=True)
+
+
+class MaintenanceSignalementSerializer(serializers.Serializer):
+    task_id = serializers.IntegerField()
+    sheet_id = serializers.IntegerField()
+    sheet_date = serializers.DateField()
+    catalog_task_id = serializers.IntegerField(allow_null=True)
+    name = serializers.CharField()
+    description = serializers.CharField(allow_blank=True)
+    source = serializers.ChoiceField(choices=PLANNING_SOURCE_CHOICES)
+    photos = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.ListField(child=serializers.URLField()))
+    def get_photos(self, obj):
+        request = self.context.get('request')
+        return [request.build_absolute_uri(url) if request is not None else url for url in obj['photos']]
+
+
+class MaintenancePeriodicitySerializer(serializers.Serializer):
+    km = serializers.IntegerField(allow_null=True)
+    months = serializers.IntegerField(allow_null=True)
+
+
+class MaintenanceTaskSerializer(serializers.Serializer):
+    catalog_task_id = serializers.IntegerField()
+    name = serializers.CharField()
+    icon = serializers.ChoiceField(choices=TaskCatalog.ICON_CHOICES)
+    periodicity = MaintenancePeriodicitySerializer()
+    is_critical = serializers.BooleanField()
+    is_wear_task = serializers.BooleanField()
+    status = serializers.ChoiceField(choices=TASK_STATUS_CHOICES)
+    source = serializers.ChoiceField(choices=PLANNING_SOURCE_CHOICES, allow_null=True)
+    last_realization = MaintenanceRealizationSerializer(allow_null=True)
+    km = MaintenanceKmAxisSerializer(allow_null=True)
+    months = MaintenanceMonthsAxisSerializer(allow_null=True)
+    main_axis = serializers.ChoiceField(choices=AXIS_CHOICES, allow_null=True)
+    signalements = MaintenanceSignalementSerializer(many=True)
+
+
+class MaintenanceOtherWorkSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    catalog_task_id = serializers.IntegerField(allow_null=True)
+    name = serializers.CharField()
+    icon = serializers.ChoiceField(choices=TaskCatalog.ICON_CHOICES, allow_null=True)
+    sheet_id = serializers.IntegerField()
+    task_id = serializers.IntegerField()
+    date = serializers.DateField()
+    km = serializers.IntegerField(allow_null=True)
+    wear_level = serializers.IntegerField(allow_null=True)
+
+
+class MaintenanceSheetSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    status = serializers.ChoiceField(choices=InterventionSheet.STATUS_CHOICES)
+    start_date = serializers.DateField(allow_null=True)
+    end_date = serializers.DateField(allow_null=True)
+    start_mileage = serializers.IntegerField(allow_null=True)
+    created_by_display = serializers.CharField()
+    done_count = serializers.IntegerField()
+    planned_count = serializers.IntegerField()
+
+
+class MaintenanceCountsSerializer(serializers.Serializer):
+    overdue = serializers.IntegerField()
+    to_plan = serializers.IntegerField()
+    up_to_date = serializers.IntegerField()
+    not_recorded = serializers.IntegerField()
+    other_work = serializers.IntegerField()
+    sheets = serializers.IntegerField()
+
+
+class MaintenanceSummarySerializer(serializers.Serializer):
+    vehicle_id = serializers.IntegerField()
+    current_km = serializers.IntegerField()
+    today = serializers.DateField()
+    tasks = MaintenanceTaskSerializer(many=True)
+    signalements = MaintenanceSignalementSerializer(many=True)
+    other_work = MaintenanceOtherWorkSerializer(many=True)
+    sheets = MaintenanceSheetSerializer(many=True)
+    counts = MaintenanceCountsSerializer()

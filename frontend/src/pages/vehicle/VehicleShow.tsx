@@ -1,10 +1,10 @@
-import {useGo, useShow} from "@refinedev/core";
+import {useOne, useShow} from "@refinedev/core";
 import {Beneficiary} from "../../types/beneficiary";
-import {useMemo} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import {CompleteContract} from "../../types/contract";
 import {Vehicle} from "../../types/vehicle";
 import VehicleBadge from "../../components/Vehicle/VehicleBadge";
-import {Group, Paper, Stack, Tabs, Title, useMantineTheme} from "@mantine/core";
+import {Badge, Group, Paper, Stack, Tabs, Title, useMantineTheme} from "@mantine/core";
 import ContractTable from "../../components/contract/ContractTable";
 import BeneficiaryBadge from "../../components/beneficiary/BeneficiaryBadge";
 import VehicleCard from "../../components/Vehicle/VehicleCard";
@@ -19,20 +19,18 @@ import ContractEditButton from "../../components/contract/ContractEditButton";
 import {humanizeDate} from "../../constants";
 import ContractSearchTooltip from "../../components/contract/ContractSearchTooltip";
 import VehicleActions from "../../components/Vehicle/VehicleActions";
-import {DataTableColumn, DataTableRowClickHandler} from "mantine-datatable";
+import {DataTableColumn} from "mantine-datatable";
 import {Show} from "../../components/forkedFromRefine/Show";
 import {useMediaQuery} from "@mantine/hooks";
 import {ErrorComponent} from "../../components/ErrorComponent";
 import CanAccess from "../../components/CanAccess";
 import MileageHistoryChart from "../../components/garage/MileageHistoryChart";
-import {PlannedTasksPanel} from "../../components/garage/PlannedTasksPanel";
-import {IconHistory, IconFileText, IconClipboardList, IconTool} from "@tabler/icons-react";
-import {InterventionStatusBadge} from "../../components/garage/intervention/InterventionStatusBadge";
-import InterventionStatusFilter from "../../components/garage/intervention/filters/InterventionStatusFilter";
-import InterventionDateFilter from "../../components/garage/intervention/filters/InterventionDateFilter";
-import SearchableDataTable, {SearchableDataTableColumn} from "../../components/SearchableDataTable";
-import {InterventionSheet} from "../../types/garage";
-import {humanizeFirstName, humanizeNumber} from "../../constants";
+import {IconHistory, IconFileText, IconTool} from "@tabler/icons-react";
+import {MaintenanceSummary} from "../../types/garage";
+import useAccessControl from "../../hooks/useAccessControl";
+import {MaintenanceTab} from "../../components/garage/maintenance/MaintenanceTab";
+import {maintenanceBadge} from "../../components/garage/maintenance/maintenanceUtils";
+import {MaintenanceInfoLine} from "../../components/garage/maintenance/MaintenanceInfoLine";
 
 const VehicleShow = (props: any) => {
 
@@ -41,11 +39,45 @@ const VehicleShow = (props: any) => {
 
     const { queryResult: showResponse } = useShow<Vehicle>()
     const vehicle  = showResponse.data?.data;
-    const go = useGo();
 
-    const interventionRowClickHandler: DataTableRowClickHandler<InterventionSheet> = ({record}) => {
-        go({to: `/garage/intervention/${record.id}`});
-    }
+    // Synthèse d'entretien chargée une seule fois : onglet, pastille et ligne Informations.
+    // Jamais demandée sans garage.view_vehicle (un 403 déclencherait une notification d'erreur).
+    const {isAuthorized} = useAccessControl();
+    const canViewGarage = !!isAuthorized('garage.view_vehicle');
+    const {data: maintenanceData, isLoading: maintenanceLoading, isError: maintenanceError, refetch: refetchMaintenance} = useOne<MaintenanceSummary>({
+        resource: 'garage/maintenance',
+        id: vehicle?.id,
+        queryOptions: {enabled: vehicle?.id != null && canViewGarage},
+    });
+    // Les échéances km dépendent du kilométrage : resynchronise après une édition du véhicule sur cette page
+    const lastKilometer = useRef(vehicle?.kilometer);
+    useEffect(() => {
+        if (vehicle?.kilometer === undefined) return;
+        if (lastKilometer.current !== undefined && lastKilometer.current !== vehicle.kilometer && canViewGarage) refetchMaintenance();
+        lastKilometer.current = vehicle.kilometer;
+    }, [vehicle?.kilometer, canViewGarage, refetchMaintenance]);
+    const maintenance = maintenanceData?.data;
+    const badge = maintenance ? maintenanceBadge(maintenance.counts) : null;
+
+    // Tabs contrôlés : le défaut dépend de whoami (asynchrone) tant que l'utilisateur n'a rien choisi
+    const [chosenTab, setChosenTab] = useState<string | null>(null);
+    const defaultTab = isAuthorized(['garage.view_vehicle', 'garage.manage_intervention']) ? 'maintenance' : 'contracts';
+    const activeTab = chosenTab ?? defaultTab;
+
+    // Ligne « Entretien » des Informations : bascule sur l'onglet, fait défiler jusqu'aux onglets
+    // et éclaire brièvement l'onglet pour montrer où l'on arrive.
+    const tabsRef = useRef<HTMLDivElement>(null);
+    const [maintenanceTabFlash, setMaintenanceTabFlash] = useState(false);
+    const goToMaintenanceTab = () => {
+        setChosenTab('maintenance');
+        tabsRef.current?.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+        setMaintenanceTabFlash(true);
+    };
+    useEffect(() => {
+        if (!maintenanceTabFlash) return;
+        const timeout = setTimeout(() => setMaintenanceTabFlash(false), 900);
+        return () => clearTimeout(timeout);
+    }, [maintenanceTabFlash]);
 
     const editModalForm = useContractModalForm({action: "edit"});
     const {modal: { show: showEditModal}} = editModalForm;
@@ -103,38 +135,6 @@ const VehicleShow = (props: any) => {
         [],
     );
 
-    const interventionColumns = useMemo<SearchableDataTableColumn<InterventionSheet>[]>(
-        () => [
-            {
-                accessor: 'status',
-                title: 'Statut',
-                sortable: true,
-                textAlignment: 'center',
-                render: (sheet) => <InterventionStatusBadge status={sheet.status} />,
-                filter: InterventionStatusFilter,
-            },
-            {
-                accessor: 'created_at',
-                title: 'Date',
-                sortable: true,
-                render: (sheet) => humanizeDate(sheet.created_at),
-                filter: InterventionDateFilter,
-            },
-            {
-                accessor: 'start_mileage',
-                title: 'Kilométrage',
-                render: (sheet) => (sheet.start_mileage != null ? `${humanizeNumber(sheet.start_mileage)} km` : '—'),
-            },
-            {
-                accessor: 'created_by',
-                title: 'Garagiste',
-                render: (sheet) =>
-                    sheet.created_by ? `${humanizeFirstName(sheet.created_by.first_name)} ${sheet.created_by.last_name}` : '—',
-            },
-        ],
-        [],
-    );
-
     // If the vehicle is not found, show an error
     if(showResponse.error?.statusCode === 404) return <ErrorComponent errorMessage={"Le vehicule n'existe pas ou n'est pas accessible"}/>;
 
@@ -148,24 +148,48 @@ const VehicleShow = (props: any) => {
                 <Show title={<Title><VehicleBadge vehicle={vehicle} noLink noColor/> </Title>} wrapperProps={{flex:"none"}} contentProps={{style:{padding:0}}}/>
 
                 <Group grow style={{alignItems:"stretch"}}>
-                    <VehicleCard vehicle={vehicle} withEdit style={{flexGrow:2, maxWidth:"100%"}}/>
+                    <VehicleCard
+                        vehicle={vehicle}
+                        withEdit
+                        style={{flexGrow:2, maxWidth:"100%"}}
+                        footer={canViewGarage && maintenance ? (
+                            <MaintenanceInfoLine summary={maintenance} onClick={goToMaintenanceTab}/>
+                        ) : undefined}
+                    />
                     <VehicleActions vehicle={vehicle} style={{flexGrow:1, maxWidth:"100%"}}/>
                 </Group>
 
-                <Paper shadow="sm" p="md" style={{flex: "auto", minHeight:(smallerThanMd ? "100vh" : 0), display: "flex", flexDirection: "column"}}>
-                    <Tabs variant="outline" defaultValue="contracts" keepMounted={false} style={{display: "flex", flexDirection: "column", flex: "1 1 auto"}}>
+                {/* L'onglet Entretien grandit avec son contenu (la page défile) ; les autres onglets restent à la hauteur de l'écran */}
+                <Paper ref={tabsRef} shadow="sm" p="md" style={{flex: activeTab === 'maintenance' ? "0 0 auto" : "auto", minHeight:(smallerThanMd ? "100vh" : 0), display: "flex", flexDirection: "column"}}>
+                    <Tabs variant="outline" value={activeTab} onChange={setChosenTab} keepMounted={false} style={{display: "flex", flexDirection: "column", flex: "1 1 auto"}}>
                         <Tabs.List>
+                            <CanAccess permKey="garage.view_vehicle">
+                                <Tabs.Tab
+                                    leftSection={<IconTool size={18}/>}
+                                    style={{backgroundColor: maintenanceTabFlash ? "var(--mantine-color-blue-1)" : undefined, transition: "background-color 600ms ease"}}
+                                    rightSection={badge ? <Badge size="sm" circle color={badge.color}>{badge.count}</Badge> : undefined}
+                                    value="maintenance"
+                                >
+                                    Entretien
+                                </Tabs.Tab>
+                            </CanAccess>
                             <Tabs.Tab leftSection={<IconFileText size={18}/>} value="contracts">Contrats</Tabs.Tab>
                             <CanAccess permKey="garage.view_vehicle">
                                 <Tabs.Tab leftSection={<IconHistory size={18}/>} value="mileage">Historique kilométrique</Tabs.Tab>
                             </CanAccess>
-                            <CanAccess permKey="garage.view_vehicle">
-                                <Tabs.Tab leftSection={<IconClipboardList size={18}/>} value="planned-tasks">À prévoir</Tabs.Tab>
-                            </CanAccess>
-                            <CanAccess permKey="garage.view_vehicle">
-                                <Tabs.Tab leftSection={<IconTool size={18}/>} value="interventions">Interventions</Tabs.Tab>
-                            </CanAccess>
                         </Tabs.List>
+
+                        <CanAccess permKey="garage.view_vehicle">
+                            <Tabs.Panel value="maintenance" p="md">
+                                {vehicle && (
+                                    <MaintenanceTab
+                                        summary={maintenance}
+                                        isLoading={maintenanceLoading}
+                                        isError={maintenanceError}
+                                    />
+                                )}
+                            </Tabs.Panel>
+                        </CanAccess>
 
                         <Tabs.Panel value="contracts" style={{flex: "1 1 auto", display: "flex", flexDirection: "column", alignItems:"center", gap:"10px", paddingRight:20, paddingLeft:20, paddingTop:10}}>
                             <ContractTable
@@ -196,36 +220,6 @@ const VehicleShow = (props: any) => {
                             </Tabs.Panel>
                         </CanAccess>
 
-                        <CanAccess permKey="garage.view_vehicle">
-                            <Tabs.Panel value="planned-tasks" p="md">
-                                {vehicle && (
-                                    <PlannedTasksPanel
-                                        vehicleId={vehicle.id}
-                                        vehicleType={vehicle.type!}
-                                    />
-                                )}
-                            </Tabs.Panel>
-                        </CanAccess>
-
-                        <CanAccess permKey="garage.view_vehicle">
-                            <Tabs.Panel value="interventions" style={{flex: "1 1 auto", display: "flex", flexDirection: "column", paddingRight:20, paddingLeft:20, paddingTop:10}}>
-                                {vehicle && (
-                                    <SearchableDataTable
-                                        resource="garage/intervention"
-                                        searchPlaceHolder="Rechercher une intervention"
-                                        columns={interventionColumns}
-                                        withReloadIcon
-                                        withArchivedSwitch={false}
-                                        permanentFilters={[{field: "vehicle", operator: "eq", value: vehicle.id}]}
-                                        syncWithLocation={false}
-                                        defaultSortedColumn="created_at"
-                                        defaultSortedDirection="desc"
-                                        style={{flex: "auto", minHeight:0}}
-                                        onRowClick={interventionRowClickHandler}
-                                    />
-                                )}
-                            </Tabs.Panel>
-                        </CanAccess>
                     </Tabs>
                 </Paper>
 

@@ -1,9 +1,14 @@
 import datetime
 from django.utils import timezone
 
-from django.test import TestCase, RequestFactory
-from django.contrib.auth.models import Group
+from types import SimpleNamespace
+
+from django.db import IntegrityError, connection, transaction
+from django.test import TestCase, SimpleTestCase, RequestFactory
+from django.test.utils import CaptureQueriesContext
+from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
@@ -12,10 +17,13 @@ from core.models import Action
 from api.models import Parking, Vehicle, Beneficiary, Contract
 from .models import (
     MileageEntry, TaskCatalog, MaintenanceConfig, InterventionSheet, InterventionTask, InterventionTaskPart,
-    VehicleTaskRecord, GaragePhoto, AuditLog,
+    GaragePhoto, AuditLog,
 )
-from .alerts import get_config
-from .admin import MaintenanceConfigAdmin
+from .alerts import (
+    get_config, add_months, load_maintenance_data, compute_task_statuses, compute_open_signalements,
+    compute_other_work, CatalogTask, TaskOccurrence,
+)
+from .admin import MaintenanceConfigAdmin, TaskCatalogAdmin, TaskCatalogForm
 
 User = get_user_model()
 
@@ -677,6 +685,16 @@ class InterventionSheetAPITestCase(APITestCase):
     def _validate_url(self, sheet):
         return f'/api/garage/intervention/{sheet.id}/validate/'
 
+    def _maintenance(self, vehicle=None):
+        response = self.client.get(f'/api/garage/maintenance/{(vehicle or self.vehicle_a).id}/')
+        self.assertEqual(response.status_code, 200)
+        return response.data
+
+    def _maintenance_row(self, catalog_task, vehicle=None):
+        rows = [row for row in self._maintenance(vehicle)['tasks'] if row['catalog_task_id'] == catalog_task.id]
+        self.assertEqual(len(rows), 1)
+        return rows[0]
+
     def test_create_sheet_by_garagiste(self):
         self.client.force_authenticate(user=self.garagiste)
         response = self.client.post(self._list_url(), {'vehicle': self.vehicle_a.id})
@@ -785,10 +803,11 @@ class InterventionSheetAPITestCase(APITestCase):
         task = InterventionTask.objects.get(pk=response.data['id'])
         self.assertEqual(GaragePhoto.objects.filter(object_id=task.pk).count(), 1)
 
-    def test_validate_sheet_creates_mileage_entry_and_task_records(self):
+    def test_validate_sheet_creates_mileage_entry_and_realization(self):
         self.client.force_authenticate(user=self.garagiste)
         sheet = InterventionSheet.objects.create(
             vehicle=self.vehicle_a, created_by=self.garagiste, start_mileage=10500,
+            start_date=datetime.date(2026, 1, 1), end_date=datetime.date(2026, 1, 3),
         )
         InterventionTask.objects.create(
             sheet=sheet, type='done', catalog_task=self.catalog_task_periodic,
@@ -811,12 +830,18 @@ class InterventionSheetAPITestCase(APITestCase):
         self.vehicle_a.refresh_from_db()
         self.assertEqual(self.vehicle_a.kilometer, 10500)
 
-        self.assertTrue(VehicleTaskRecord.objects.filter(
-            vehicle=self.vehicle_a, catalog_task=self.catalog_task_periodic,
-        ).exists())
-        self.assertFalse(VehicleTaskRecord.objects.filter(
-            vehicle=self.vehicle_a, catalog_task=self.catalog_task_no_periodicity,
-        ).exists())
+        summary = self._maintenance()
+        row = next(r for r in summary['tasks'] if r['catalog_task_id'] == self.catalog_task_periodic.id)
+        # Datée à la start_date de la fiche (et non à end_date) : une seule règle de date (D1)
+        self.assertEqual(row['last_realization']['date'], '2026-01-01')
+        self.assertEqual(row['last_realization']['km'], 10500)
+        self.assertEqual(row['last_realization']['sheet_id'], sheet.id)
+        # La tâche « à prévoir » de la même fiche est close par la réalisation
+        self.assertEqual(row['signalements'], [])
+        self.assertNotIn(self.catalog_task_no_periodicity.id, [r['catalog_task_id'] for r in summary['tasks']])
+        self.assertEqual(
+            [w['catalog_task_id'] for w in summary['other_work']], [self.catalog_task_no_periodicity.id],
+        )
 
     def test_garagiste_multi_action_can_act_on_vehicle_b(self):
         self.client.force_authenticate(user=self.garagiste)
@@ -941,6 +966,7 @@ class InterventionSheetAPITestCase(APITestCase):
         self.client.force_authenticate(user=self.garagiste)
         validated = InterventionSheet.objects.create(
             vehicle=self.vehicle_a, created_by=self.garagiste, status='validated', start_mileage=10500,
+            start_date=datetime.date(2026, 1, 1),
         )
         InterventionTask.objects.create(sheet=validated, type='planned', name='À prévoir')
         InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste, status='open')
@@ -960,7 +986,10 @@ class InterventionSheetAPITestCase(APITestCase):
 
     def test_filter_by_out_of_scope_vehicle_returns_empty(self):
         # vehicle_c appartient à action_c, hors périmètre du garagiste (actions A+B)
-        InterventionSheet.objects.create(vehicle=self.vehicle_c, created_by=self.garagiste, status='validated')
+        InterventionSheet.objects.create(
+            vehicle=self.vehicle_c, created_by=self.garagiste, status='validated', start_mileage=8000,
+            start_date=datetime.date(2026, 1, 1),
+        )
         self.client.force_authenticate(user=self.garagiste)
         response = self.client.get(f'{self._list_url()}?vehicle={self.vehicle_c.id}')
         self.assertEqual(response.status_code, 200)
@@ -1104,7 +1133,7 @@ class InterventionSheetAPITestCase(APITestCase):
         response = self.client.get(self._audit_log_url(sheet))
         self.assertEqual(response.status_code, 404)
 
-    def test_post_task_on_validated_sheet_creates_audit_log_and_task_record(self):
+    def test_post_task_on_validated_sheet_creates_audit_log_and_realization(self):
         self.client.force_authenticate(user=self.garagiste)
         sheet = self._make_validated_sheet()
         response = self.client.post(self._tasks_url(sheet), {
@@ -1112,23 +1141,24 @@ class InterventionSheetAPITestCase(APITestCase):
         }, format='json')
         self.assertEqual(response.status_code, 201)
         self.assertEqual(AuditLog.objects.filter(action='task_added').count(), 1)
-        record = VehicleTaskRecord.objects.get(vehicle=self.vehicle_a, catalog_task=self.catalog_task_periodic)
-        self.assertEqual(record.kilometer, sheet.start_mileage)
+        row = self._maintenance_row(self.catalog_task_periodic)
+        self.assertEqual(row['last_realization']['km'], sheet.start_mileage)
+        self.assertEqual(row['last_realization']['task_id'], response.data['id'])
 
         response = self.client.post(self._tasks_url(sheet), {
             'type': 'done', 'catalog_task': self.catalog_task_no_periodicity.id,
         }, format='json')
         self.assertEqual(response.status_code, 201)
         self.assertEqual(AuditLog.objects.filter(action='task_added').count(), 2)
-        self.assertFalse(
-            VehicleTaskRecord.objects.filter(vehicle=self.vehicle_a, catalog_task=self.catalog_task_no_periodicity).exists()
+        self.assertIn(
+            self.catalog_task_no_periodicity.id, [w['catalog_task_id'] for w in self._maintenance()['other_work']],
         )
 
         response = self.client.post(self._tasks_url(sheet), {'type': 'planned', 'name': 'Libre'}, format='json')
         self.assertEqual(response.status_code, 201)
         self.assertEqual(AuditLog.objects.filter(action='task_added').count(), 3)
 
-    def test_post_task_on_open_sheet_creates_no_audit_log_and_no_task_record(self):
+    def test_post_task_on_open_sheet_creates_no_audit_log_and_no_realization(self):
         self.client.force_authenticate(user=self.garagiste)
         sheet = InterventionSheet.objects.create(
             vehicle=self.vehicle_a, created_by=self.garagiste, start_mileage=10500,
@@ -1138,23 +1168,20 @@ class InterventionSheetAPITestCase(APITestCase):
         }, format='json')
         self.assertEqual(response.status_code, 201)
         self.assertFalse(AuditLog.objects.exists())
-        self.assertFalse(VehicleTaskRecord.objects.exists())
+        self.assertEqual(self._maintenance_row(self.catalog_task_periodic)['status'], 'not_recorded')
 
-    def test_delete_only_occurrence_removes_vehicle_task_record(self):
+    def test_delete_only_occurrence_returns_to_not_recorded(self):
         self.client.force_authenticate(user=self.garagiste)
         sheet = self._make_validated_sheet()
         task = InterventionTask.objects.create(
             sheet=sheet, type='done', catalog_task=self.catalog_task_periodic,
         )
-        VehicleTaskRecord.objects.create(
-            vehicle=self.vehicle_a, catalog_task=self.catalog_task_periodic,
-            date=sheet.start_date, kilometer=sheet.start_mileage,
-        )
+        self.assertIsNotNone(self._maintenance_row(self.catalog_task_periodic)['last_realization'])
         response = self.client.delete(self._task_detail_url(sheet, task))
         self.assertEqual(response.status_code, 204)
-        self.assertFalse(
-            VehicleTaskRecord.objects.filter(vehicle=self.vehicle_a, catalog_task=self.catalog_task_periodic).exists()
-        )
+        row = self._maintenance_row(self.catalog_task_periodic)
+        self.assertEqual(row['status'], 'not_recorded')
+        self.assertIsNone(row['last_realization'])
 
     def test_delete_recent_occurrence_falls_back_to_older_one(self):
         self.client.force_authenticate(user=self.garagiste)
@@ -1164,14 +1191,87 @@ class InterventionSheetAPITestCase(APITestCase):
         recent_task = InterventionTask.objects.create(
             sheet=recent_sheet, type='done', catalog_task=self.catalog_task_periodic,
         )
-        VehicleTaskRecord.objects.create(
-            vehicle=self.vehicle_a, catalog_task=self.catalog_task_periodic,
-            date=recent_sheet.start_date, kilometer=recent_sheet.start_mileage,
-        )
+        self.assertEqual(self._maintenance_row(self.catalog_task_periodic)['last_realization']['km'], 10500)
         response = self.client.delete(self._task_detail_url(recent_sheet, recent_task))
         self.assertEqual(response.status_code, 204)
-        record = VehicleTaskRecord.objects.get(vehicle=self.vehicle_a, catalog_task=self.catalog_task_periodic)
-        self.assertEqual(record.kilometer, older_sheet.start_mileage)
+        row = self._maintenance_row(self.catalog_task_periodic)
+        self.assertEqual(row['last_realization']['km'], older_sheet.start_mileage)
+        self.assertEqual(row['last_realization']['date'], '2025-01-01')
+
+    def test_patch_start_date_of_validated_sheet_moves_realization_date(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = self._make_validated_sheet()
+        InterventionTask.objects.create(sheet=sheet, type='done', catalog_task=self.catalog_task_periodic)
+        self.assertEqual(self._maintenance_row(self.catalog_task_periodic)['last_realization']['date'], '2026-01-01')
+        response = self.client.patch(self._detail_url(sheet), {'start_date': '2026-01-05'}, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._maintenance_row(self.catalog_task_periodic)['last_realization']['date'], '2026-01-05')
+
+    def test_patch_task_of_validated_sheet_updates_summary(self):
+        self.client.force_authenticate(user=self.garagiste)
+        wear_task = self._make_wear_task()
+        sheet = self._make_validated_sheet()
+        task = InterventionTask.objects.create(sheet=sheet, type='done', catalog_task=wear_task, wear_level=8)
+        self.assertEqual(self._maintenance_row(wear_task)['last_realization']['wear_level'], 8)
+        response = self.client.patch(f'{self._tasks_url(sheet)}{task.id}/', {'wear_level': 6}, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._maintenance_row(wear_task)['last_realization']['wear_level'], 6)
+
+    def test_wear_task_posed_at_alert_threshold_is_to_plan_in_summary(self):
+        self.client.force_authenticate(user=self.garagiste)
+        wear_task = self._make_wear_task()
+        sheet = self._make_validated_sheet()
+        InterventionTask.objects.create(sheet=sheet, type='done', catalog_task=wear_task, wear_level=4)
+        row = self._maintenance_row(wear_task)
+        self.assertEqual((row['status'], row['source']), ('to_plan', 'usure'))
+
+    def test_mileage_correction_of_intervention_entry_updates_sheet_and_due_km(self):
+        self.garagiste.user_permissions.add(Permission.objects.get(codename='correct_mileage'))
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = InterventionSheet.objects.create(
+            vehicle=self.vehicle_a, created_by=self.garagiste, start_mileage=10500,
+            start_date=datetime.date(2026, 1, 1),
+        )
+        InterventionTask.objects.create(sheet=sheet, type='done', catalog_task=self.catalog_task_periodic)
+        self.assertEqual(self.client.post(self._validate_url(sheet)).status_code, 200)
+        self.assertEqual(self._maintenance_row(self.catalog_task_periodic)['km']['due'], 20500)
+
+        entry = MileageEntry.objects.get(source='intervention', source_id=sheet.id)
+        url = f'/api/garage/mileage/{self.vehicle_a.id}/correct/'
+        response = self.client.post(url, {'entry': entry.id, 'value': 10200, 'reason': 'Erreur de saisie'})
+        self.assertEqual(response.status_code, 201)
+        sheet.refresh_from_db()
+        self.assertEqual(sheet.start_mileage, 10200)
+        self.assertEqual(self._maintenance_row(self.catalog_task_periodic)['km']['due'], 20200)
+
+        # corriger la correction suit la chaîne jusqu'à l'entrée de la fiche
+        response = self.client.post(url, {'entry': response.data['id'], 'value': 10300, 'reason': 'Encore faux'})
+        self.assertEqual(response.status_code, 201)
+        sheet.refresh_from_db()
+        self.assertEqual(sheet.start_mileage, 10300)
+
+    def test_mileage_correction_of_manual_entry_does_not_touch_sheets(self):
+        self.garagiste.user_permissions.add(Permission.objects.get(codename='correct_mileage'))
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = self._make_validated_sheet()
+        entry = MileageEntry.objects.create(
+            vehicle=self.vehicle_a, value=10800, date=datetime.date(2026, 2, 1), source='manual',
+            source_id=sheet.id, author=self.garagiste,
+        )
+        response = self.client.post(
+            f'/api/garage/mileage/{self.vehicle_a.id}/correct/',
+            {'entry': entry.id, 'value': 10700, 'reason': 'Erreur de saisie'},
+        )
+        self.assertEqual(response.status_code, 201)
+        sheet.refresh_from_db()
+        self.assertEqual(sheet.start_mileage, 10500)
+
+    def test_validated_sheet_requires_start_mileage_and_start_date_in_database(self):
+        for missing in ('start_mileage', 'start_date'):
+            with self.subTest(missing=missing), self.assertRaises(IntegrityError), transaction.atomic():
+                self._make_validated_sheet(**{missing: None})
+        # une fiche ouverte peut ne pas les avoir
+        InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
 
     # ── Story 2.9 : synchronisation kilométrage — saisies hors ordre chronologique ──
 
@@ -1243,6 +1343,7 @@ class InterventionSheetAPITestCase(APITestCase):
         self.client.force_authenticate(user=self.garagiste)
         sheet = InterventionSheet.objects.create(
             vehicle=self.vehicle_a, created_by=self.garagiste, start_mileage=10500,
+            start_date=timezone.localdate(),
         )
         response = self.client.post(self._validate_url(sheet))
         self.assertEqual(response.status_code, 200)
@@ -1330,3 +1431,532 @@ class InterventionSheetAPITestCase(APITestCase):
             self._detail_url(sheet), {'start_mileage': 10500, 'start_date': today}, format='json',
         )
         self.assertEqual(response.status_code, 200)
+
+    # ── Story 2.10 : start_date obligatoire, usure de la pièce posée, synthèse d'entretien ──
+
+    def _make_wear_task(self):
+        return TaskCatalog.objects.create(
+            name='Pneus', vehicle_types=['voiture'], km_periodicity=30000, is_wear_task=True,
+        )
+
+    def test_validate_without_start_date_returns_400(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = InterventionSheet.objects.create(
+            vehicle=self.vehicle_a, created_by=self.garagiste, start_mileage=10500,
+        )
+        response = self.client.post(self._validate_url(sheet))
+        self.assertEqual(response.status_code, 400)
+        sheet.refresh_from_db()
+        self.assertEqual(sheet.status, 'open')
+        self.assertFalse(MileageEntry.objects.filter(source='intervention').exists())
+
+    def test_patch_start_date_null_on_validated_sheet_returns_400(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = self._make_validated_sheet()
+        response = self.client.patch(self._detail_url(sheet), {'start_date': None}, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('start_date', response.data)
+        sheet.refresh_from_db()
+        self.assertEqual(sheet.start_date, datetime.date(2026, 1, 1))
+
+    def test_patch_start_date_null_on_open_sheet_is_allowed(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = InterventionSheet.objects.create(
+            vehicle=self.vehicle_a, created_by=self.garagiste, start_date=datetime.date(2026, 1, 1),
+        )
+        response = self.client.patch(self._detail_url(sheet), {'start_date': None}, format='json')
+        self.assertEqual(response.status_code, 200)
+        sheet.refresh_from_db()
+        self.assertIsNone(sheet.start_date)
+
+    def test_post_done_wear_task_below_alert_threshold_returns_400(self):
+        self.client.force_authenticate(user=self.garagiste)
+        wear_task = self._make_wear_task()
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+        response = self.client.post(self._tasks_url(sheet), {
+            'type': 'done', 'catalog_task': wear_task.id, 'wear_level': 3,
+        }, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('wear_level', response.data)
+        self.assertIn('4/10', str(response.data['wear_level']))
+        self.assertFalse(InterventionTask.objects.exists())
+
+        response = self.client.post(self._tasks_url(sheet), {
+            'type': 'done', 'catalog_task': wear_task.id, 'wear_level': 4,
+        }, format='json')
+        self.assertEqual(response.status_code, 201)
+
+    def test_post_done_wear_task_honours_configured_threshold(self):
+        self.client.force_authenticate(user=self.garagiste)
+        config = get_config()
+        config.wear_alert_threshold = 6
+        config.save()
+        wear_task = self._make_wear_task()
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+        response = self.client.post(self._tasks_url(sheet), {
+            'type': 'done', 'catalog_task': wear_task.id, 'wear_level': 5,
+        }, format='json')
+        self.assertEqual(response.status_code, 400)
+
+    def test_patch_done_wear_task_below_alert_threshold_returns_400(self):
+        self.client.force_authenticate(user=self.garagiste)
+        wear_task = self._make_wear_task()
+        sheet = self._make_validated_sheet()
+        task = InterventionTask.objects.create(sheet=sheet, type='done', catalog_task=wear_task, wear_level=8)
+        response = self.client.patch(self._task_detail_url(sheet, task), {'wear_level': 2}, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('wear_level', response.data)
+        task.refresh_from_db()
+        self.assertEqual(task.wear_level, 8)
+        self.assertFalse(AuditLog.objects.exists())
+
+        response = self.client.patch(self._task_detail_url(sheet, task), {'wear_level': 4}, format='json')
+        self.assertEqual(response.status_code, 200)
+
+    def test_planned_wear_task_below_threshold_is_accepted(self):
+        self.client.force_authenticate(user=self.garagiste)
+        wear_task = self._make_wear_task()
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+        response = self.client.post(self._tasks_url(sheet), {
+            'type': 'planned', 'catalog_task': wear_task.id, 'wear_level': 2,
+        }, format='json')
+        self.assertEqual(response.status_code, 201)
+        task = InterventionTask.objects.get(pk=response.data['id'])
+        response = self.client.patch(self._task_detail_url(sheet, task), {'wear_level': 1}, format='json')
+        self.assertEqual(response.status_code, 200)
+
+    def test_wear_rule_not_applied_to_non_wear_task(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+        response = self.client.post(self._tasks_url(sheet), {
+            'type': 'done', 'catalog_task': self.catalog_task_periodic.id, 'wear_level': 1,
+        }, format='json')
+        self.assertEqual(response.status_code, 201)
+        response = self.client.post(self._tasks_url(sheet), {
+            'type': 'done', 'name': 'Libre', 'wear_level': 1,
+        }, format='json')
+        self.assertEqual(response.status_code, 201)
+
+    def test_maintenance_multi_action_garagiste_can_read_vehicle_of_other_action(self):
+        self.client.force_authenticate(user=self.garagiste)
+        response = self.client.get(f'/api/garage/maintenance/{self.vehicle_b.id}/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['vehicle_id'], self.vehicle_b.id)
+
+    def test_maintenance_without_view_vehicle_permission_returns_403(self):
+        user = User.objects.create_user(
+            username='nogarage@test.com', email='nogarage@test.com', password='pass',
+            phone='0600000015', first_name='Sans', last_name='Droit',
+        )
+        user.actions.set([self.action_a])
+        user.current_action = self.action_a
+        user.save()
+        self.client.force_authenticate(user=user)
+        response = self.client.get(f'/api/garage/maintenance/{self.vehicle_a.id}/')
+        self.assertEqual(response.status_code, 403)
+
+    def test_maintenance_vehicle_outside_user_actions_returns_403(self):
+        self.client.force_authenticate(user=self.garagiste)
+        response = self.client.get(f'/api/garage/maintenance/{self.vehicle_c.id}/')
+        self.assertEqual(response.status_code, 403)
+
+    def test_maintenance_unknown_vehicle_returns_404(self):
+        self.client.force_authenticate(user=self.garagiste)
+        self.assertEqual(self.client.get('/api/garage/maintenance/999999/').status_code, 404)
+        self.assertEqual(self.client.get('/api/garage/maintenance/abc/').status_code, 404)
+
+    def test_maintenance_unauthenticated_returns_401(self):
+        response = self.client.get(f'/api/garage/maintenance/{self.vehicle_a.id}/')
+        self.assertEqual(response.status_code, 401)
+
+    def test_maintenance_response_shape_and_open_sheet(self):
+        self.client.force_authenticate(user=self.garagiste)
+        validated = self._make_validated_sheet(start_mileage=9000)
+        InterventionTask.objects.create(sheet=validated, type='done', catalog_task=self.catalog_task_periodic)
+        InterventionTask.objects.create(sheet=validated, type='planned', name='Bruit train avant')
+        open_sheet = InterventionSheet.objects.create(
+            vehicle=self.vehicle_a, created_by=self.garagiste, start_date=datetime.date(2026, 2, 1),
+        )
+        InterventionTask.objects.create(sheet=open_sheet, type='done', catalog_task=self.catalog_task_no_periodicity)
+        InterventionTask.objects.create(sheet=open_sheet, type='planned', name='Essuie-glaces')
+
+        data = self._maintenance()
+        self.assertEqual(
+            set(data.keys()),
+            {'vehicle_id', 'current_km', 'today', 'tasks', 'signalements', 'other_work', 'sheets', 'counts'},
+        )
+        self.assertEqual(data['current_km'], 10000)
+        self.assertEqual(data['today'], timezone.localdate().isoformat())
+
+        row = next(r for r in data['tasks'] if r['catalog_task_id'] == self.catalog_task_periodic.id)
+        self.assertEqual(row['status'], 'up_to_date')
+        self.assertEqual(row['source'], None)
+        self.assertEqual(row['km'], {'lifespan': 10000, 'due': 19000, 'remaining': 9000, 'progress': 0.1, 'soon': None})
+        self.assertIsNone(row['months'])
+        self.assertEqual(row['main_axis'], 'km')
+        self.assertEqual(row['last_realization']['date'], '2026-01-01')
+
+        self.assertEqual([sig['name'] for sig in data['signalements']], ['Bruit train avant'])
+        self.assertEqual(data['signalements'][0]['source'], 'signalement')
+        self.assertEqual(data['signalements'][0]['sheet_date'], '2026-01-01')
+
+        # Fiche ouverte : présente dans sheets, mais ses tâches ne sont ni réalisations ni signalements
+        self.assertEqual([sheet['id'] for sheet in data['sheets']], [open_sheet.id, validated.id])
+        self.assertEqual(data['sheets'][0]['status'], 'open')
+        self.assertEqual(data['sheets'][0]['done_count'], 1)
+        self.assertEqual(data['sheets'][0]['planned_count'], 1)
+        self.assertEqual(data['sheets'][1]['created_by_display'], 'Jean Garagiste')
+        self.assertEqual(data['other_work'], [])
+
+        # Les autres tâches cycliques du catalogue préconfiguré (migration 0003) ne sont pas enregistrées
+        self.assertTrue(all(r['status'] == 'not_recorded' for r in data['tasks'] if r is not row))
+        self.assertEqual(data['counts'], {
+            'overdue': 0, 'to_plan': 1, 'up_to_date': 1, 'not_recorded': len(data['tasks']) - 1,
+            'other_work': 0, 'sheets': 2,
+        })
+
+    def test_maintenance_exposes_icon_periodicity_and_signalement_photos(self):
+        self.client.force_authenticate(user=self.garagiste)
+        self.catalog_task_periodic.icon = 'oil'
+        self.catalog_task_periodic.month_periodicity = 12
+        self.catalog_task_periodic.save()
+        self.catalog_task_no_periodicity.icon = 'body'
+        self.catalog_task_no_periodicity.save()
+        sheet = self._make_validated_sheet(start_mileage=9000)
+        InterventionTask.objects.create(sheet=sheet, type='done', catalog_task=self.catalog_task_no_periodicity)
+        InterventionTask.objects.create(sheet=sheet, type='done', name='Rétroviseur')
+        signalement = InterventionTask.objects.create(sheet=sheet, type='planned', name='Bruit train avant')
+        GaragePhoto.objects.create(
+            image=SimpleUploadedFile('p.png', b'\x89PNG\r\n', content_type='image/png'),
+            content_type=ContentType.objects.get_for_model(InterventionTask), object_id=signalement.pk,
+        )
+
+        data = self._maintenance()
+
+        # Ligne jamais enregistrée : pas d'axe, mais l'icône et la périodicité sont connues
+        row = next(r for r in data['tasks'] if r['catalog_task_id'] == self.catalog_task_periodic.id)
+        self.assertEqual(row['status'], 'not_recorded')
+        self.assertIsNone(row['km'])
+        self.assertEqual(row['icon'], 'oil')
+        self.assertEqual(row['periodicity'], {'km': 10000, 'months': 12})
+
+        other = {item['name']: item for item in data['other_work']}
+        self.assertEqual(other['Nettoyage']['icon'], 'body')
+        self.assertIsNone(other['Rétroviseur']['icon'])
+
+        photos = data['signalements'][0]['photos']
+        self.assertEqual(len(photos), 1)
+        self.assertTrue(photos[0].startswith('http://testserver/'))
+
+    def test_initial_catalog_tasks_get_their_icon(self):
+        self.assertEqual(TaskCatalog.objects.get(name='Distribution').icon, 'belt')
+        self.assertEqual(TaskCatalog.objects.get(name='Pneus').icon, 'tire')
+        self.assertEqual(TaskCatalog.objects.get(name='Biellettes').icon, 'steering')
+
+    def test_load_maintenance_data_query_count_is_constant(self):
+        for vehicle in (self.vehicle_a, self.vehicle_b, self.vehicle_c):
+            sheet = self._make_validated_sheet(vehicle=vehicle, start_mileage=vehicle.kilometer)
+            InterventionTask.objects.create(sheet=sheet, type='done', catalog_task=self.catalog_task_periodic)
+            InterventionTask.objects.create(sheet=sheet, type='planned', name='Libre')
+            InterventionSheet.objects.create(vehicle=vehicle, created_by=self.garagiste)
+
+        with CaptureQueriesContext(connection) as one_vehicle:
+            data_one = load_maintenance_data([self.vehicle_a])
+        with CaptureQueriesContext(connection) as three_vehicles:
+            data_three = load_maintenance_data([self.vehicle_a, self.vehicle_b, self.vehicle_c])
+
+        self.assertEqual(len(one_vehicle), len(three_vehicles))
+        self.assertEqual(len(three_vehicles), 4)  # catalogue, tâches, photos des signalements, fiches
+        self.assertEqual(len(data_one['occurrences_by_vehicle'][self.vehicle_a.id]), 2)
+        for vehicle in (self.vehicle_a, self.vehicle_b, self.vehicle_c):
+            self.assertEqual(len(data_three['occurrences_by_vehicle'][vehicle.id]), 2)
+            self.assertEqual(len(data_three['sheets_by_vehicle'][vehicle.id]), 2)
+
+    def test_task_catalog_admin_exposes_soon_thresholds(self):
+        admin_user = User.objects.create_superuser(
+            username='admin210@test.com', email='admin210@test.com', password='pass', phone='0600000016',
+        )
+        request = RequestFactory().get('/admin/garage/taskcatalog/add/')
+        request.user = admin_user
+        model_admin = TaskCatalogAdmin(TaskCatalog, AdminSite())
+        form = model_admin.get_form(request)
+        self.assertIn('soon_km', form.base_fields)
+        self.assertIn('soon_months', form.base_fields)
+        self.assertIn('soon_km', model_admin.list_display)
+        self.assertIn('soon_months', model_admin.list_display)
+
+    def test_task_catalog_soon_threshold_must_be_below_periodicity(self):
+        task = TaskCatalog(name='Vidange', km_periodicity=15000, month_periodicity=12, soon_km=15000, soon_months=12)
+        with self.assertRaises(ValidationError) as ctx:
+            task.clean()
+        self.assertEqual(set(ctx.exception.message_dict), {'soon_km', 'soon_months'})
+        TaskCatalog(name='Vidange', km_periodicity=15000, month_periodicity=12, soon_km=14999, soon_months=11).clean()
+        TaskCatalog(name='Libre', soon_km=1000, soon_months=2).clean()  # sans périodicité : ignoré
+
+    def test_task_catalog_admin_form_rejects_soon_threshold_above_periodicity(self):
+        form = TaskCatalogForm(data={
+            'name': 'Vidange', 'vehicle_types': ['voiture'], 'km_periodicity': 15000, 'soon_km': 20000,
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn('soon_km', form.errors)
+
+
+# ── Story 2.10 : calcul pur de l'entretien par tâche (aucune base de données) ──
+
+TODAY = datetime.date(2026, 10, 1)
+VEHICLE = SimpleNamespace(id=1, type='voiture', kilometer=50000)
+CONFIG = SimpleNamespace(wear_alert_threshold=4, wear_critical_threshold=3)
+
+
+def _catalog(id=1, name='Vidange', km=None, months=None, soon_km=None, soon_months=None, types=('voiture',),
+             is_wear_task=False):
+    return CatalogTask(
+        id=id, name=name, vehicle_types=list(types), km_periodicity=km, month_periodicity=months,
+        soon_km=soon_km, soon_months=soon_months, is_critical=False, is_wear_task=is_wear_task,
+    )
+
+
+def _occurrence(task_id, sheet_id, type='done', catalog_task_id=1, date=datetime.date(2026, 1, 1), km=40000,
+                name='Vidange', description='', wear_level=None):
+    return TaskOccurrence(
+        task_id=task_id, sheet_id=sheet_id, vehicle_id=VEHICLE.id, type=type, catalog_task_id=catalog_task_id,
+        name=name, description=description, wear_level=wear_level, sheet_start_date=date, sheet_start_mileage=km,
+    )
+
+
+def _data(catalog, occurrences):
+    return {'catalog': catalog, 'occurrences_by_vehicle': {VEHICLE.id: occurrences}, 'sheets_by_vehicle': {VEHICLE.id: []}}
+
+
+class AddMonthsTestCase(SimpleTestCase):
+    def test_clamps_to_last_day_of_month(self):
+        self.assertEqual(add_months(datetime.date(2026, 1, 31), 1), datetime.date(2026, 2, 28))
+        self.assertEqual(add_months(datetime.date(2024, 1, 31), 1), datetime.date(2024, 2, 29))
+        self.assertEqual(add_months(datetime.date(2026, 3, 31), 1), datetime.date(2026, 4, 30))
+
+    def test_crosses_years_both_ways(self):
+        self.assertEqual(add_months(datetime.date(2026, 11, 15), 14), datetime.date(2028, 1, 15))
+        self.assertEqual(add_months(datetime.date(2026, 1, 15), -2), datetime.date(2025, 11, 15))
+        self.assertEqual(add_months(datetime.date(2026, 3, 31), -1), datetime.date(2026, 2, 28))
+
+
+class ComputeTaskStatusesTestCase(SimpleTestCase):
+    def _row(self, catalog, occurrences):
+        rows = compute_task_statuses(_data(catalog, occurrences), VEHICLE, TODAY, CONFIG)
+        self.assertEqual(len(rows), 1)
+        return rows[0]
+
+    def test_km_overdue_at_exact_due_and_up_to_date_one_km_before(self):
+        row = self._row([_catalog(km=10000)], [_occurrence(1, 1, km=40000)])
+        self.assertEqual(row['status'], 'overdue')
+        self.assertEqual(row['km']['remaining'], 0)
+        self.assertIsNone(row['source'])
+        self.assertIsNone(row['months'])
+        row = self._row([_catalog(km=10000)], [_occurrence(1, 1, km=40001)])
+        self.assertEqual(row['status'], 'up_to_date')
+
+    def test_months_overdue_at_exact_due_date_and_up_to_date_one_day_before(self):
+        row = self._row([_catalog(months=12)], [_occurrence(1, 1, date=datetime.date(2025, 10, 1))])
+        self.assertEqual(row['status'], 'overdue')
+        self.assertEqual(row['months']['remaining_days'], 0)
+        self.assertIsNone(row['km'])
+        row = self._row([_catalog(months=12)], [_occurrence(1, 1, date=datetime.date(2025, 10, 2))])
+        self.assertEqual(row['status'], 'up_to_date')
+        self.assertEqual(row['months']['due'], datetime.date(2026, 10, 2))
+
+    def test_to_plan_on_soon_km_inclusive(self):
+        row = self._row([_catalog(km=10000, soon_km=1000)], [_occurrence(1, 1, km=41000)])
+        self.assertEqual((row['status'], row['source']), ('to_plan', 'echeance'))
+        row = self._row([_catalog(km=10000, soon_km=1000)], [_occurrence(1, 1, km=41001)])
+        self.assertEqual(row['status'], 'up_to_date')
+
+    def test_to_plan_on_soon_months(self):
+        # échéance 2026-12-01, seuil 2 mois → à prévoir dès le 2026-10-01
+        row = self._row([_catalog(months=12, soon_months=2)], [_occurrence(1, 1, date=datetime.date(2025, 12, 1))])
+        self.assertEqual((row['status'], row['source']), ('to_plan', 'echeance'))
+        row = self._row([_catalog(months=12, soon_months=2)], [_occurrence(1, 1, date=datetime.date(2025, 12, 2))])
+        self.assertEqual(row['status'], 'up_to_date')
+
+    def test_null_or_zero_thresholds_never_give_to_plan(self):
+        for soon in (None, 0):
+            row = self._row([_catalog(km=10000, soon_km=soon)], [_occurrence(1, 1, km=40001)])
+            self.assertEqual(row['status'], 'up_to_date')
+            self.assertIsNone(row['km']['soon'])
+
+    def test_null_or_zero_soon_months_never_gives_to_plan(self):
+        for soon in (None, 0):
+            row = self._row([_catalog(months=12, soon_months=soon)], [_occurrence(1, 1, date=datetime.date(2025, 10, 2))])
+            self.assertEqual(row['status'], 'up_to_date')
+            self.assertIsNone(row['months']['soon'])
+
+    def test_wear_task_posed_at_or_below_alert_threshold_is_to_plan_by_wear(self):
+        catalog = [_catalog(km=10000, is_wear_task=True)]
+        for wear, expected in ((4, ('to_plan', 'usure')), (5, ('up_to_date', None)), (None, ('up_to_date', None))):
+            with self.subTest(wear=wear):
+                row = self._row(catalog, [_occurrence(1, 1, km=45000, wear_level=wear)])
+                self.assertEqual((row['status'], row['source']), expected)
+
+    def test_wear_does_not_override_overdue_or_due_date_source(self):
+        row = self._row([_catalog(km=10000, is_wear_task=True)], [_occurrence(1, 1, km=30000, wear_level=4)])
+        self.assertEqual((row['status'], row['source']), ('overdue', None))
+        row = self._row([_catalog(km=10000, soon_km=1000, is_wear_task=True)], [_occurrence(1, 1, km=41000, wear_level=4)])
+        self.assertEqual((row['status'], row['source']), ('to_plan', 'echeance'))
+
+    def test_wear_level_ignored_on_non_wear_task(self):
+        row = self._row([_catalog(km=10000)], [_occurrence(1, 1, km=45000, wear_level=2)])
+        self.assertEqual(row['status'], 'up_to_date')
+
+    def test_not_recorded(self):
+        row = self._row([_catalog(km=10000, months=12)], [])
+        self.assertEqual(row['status'], 'not_recorded')
+        self.assertIsNone(row['source'])
+        self.assertIsNone(row['last_realization'])
+        self.assertIsNone(row['km'])
+        self.assertIsNone(row['months'])
+        self.assertIsNone(row['main_axis'])
+
+    def test_not_recorded_with_signalement_becomes_to_plan(self):
+        row = self._row([_catalog(km=10000)], [_occurrence(1, 1, type='planned')])
+        self.assertEqual((row['status'], row['source']), ('to_plan', 'signalement'))
+        self.assertEqual([sig['task_id'] for sig in row['signalements']], [1])
+
+    def test_up_to_date_with_signalement_becomes_to_plan(self):
+        occurrences = [
+            _occurrence(1, 1, km=45000),
+            _occurrence(2, 2, type='planned', date=datetime.date(2026, 2, 1)),
+        ]
+        row = self._row([_catalog(km=10000)], occurrences)
+        self.assertEqual((row['status'], row['source']), ('to_plan', 'signalement'))
+
+    def test_to_plan_by_due_date_with_signalement_keeps_echeance_source(self):
+        occurrences = [
+            _occurrence(1, 1, km=41000),
+            _occurrence(2, 2, type='planned', date=datetime.date(2026, 2, 1)),
+        ]
+        row = self._row([_catalog(km=10000, soon_km=1000)], occurrences)
+        self.assertEqual((row['status'], row['source']), ('to_plan', 'echeance'))
+        self.assertEqual(len(row['signalements']), 1)
+
+    def test_overdue_with_signalement_stays_overdue(self):
+        occurrences = [
+            _occurrence(1, 1, km=30000),
+            _occurrence(2, 2, type='planned', date=datetime.date(2026, 2, 1)),
+        ]
+        row = self._row([_catalog(km=10000)], occurrences)
+        self.assertEqual(row['status'], 'overdue')
+        self.assertIsNone(row['source'])
+        self.assertEqual([sig['task_id'] for sig in row['signalements']], [2])
+
+    def test_main_axis_is_the_most_advanced_axis(self):
+        # km : 5000 / 10000 = 0.5 ; mois : 304 / 365 jours = 0.83
+        row = self._row([_catalog(km=10000, months=12)], [_occurrence(1, 1, km=45000, date=datetime.date(2025, 12, 1))])
+        self.assertEqual(row['main_axis'], 'months')
+        self.assertEqual(row['km']['progress'], 0.5)
+        self.assertEqual(row['months']['progress'], 0.83)
+        # km : 9000 / 10000 = 0.9
+        row = self._row([_catalog(km=10000, months=12)], [_occurrence(1, 1, km=41000, date=datetime.date(2025, 12, 1))])
+        self.assertEqual(row['main_axis'], 'km')
+
+    def test_progress_may_exceed_one(self):
+        row = self._row([_catalog(km=10000)], [_occurrence(1, 1, km=35000)])
+        self.assertEqual(row['km']['progress'], 1.5)
+
+    def test_last_realization_is_latest_by_start_date_then_sheet_id(self):
+        occurrences = [
+            _occurrence(1, 5, km=42000, date=datetime.date(2026, 3, 1)),
+            _occurrence(2, 3, km=43000, date=datetime.date(2026, 3, 1)),
+            _occurrence(3, 9, km=41000, date=datetime.date(2026, 2, 1)),
+        ]
+        row = self._row([_catalog(km=10000)], occurrences)
+        self.assertEqual(row['last_realization'], {
+            'sheet_id': 5, 'task_id': 1, 'date': datetime.date(2026, 3, 1), 'km': 42000, 'wear_level': None,
+        })
+
+    def test_non_applicable_and_non_cyclic_tasks_have_no_row(self):
+        catalog = [
+            _catalog(id=1, km=10000, types=('scouter',)),
+            _catalog(id=2, name='Nettoyage'),
+            _catalog(id=3, name='Zéro', km=0, months=0),
+        ]
+        self.assertEqual(compute_task_statuses(_data(catalog, []), VEHICLE, TODAY, CONFIG), [])
+
+    def test_rows_sorted_by_name(self):
+        catalog = [_catalog(id=1, name='Vidange', km=10000), _catalog(id=2, name='Distribution', km=100000)]
+        rows = compute_task_statuses(_data(catalog, []), VEHICLE, TODAY, CONFIG)
+        self.assertEqual([row['name'] for row in rows], ['Distribution', 'Vidange'])
+
+
+class ComputeOpenSignalementsTestCase(SimpleTestCase):
+    CATALOG = [_catalog(id=1, km=10000), _catalog(id=2, name='Nettoyage')]
+
+    def _open_ids(self, occurrences):
+        result = compute_open_signalements(_data(self.CATALOG, occurrences), VEHICLE)
+        return (
+            sorted(sig['task_id'] for sigs in result['by_task'].values() for sig in sigs),
+            sorted(sig['task_id'] for sig in result['standalone']),
+        )
+
+    def test_closed_by_done_in_same_sheet(self):
+        occurrences = [_occurrence(1, 1, type='planned'), _occurrence(2, 1)]
+        self.assertEqual(self._open_ids(occurrences), ([], []))
+
+    def test_closed_by_done_in_later_sheet(self):
+        occurrences = [
+            _occurrence(1, 1, type='planned', date=datetime.date(2026, 1, 1)),
+            _occurrence(2, 2, date=datetime.date(2026, 2, 1)),
+        ]
+        self.assertEqual(self._open_ids(occurrences), ([], []))
+
+    def test_stays_open_when_done_in_earlier_sheet(self):
+        occurrences = [
+            _occurrence(1, 2, type='planned', date=datetime.date(2026, 2, 1)),
+            _occurrence(2, 1, date=datetime.date(2026, 1, 1)),
+        ]
+        self.assertEqual(self._open_ids(occurrences), ([1], []))
+
+    def test_same_start_date_is_decided_by_sheet_id(self):
+        same_day = datetime.date(2026, 2, 1)
+        closed = [_occurrence(1, 5, type='planned', date=same_day), _occurrence(2, 6, date=same_day)]
+        self.assertEqual(self._open_ids(closed), ([], []))
+        still_open = [_occurrence(1, 6, type='planned', date=same_day), _occurrence(2, 5, date=same_day)]
+        self.assertEqual(self._open_ids(still_open), ([1], []))
+
+    def test_free_signalement_is_never_closed_by_a_realization(self):
+        occurrences = [
+            _occurrence(1, 1, type='planned', catalog_task_id=None, name='Bruit', date=datetime.date(2026, 1, 1)),
+            _occurrence(2, 1, catalog_task_id=None, name='Bruit', date=datetime.date(2026, 1, 1)),
+            _occurrence(3, 2, catalog_task_id=None, name='Bruit', date=datetime.date(2026, 2, 1)),
+        ]
+        self.assertEqual(self._open_ids(occurrences), ([], [1]))
+
+    def test_signalement_on_non_cyclic_catalog_task_is_standalone_and_closable(self):
+        open_signalement = [_occurrence(1, 1, type='planned', catalog_task_id=2, name='Nettoyage')]
+        result = compute_open_signalements(_data(self.CATALOG, open_signalement), VEHICLE)
+        self.assertEqual(result['by_task'], {})
+        self.assertEqual(result['standalone'], [{
+            'task_id': 1, 'sheet_id': 1, 'sheet_date': datetime.date(2026, 1, 1), 'catalog_task_id': 2,
+            'name': 'Nettoyage', 'description': '', 'source': 'signalement', 'photos': [],
+        }])
+        closed = open_signalement + [_occurrence(2, 2, catalog_task_id=2, name='Nettoyage', date=datetime.date(2026, 2, 1))]
+        self.assertEqual(self._open_ids(closed), ([], []))
+
+
+class ComputeOtherWorkTestCase(SimpleTestCase):
+    def test_latest_occurrence_and_free_tasks_grouped_by_normalized_name(self):
+        catalog = [_catalog(id=1, km=10000), _catalog(id=2, name='Nettoyage'), _catalog(id=3, name='Batterie', km=1000, types=('scouter',))]
+        occurrences = [
+            _occurrence(1, 1, catalog_task_id=1),  # cyclique : pas dans les autres travaux
+            _occurrence(2, 1, catalog_task_id=None, name='Pneus', date=datetime.date(2026, 1, 1)),
+            _occurrence(3, 2, catalog_task_id=None, name=' pneus  ', km=45000, date=datetime.date(2026, 3, 1)),
+            _occurrence(4, 1, catalog_task_id=2, name='Nettoyage', date=datetime.date(2026, 1, 1)),
+            _occurrence(5, 3, catalog_task_id=2, name='Nettoyage', date=datetime.date(2026, 2, 1)),
+            _occurrence(6, 1, catalog_task_id=3, name='Batterie', date=datetime.date(2026, 1, 1)),  # non applicable
+            _occurrence(7, 3, type='planned', catalog_task_id=None, name='Phare'),  # signalement, pas un travail
+        ]
+        work = compute_other_work(_data(catalog, occurrences), VEHICLE)
+        self.assertEqual(
+            [(item['key'], item['name'], item['task_id']) for item in work],
+            [('free:pneus', ' pneus  ', 3), ('cat:2', 'Nettoyage', 5), ('cat:3', 'Batterie', 6)],
+        )
+        self.assertEqual(work[0]['km'], 45000)
+        self.assertEqual(work[0]['date'], datetime.date(2026, 3, 1))
