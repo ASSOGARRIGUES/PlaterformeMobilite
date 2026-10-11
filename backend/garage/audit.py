@@ -51,6 +51,16 @@ def log_task_deleted(task, user):
     )
 
 
+def log_task_dismissed(task, user):
+    AuditLog.objects.create(
+        author=user,
+        action='task_dismissed',
+        new_value=task.catalog_task.name if task.catalog_task else task.name,
+        content_type=ContentType.objects.get_for_model(InterventionTask),
+        object_id=task.pk,
+    )
+
+
 def get_audit_logs_for_sheet(sheet):
     """Union des logs de la fiche elle-même et de ses tâches actuelles (y compris tâches éditées ;
     une tâche supprimée sort de sheet.tasks, donc ses logs — y compris son propre task_deleted —

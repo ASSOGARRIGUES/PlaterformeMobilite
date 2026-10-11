@@ -35,6 +35,7 @@ import { MaintenanceSheet, MaintenanceSummary } from '../../../types/garage'
 import { InterventionSheetStatusEnum } from '../../../types/schema.d'
 import { humanizeDate, humanizeNumber } from '../../../constants'
 import useAccessControl from '../../../hooks/useAccessControl'
+import { useDismissSignalement } from '../../../hooks/garage/useDismissSignalement'
 import { PhotoLightbox } from '../PhotoLightbox'
 import { MaintenanceSection } from './MaintenanceSection'
 import { MaintenanceOtherWorkRow, MaintenanceSignalementRow, MaintenanceTaskRow, MaintenanceUnknownRow } from './MaintenanceTaskRow'
@@ -113,6 +114,7 @@ export function MaintenanceTab({ summary, isLoading, isError }: MaintenanceTabPr
   const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`, false)
   const { isAuthorized } = useAccessControl()
   const canManage = !!isAuthorized('garage.manage_intervention')
+  const { confirmDismiss } = useDismissSignalement(summary?.vehicle_id ?? 0)
   const [otherWorkQuery, setOtherWorkQuery] = useState('')
   const [allSheetsShown, setAllSheetsShown] = useState(false)
   const [lightboxPhotos, setLightboxPhotos] = useState<string[] | null>(null)
@@ -141,7 +143,7 @@ export function MaintenanceTab({ summary, isLoading, isError }: MaintenanceTabPr
     setLightboxPhotos(photos)
   }
   const authorOf = (sheetId: number) => sheetAuthor(summary, sheetId)
-  const rowProps = { today, showDate, stacked: isMobile, authorOf, onOpenSheet: openSheetById, onOpenPhotos: openPhotos }
+  const rowProps = { today, showDate, stacked: isMobile, authorOf, onOpenSheet: openSheetById, onOpenPhotos: openPhotos, onDismiss: canManage ? confirmDismiss : undefined }
 
   const notRecordedSection = groups.notRecorded.length > 0 && (
     <MaintenanceSection kind="notRecorded" count={groups.notRecorded.length}>
@@ -243,6 +245,7 @@ export function MaintenanceTab({ summary, isLoading, isError }: MaintenanceTabPr
                 today={today}
                 onOpenSheet={openSheetById}
                 onOpenPhotos={openPhotos}
+                onDismiss={rowProps.onDismiss}
               />
             ))}
           </SimpleGrid>

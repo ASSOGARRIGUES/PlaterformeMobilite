@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useShow, useList, useCustomMutation, useUpdate, useGo, useInvalidate, useApiUrl } from '@refinedev/core'
+import { useShow, useList, useOne, useCustomMutation, useUpdate, useGo, useInvalidate, useApiUrl } from '@refinedev/core'
 import { showNotification } from '@mantine/notifications'
-import { InterventionSheet, InterventionTask, LocalTask, PatchInterventionPayload, ValidateInterventionResponse } from '../../types/garage'
+import { InterventionSheet, InterventionTask, LocalTask, MaintenanceSummary, PatchInterventionPayload, ValidateInterventionResponse } from '../../types/garage'
 import { TaskCatalogItem } from '../../components/garage/taskCardUtils'
 import {
   localTaskToCreatePayload,
   localTaskToUpdatePayload,
   localTaskFromApiTask,
-  unresolvedPlannedTasks,
+  suggestionsFromMaintenance,
   taskIdentity,
   extractStepError,
 } from './interventionStepperUtils'
@@ -36,7 +36,7 @@ export function useInterventionStepper(sheetId: number) {
     return map
   }, [catalogData])
 
-  // Fiches validées précédentes du véhicule → suggestions "à prévoir" (AC4)
+  // Fiches validées précédentes du véhicule → carte "Historique" du panneau latéral
   const { data: validatedData } = useList<InterventionSheet>({
     resource: 'garage/intervention',
     filters: vehicle
@@ -56,8 +56,8 @@ export function useInterventionStepper(sheetId: number) {
   const [stepError, setStepError] = useState<string | null>(null)
   const initializedRef = useRef(false)
 
-  // Fiches validées précédentes (hors fiche courante) — réutilisées pour les suggestions ET
-  // pour la carte "Historique" du panneau latéral desktop (story 2.8, pas de nouvel appel réseau)
+  // Fiches validées précédentes (hors fiche courante) — réutilisées pour
+  // la carte "Historique" du panneau latéral desktop (story 2.8, pas de nouvel appel réseau)
   const previousSheets = useMemo(
     () => (validatedData?.data ?? []).filter((previous) => previous.id !== sheetId),
     [validatedData, sheetId],
@@ -67,15 +67,27 @@ export function useInterventionStepper(sheetId: number) {
     [previousSheets],
   )
 
-  // Suggestions "à prévoir" (AC4) : tâches encore en attente, exclues si déjà cochées "faites" dans la session en cours
+  // Suggestions : groupes « Dépassé » et « À prévoir » de la synthèse d'entretien (story 2.10). Absente
+  // (403, erreur) → aucune suggestion, sans bloquer le stepper.
+  const { data: maintenanceData } = useOne<MaintenanceSummary>({
+    resource: 'garage/maintenance',
+    id: vehicle?.id,
+    queryOptions: { enabled: !!vehicle },
+  })
+  // Mémo séparé du filtre : évite de régénérer les localId (et de replier les SuggestionRow) à chaque ajout
+  const baseSuggestions = useMemo(
+    () => suggestionsFromMaintenance(maintenanceData?.data, catalogById),
+    [maintenanceData, catalogById],
+  )
+  // Exclues si déjà ajoutées en "réalisées" dans la fiche en cours
   const suggestions = useMemo<LocalTask[]>(() => {
-    const pending = unresolvedPlannedTasks(previousSheets, catalogById)
+    const pending = baseSuggestions
     const doneIdentities = new Set(doneTasks.map(taskIdentity).filter((identity): identity is string => identity != null))
     return pending.filter((task) => {
       const identity = taskIdentity(task)
       return identity == null || !doneIdentities.has(identity)
     })
-  }, [previousSheets, catalogById, doneTasks])
+  }, [baseSuggestions, doneTasks])
 
   // Initialisation unique depuis sheet.tasks une fois la fiche ET le catalogue chargés (AC3)
   useEffect(() => {

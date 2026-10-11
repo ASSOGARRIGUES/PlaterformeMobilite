@@ -556,6 +556,27 @@ export interface paths {
         patch: operations["api_garage_intervention_tasks_partial_update"];
         trace?: never;
     };
+    "/api/garage/intervention/{id}/tasks/{task_pk}/dismiss/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Remplace le filtrage standard current_action pour les viewsets garage.
+         *     Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+         *     Sinon, filtrage standard par current_action.
+         */
+        post: operations["api_garage_intervention_tasks_dismiss_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/garage/intervention/{id}/validate/": {
         parameters: {
             query?: never;
@@ -3523,6 +3544,28 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["InterventionSheet"];
                 };
+            };
+        };
+    };
+    api_garage_intervention_tasks_dismiss_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this intervention sheet. */
+                id: number;
+                task_pk: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

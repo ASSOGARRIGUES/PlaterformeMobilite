@@ -230,6 +230,11 @@ class InterventionTask(models.Model):
         null=True, blank=True,
         validators=[MinValueValidator(0), MaxValueValidator(10)]
     )
+    dismissed_at = models.DateTimeField(null=True, blank=True)
+    dismissed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True,
+        on_delete=models.PROTECT, related_name='dismissed_intervention_tasks',
+    )
 
     def __str__(self):
         return f"{self.get_type_display()} — {self.catalog_task or self.description}"

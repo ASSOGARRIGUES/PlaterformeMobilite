@@ -1672,6 +1672,111 @@ class InterventionSheetAPITestCase(APITestCase):
             self.assertEqual(len(data_three['occurrences_by_vehicle'][vehicle.id]), 2)
             self.assertEqual(len(data_three['sheets_by_vehicle'][vehicle.id]), 2)
 
+    def test_load_maintenance_data_query_count_is_constant_with_dismissed_task(self):
+        for vehicle in (self.vehicle_a, self.vehicle_b):
+            sheet = self._make_validated_sheet(vehicle=vehicle, start_mileage=vehicle.kilometer)
+            InterventionTask.objects.create(
+                sheet=sheet, type='planned', name='Libre',
+                dismissed_at=timezone.now(), dismissed_by=self.garagiste,
+            )
+        with CaptureQueriesContext(connection) as one_vehicle:
+            data = load_maintenance_data([self.vehicle_a])
+        with CaptureQueriesContext(connection) as two_vehicles:
+            load_maintenance_data([self.vehicle_a, self.vehicle_b])
+        self.assertEqual(len(one_vehicle), len(two_vehicles))
+        self.assertTrue(data['occurrences_by_vehicle'][self.vehicle_a.id][0].dismissed)
+
+    # ── Écarter un signalement (story 2.13) ──
+
+    def _dismiss_url(self, sheet, task):
+        return f'/api/garage/intervention/{sheet.id}/tasks/{task.id}/dismiss/'
+
+    def _planned_task(self, sheet=None, **kwargs):
+        sheet = sheet or self._make_validated_sheet()
+        kwargs.setdefault('name', 'Bruit train avant')
+        return sheet, InterventionTask.objects.create(sheet=sheet, type='planned', **kwargs)
+
+    def test_dismiss_free_signalement_returns_204_and_audits(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet, task = self._planned_task()
+        self.assertEqual(len(self._maintenance()['signalements']), 1)
+        before = self._maintenance()['counts']['to_plan']
+
+        response = self.client.post(self._dismiss_url(sheet, task))
+        self.assertEqual(response.status_code, 204)
+        task.refresh_from_db()
+        self.assertIsNotNone(task.dismissed_at)
+        self.assertEqual(task.dismissed_by, self.garagiste)
+        log = AuditLog.objects.get(action='task_dismissed')
+        self.assertEqual((log.author, log.object_id, log.new_value), (self.garagiste, task.pk, 'Bruit train avant'))
+
+        data = self._maintenance()
+        self.assertEqual(data['signalements'], [])
+        self.assertEqual(data['counts']['to_plan'], before - 1)
+
+    def test_dismiss_signalement_attached_to_task_removes_it_from_the_row(self):
+        self.client.force_authenticate(user=self.garagiste)
+        done_sheet = self._make_validated_sheet(start_mileage=10000, start_date=datetime.date(2026, 1, 1))
+        InterventionTask.objects.create(sheet=done_sheet, type='done', catalog_task=self.catalog_task_periodic)
+        sheet, task = self._planned_task(
+            sheet=self._make_validated_sheet(start_mileage=10100, start_date=datetime.date(2026, 2, 1)),
+            name='', catalog_task=self.catalog_task_periodic,
+        )
+        row = self._maintenance_row(self.catalog_task_periodic)
+        self.assertEqual((row['status'], len(row['signalements'])), ('to_plan', 1))
+
+        self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 204)
+        row = self._maintenance_row(self.catalog_task_periodic)
+        self.assertEqual((row['status'], row['signalements']), ('up_to_date', []))
+        self.assertEqual(AuditLog.objects.get(action='task_dismissed').new_value, 'Vidange')
+
+    def test_dismiss_twice_returns_400_with_single_audit(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet, task = self._planned_task()
+        self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 204)
+        self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 400)
+        self.assertEqual(AuditLog.objects.filter(action='task_dismissed').count(), 1)
+
+    def test_dismiss_done_task_returns_400(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = self._make_validated_sheet()
+        task = InterventionTask.objects.create(sheet=sheet, type='done', name='Pneus')
+        self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 400)
+
+    def test_dismiss_task_of_open_sheet_returns_400(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
+        _, task = self._planned_task(sheet=sheet)
+        self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 400)
+
+    def test_dismiss_requires_manage_intervention(self):
+        sheet, task = self._planned_task()
+        self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 401)
+        self.client.force_authenticate(user=self.referent)
+        self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 403)
+        task.refresh_from_db()
+        self.assertIsNone(task.dismissed_at)
+
+    def test_dismiss_sheet_of_vehicle_outside_user_actions_returns_404(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet = self._make_validated_sheet(vehicle=self.vehicle_c, start_mileage=8000)
+        _, task = self._planned_task(sheet=sheet)
+        self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 404)
+
+    def test_dismiss_unknown_task_or_task_of_other_sheet_returns_404(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet, task = self._planned_task()
+        other_sheet = self._make_validated_sheet(start_date=datetime.date(2026, 3, 1))
+        self.assertEqual(self.client.post(self._dismiss_url(other_sheet, task)).status_code, 404)
+        self.assertEqual(self.client.post(f'/api/garage/intervention/{sheet.id}/tasks/999999/dismiss/').status_code, 404)
+
+    def test_task_detail_delete_still_reachable_next_to_dismiss(self):
+        self.client.force_authenticate(user=self.garagiste)
+        sheet, task = self._planned_task()
+        response = self.client.delete(f'/api/garage/intervention/{sheet.id}/tasks/{task.id}/')
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(InterventionTask.objects.filter(pk=task.pk).exists())
+
     def test_task_catalog_admin_exposes_soon_thresholds(self):
         admin_user = User.objects.create_superuser(
             username='admin210@test.com', email='admin210@test.com', password='pass', phone='0600000016',
@@ -1717,10 +1822,11 @@ def _catalog(id=1, name='Vidange', km=None, months=None, soon_km=None, soon_mont
 
 
 def _occurrence(task_id, sheet_id, type='done', catalog_task_id=1, date=datetime.date(2026, 1, 1), km=40000,
-                name='Vidange', description='', wear_level=None):
+                name='Vidange', description='', wear_level=None, dismissed=False):
     return TaskOccurrence(
         task_id=task_id, sheet_id=sheet_id, vehicle_id=VEHICLE.id, type=type, catalog_task_id=catalog_task_id,
         name=name, description=description, wear_level=wear_level, sheet_start_date=date, sheet_start_mileage=km,
+        dismissed=dismissed,
     )
 
 
@@ -1847,6 +1953,19 @@ class ComputeTaskStatusesTestCase(SimpleTestCase):
         self.assertIsNone(row['source'])
         self.assertEqual([sig['task_id'] for sig in row['signalements']], [2])
 
+    def test_dismissed_signalement_returns_to_up_to_date_or_not_recorded(self):
+        row = self._row([_catalog(km=10000)], [_occurrence(1, 1, km=45000), _occurrence(2, 2, type='planned', date=datetime.date(2026, 2, 1), dismissed=True)])
+        self.assertEqual(row['status'], 'up_to_date')
+        self.assertEqual(row['signalements'], [])
+        row = self._row([_catalog(km=10000)], [_occurrence(1, 1, type='planned', dismissed=True)])
+        self.assertEqual(row['status'], 'not_recorded')
+
+    def test_overdue_with_dismissed_signalement_stays_overdue(self):
+        occurrences = [_occurrence(1, 1, km=30000), _occurrence(2, 2, type='planned', date=datetime.date(2026, 2, 1), dismissed=True)]
+        row = self._row([_catalog(km=10000)], occurrences)
+        self.assertEqual(row['status'], 'overdue')
+        self.assertEqual(row['signalements'], [])
+
     def test_main_axis_is_the_most_advanced_axis(self):
         # km : 5000 / 10000 = 0.5 ; mois : 304 / 365 jours = 0.83
         row = self._row([_catalog(km=10000, months=12)], [_occurrence(1, 1, km=45000, date=datetime.date(2025, 12, 1))])
@@ -1939,6 +2058,21 @@ class ComputeOpenSignalementsTestCase(SimpleTestCase):
         }])
         closed = open_signalement + [_occurrence(2, 2, catalog_task_id=2, name='Nettoyage', date=datetime.date(2026, 2, 1))]
         self.assertEqual(self._open_ids(closed), ([], []))
+
+    def test_dismissed_signalement_is_neither_attached_nor_standalone(self):
+        occurrences = [
+            _occurrence(1, 1, type='planned', dismissed=True),
+            _occurrence(2, 1, type='planned', catalog_task_id=None, name='Bruit', dismissed=True),
+            _occurrence(3, 1, type='planned', catalog_task_id=2, name='Nettoyage', dismissed=True),
+        ]
+        self.assertEqual(self._open_ids(occurrences), ([], []))
+
+    def test_dismissed_and_closed_by_later_realization_is_still_absent(self):
+        occurrences = [
+            _occurrence(1, 1, type='planned', dismissed=True),
+            _occurrence(2, 2, date=datetime.date(2026, 2, 1)),
+        ]
+        self.assertEqual(self._open_ids(occurrences), ([], []))
 
 
 class ComputeOtherWorkTestCase(SimpleTestCase):

@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
-import { Anchor, Avatar, Badge, Group, Image, Paper, Progress, Stack, Text, ThemeIcon, Tooltip, UnstyledButton } from '@mantine/core'
-import { IconAlertOctagon, IconArrowRight, IconChevronRight, IconHistory, IconHistoryOff, IconPencil } from '@tabler/icons-react'
+import { Anchor, Avatar, Badge, Button, Group, Image, Paper, Progress, Stack, Text, ThemeIcon, Tooltip, UnstyledButton } from '@mantine/core'
+import { IconAlertOctagon, IconArrowRight, IconChevronRight, IconHistory, IconHistoryOff, IconPencil, IconX } from '@tabler/icons-react'
 import { humanizeDate, humanizeNumber } from '../../../constants'
 import { MaintenanceOtherWork, MaintenanceSignalement, MaintenanceTask } from '../../../types/garage'
 import { MaintenanceStatusEnum } from '../../../types/schema.d'
@@ -108,13 +108,26 @@ function SignalementMeta({ signalement, author, today, onOpenSheet }: {
   )
 }
 
+type OnDismiss = (signalement: MaintenanceSignalement) => void
+
+/** Bouton « Écarter » : rendu seulement si l'utilisateur peut gérer les interventions (onDismiss défini). */
+function DismissButton({ signalement, onDismiss }: { signalement: MaintenanceSignalement; onDismiss?: OnDismiss }) {
+  if (!onDismiss) return null
+  return (
+    <Button variant="subtle" color="gray" size="compact-sm" mih={44} leftSection={<IconX size={14} />} onClick={() => onDismiss(signalement)}>
+      Écarter
+    </Button>
+  )
+}
+
 /** Signalement rattaché à une tâche : encadré dans la carte de la tâche (jamais en double). */
-function AttachedSignalement({ signalement, author, today, onOpenSheet, onOpenPhotos }: {
+function AttachedSignalement({ signalement, author, today, onOpenSheet, onOpenPhotos, onDismiss }: {
   signalement: MaintenanceSignalement
   author: string
   today: string
   onOpenSheet: OpenSheet
   onOpenPhotos: OpenPhotos
+  onDismiss?: OnDismiss
 }) {
   return (
     <Paper bg="gray.0" radius="sm" p="xs">
@@ -125,6 +138,7 @@ function AttachedSignalement({ signalement, author, today, onOpenSheet, onOpenPh
           <SignalementMeta signalement={signalement} author={author} today={today} onOpenSheet={onOpenSheet} />
         </Stack>
         {signalement.photos.length > 0 && <PhotoThumb photos={signalement.photos} onOpenPhotos={onOpenPhotos} size={44} />}
+        <DismissButton signalement={signalement} onDismiss={onDismiss} />
       </Group>
     </Paper>
   )
@@ -141,10 +155,11 @@ type MaintenanceTaskRowProps = {
   authorOf: (sheetId: number) => string
   onOpenSheet: OpenSheet
   onOpenPhotos: OpenPhotos
+  onDismiss?: OnDismiss
 }
 
 /** Tâche cyclique : tuile icône · nom · dernière réalisation · écart à l'échéance · barre. */
-export function MaintenanceTaskRow({ task, color, today, showDate, stacked = false, dense = false, authorOf, onOpenSheet, onOpenPhotos }: MaintenanceTaskRowProps) {
+export function MaintenanceTaskRow({ task, color, today, showDate, stacked = false, dense = false, authorOf, onOpenSheet, onOpenPhotos, onDismiss }: MaintenanceTaskRowProps) {
   const TaskIcon = taskIcon(task.icon)
   const progress = mainAxisProgress(task)
   const figure = mainFigure(task)
@@ -215,6 +230,7 @@ export function MaintenanceTaskRow({ task, color, today, showDate, stacked = fal
             today={today}
             onOpenSheet={onOpenSheet}
             onOpenPhotos={onOpenPhotos}
+            onDismiss={onDismiss}
           />
         ))}
       </Stack>
@@ -246,12 +262,13 @@ export function MaintenanceUnknownRow({ task }: { task: MaintenanceTask }) {
 }
 
 /** Signalement autonome (groupe À prévoir) : avatar de l'auteur à la place de la tuile. */
-export function MaintenanceSignalementRow({ signalement, author, today, onOpenSheet, onOpenPhotos }: {
+export function MaintenanceSignalementRow({ signalement, author, today, onOpenSheet, onOpenPhotos, onDismiss }: {
   signalement: MaintenanceSignalement
   author: string
   today: string
   onOpenSheet: OpenSheet
   onOpenPhotos: OpenPhotos
+  onDismiss?: OnDismiss
 }) {
   return (
     <RowCard>
@@ -263,6 +280,7 @@ export function MaintenanceSignalementRow({ signalement, author, today, onOpenSh
           <SignalementMeta signalement={signalement} author={author} today={today} onOpenSheet={onOpenSheet} />
         </Stack>
         {signalement.photos.length > 0 && <PhotoThumb photos={signalement.photos} onOpenPhotos={onOpenPhotos} size={44} />}
+        <DismissButton signalement={signalement} onDismiss={onDismiss} />
       </Group>
     </RowCard>
   )

@@ -77,6 +77,7 @@ class TaskOccurrence:
     sheet_start_mileage: int | None
     catalog_icon: str | None = None  # icône de la tâche du catalogue, None pour une tâche libre
     photo_urls: tuple = ()  # chemins des photos (GaragePhoto.image.url), chargés pour les tâches « à prévoir »
+    dismissed: bool = False  # signalement écarté (dismissed_at renseigné) : n'est plus ouvert
 
 
 @dataclass(frozen=True)
@@ -154,6 +155,7 @@ def load_maintenance_data(vehicles) -> dict:
             sheet_start_date=task.sheet.start_date, sheet_start_mileage=task.sheet.start_mileage,
             catalog_icon=task.catalog_task.icon if task.catalog_task else None,
             photo_urls=tuple(photo_urls.get(task.id, ())),
+            dismissed=task.dismissed_at is not None,
         ))
 
     sheets_by_vehicle = {vehicle_id: [] for vehicle_id in vehicle_ids}
@@ -221,6 +223,8 @@ def compute_open_signalements(data, vehicle) -> dict:
 
     by_task, standalone = {}, []
     for planned in sorted((o for o in occurrences if o.type == 'planned'), key=_occurrence_key):
+        if planned.dismissed:
+            continue
         if planned.catalog_task_id is not None:
             planned_key = (planned.sheet_start_date, planned.sheet_id)
             closed = any(

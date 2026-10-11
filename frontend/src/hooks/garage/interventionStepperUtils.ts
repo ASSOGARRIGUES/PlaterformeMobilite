@@ -3,6 +3,7 @@ import {
   LocalTaskPart,
   InterventionTask,
   InterventionSheet,
+  MaintenanceSummary,
   CreateInterventionTaskPayload,
   UpdateInterventionTaskPayload,
 } from '../../types/garage'
@@ -98,37 +99,48 @@ export function taskIdentity(task: Pick<LocalTask, 'catalogTaskId'>): string | n
 }
 
 /**
- * Tâches "à prévoir" encore en attente parmi un ensemble de fiches validées : exclut celles
- * déjà réalisées ("done") dans une fiche postérieure (retour story 2.6, points 2-3).
+ * Suggestions du stepper : éléments des groupes « Dépassé » puis « À prévoir » de la synthèse
+ * d'entretien (tâches, puis signalements autonomes). On filtre sur le statut tel que renvoyé par
+ * l'API, sans rien recalculer.
  */
-export function unresolvedPlannedTasks(
-  sheets: { created_at: string; tasks: InterventionTask[] }[],
+export function suggestionsFromMaintenance(
+  summary: MaintenanceSummary | undefined,
   catalogById: Map<number, TaskCatalogItem>,
 ): LocalTask[] {
-  const latestDoneAt = new Map<string, string>()
-  sheets.forEach((sheet) => {
-    sheet.tasks
-      .filter((task) => task.type === 'done')
-      .forEach((task) => {
-        const identity = taskIdentity(localTaskFromApiTask(task, catalogById))
-        if (identity == null) return
-        const current = latestDoneAt.get(identity)
-        if (!current || sheet.created_at > current) latestDoneAt.set(identity, sheet.created_at)
-      })
+  if (!summary) return []
+  const rows = [
+    ...summary.tasks.filter((row) => row.status === 'overdue'),
+    ...summary.tasks.filter((row) => row.status === 'to_plan'),
+  ]
+  const fromRows = rows.map<LocalTask>((row) => {
+    const catalogItem = catalogById.get(row.catalog_task_id)
+    return {
+      localId: `row-${row.catalog_task_id}`,
+      catalogTaskId: row.catalog_task_id,
+      name: row.name,
+      type: 'planned',
+      periodicityLabel: catalogItem ? periodicityLabel(catalogItem) : undefined,
+      isWearTask: row.is_wear_task,
+      description: row.signalements.map((signalement) => signalement.description).filter(Boolean).join('\n'),
+      parts: [],
+      photos: row.signalements.flatMap((signalement) => signalement.photos),
+    }
   })
-
-  const pending: LocalTask[] = []
-  sheets.forEach((sheet) => {
-    sheet.tasks
-      .filter((task) => task.type === 'planned')
-      .forEach((task) => {
-        const local = localTaskFromApiTask(task, catalogById)
-        const identity = taskIdentity(local)
-        const resolvedAt = identity != null ? latestDoneAt.get(identity) : undefined
-        if (!resolvedAt || sheet.created_at > resolvedAt) pending.push(local)
-      })
+  const fromSignalements = summary.signalements.map<LocalTask>((signalement) => {
+    const catalogItem = signalement.catalog_task_id != null ? catalogById.get(signalement.catalog_task_id) : undefined
+    return {
+      localId: `sig-${signalement.task_id}`,
+      catalogTaskId: signalement.catalog_task_id ?? undefined,
+      name: signalement.name,
+      type: 'planned',
+      periodicityLabel: catalogItem ? periodicityLabel(catalogItem) : undefined,
+      isWearTask: !!catalogItem?.is_wear_task,
+      description: signalement.description,
+      parts: [],
+      photos: signalement.photos,
+    }
   })
-  return pending
+  return [...fromRows, ...fromSignalements]
 }
 
 export type SidePanelCardVisibility = {

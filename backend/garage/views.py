@@ -23,7 +23,7 @@ from .filters import TaskCatalogFilter, InterventionSheetFilter
 from .mixins import GarageMultiActionMixin
 from .alerts import get_config, load_maintenance_data, compute_maintenance_summary
 from .audit import (
-    log_field_change, log_task_added, log_task_deleted, get_audit_logs_for_sheet,
+    log_field_change, log_task_added, log_task_deleted, log_task_dismissed, get_audit_logs_for_sheet,
     format_parts, format_photo_ids,
 )
 
@@ -138,7 +138,8 @@ class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
 
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
-        if self.action in ('create', 'update', 'partial_update', 'destroy', 'tasks', 'task_detail', 'validate') \
+        if self.action in ('create', 'update', 'partial_update', 'destroy', 'tasks', 'task_detail', 'validate',
+                           'dismiss_task') \
                 and not request.user.has_perm('garage.manage_intervention'):
             raise PermissionDenied()
 
@@ -211,6 +212,24 @@ class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
         sheet = self.get_object()
         logs = get_audit_logs_for_sheet(sheet)
         return Response(AuditLogSerializer(logs, many=True).data)
+
+    @extend_schema(request=None, responses={204: None})
+    @action(detail=True, methods=['post'], url_path=r'tasks/(?P<task_pk>[^/.]+)/dismiss')
+    @transaction.atomic
+    def dismiss_task(self, request, pk=None, task_pk=None):
+        sheet = self.get_object()
+        task = get_object_or_404(InterventionTask.objects.select_for_update(), pk=task_pk, sheet=sheet)
+        if sheet.status != 'validated':
+            raise serializers.ValidationError("Seuls les signalements d'une fiche validée peuvent être écartés.")
+        if task.type != 'planned':
+            raise serializers.ValidationError("Seule une tâche à prévoir peut être écartée.")
+        if task.dismissed_at is not None:
+            raise serializers.ValidationError("Ce signalement est déjà écarté.")
+        task.dismissed_at = timezone.now()
+        task.dismissed_by = request.user
+        task.save(update_fields=['dismissed_at', 'dismissed_by'])
+        log_task_dismissed(task, request.user)
+        return Response(status=204)
 
     @action(detail=True, methods=['post'], url_path='validate')
     def validate(self, request, pk=None):

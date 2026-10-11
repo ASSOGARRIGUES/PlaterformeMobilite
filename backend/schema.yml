@@ -2087,6 +2087,33 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/garage/intervention/{id}/tasks/{task_pk}/dismiss/:
+    post:
+      operationId: api_garage_intervention_tasks_dismiss_create
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this intervention sheet.
+        required: true
+      - in: path
+        name: task_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/garage/intervention/{id}/validate/:
     post:
       operationId: api_garage_intervention_validate_create

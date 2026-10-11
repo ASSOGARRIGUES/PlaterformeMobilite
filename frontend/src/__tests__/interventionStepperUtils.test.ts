@@ -3,11 +3,13 @@ import {
   localTaskToCreatePayload,
   localTaskToUpdatePayload,
   localTaskFromApiTask,
-  unresolvedPlannedTasks,
+  suggestionsFromMaintenance,
   sidePanelCardVisibility,
   dedupedHistorySummaries,
 } from '../hooks/garage/interventionStepperUtils';
-import { LocalTask, InterventionTask, InterventionSheet } from '../types/garage';
+import { LocalTask, InterventionTask, InterventionSheet, MaintenanceSummary, MaintenanceTask, MaintenanceSignalement } from '../types/garage';
+import { IconEnum, MaintenanceSourceEnum, MaintenanceStatusEnum } from '../types/schema.d';
+import { humanizeNumber } from '../constants';
 import { TaskCatalogItem } from '../components/garage/taskCardUtils';
 
 function makeLocalTask(overrides: Partial<LocalTask> = {}): LocalTask {
@@ -121,59 +123,93 @@ describe('localTaskFromApiTask', () => {
   });
 });
 
-describe('unresolvedPlannedTasks', () => {
+describe('suggestionsFromMaintenance', () => {
   const catalogById = new Map<number, TaskCatalogItem>([
-    [7, { id: 7, name: 'Vidange', vehicle_types: ['voiture'], km_periodicity: 10000, is_wear_task: false } as TaskCatalogItem],
+    [1, { id: 1, name: 'Vidange', vehicle_types: ['voiture'], km_periodicity: 10000, is_wear_task: true } as TaskCatalogItem],
+    [2, { id: 2, name: 'Nettoyage', vehicle_types: ['voiture'], is_wear_task: false } as TaskCatalogItem],
   ]);
 
-  function makeApiTask(overrides: Record<string, unknown> = {}): InterventionTask {
+  function makeSig(overrides: Partial<MaintenanceSignalement> = {}): MaintenanceSignalement {
     return {
-      id: 1, sheet: 1, type: 'planned', catalog_task: 7, name: '', description: '',
-      wear_level: null, parts: [], photos: [],
+      task_id: 230, sheet_id: 44, sheet_date: '2026-09-12', catalog_task_id: null, name: 'Bruit train avant',
+      description: '', source: MaintenanceSourceEnum.signalement, photos: [],
       ...overrides,
-    } as unknown as InterventionTask;
+    };
   }
 
-  it('resolves a planned task when a later sheet has the matching done task (résolution rétroactive normale)', () => {
-    const sheets = [
-      { created_at: '2026-01-01T00:00:00Z', tasks: [makeApiTask({ id: 1, type: 'planned' })] },
-      { created_at: '2026-01-05T00:00:00Z', tasks: [makeApiTask({ id: 2, type: 'done' })] },
-    ];
-    expect(unresolvedPlannedTasks(sheets, catalogById)).toEqual([]);
+  function makeRow(overrides: Partial<MaintenanceTask> = {}): MaintenanceTask {
+    return {
+      catalog_task_id: 1, name: 'Vidange', icon: IconEnum.oil, periodicity: { km: 10000, months: null },
+      is_critical: false, is_wear_task: false, status: MaintenanceStatusEnum.to_plan, source: null,
+      last_realization: null, km: null, months: null, main_axis: null, signalements: [],
+      ...overrides,
+    };
+  }
+
+  function makeSummary(overrides: Partial<MaintenanceSummary> = {}): MaintenanceSummary {
+    return {
+      vehicle_id: 12, current_km: 84200, today: '2026-10-01', tasks: [], signalements: [], other_work: [], sheets: [],
+      counts: { overdue: 0, to_plan: 0, up_to_date: 0, not_recorded: 0, other_work: 0, sheets: 0 },
+      ...overrides,
+    };
+  }
+
+  it('returns no suggestion without summary', () => {
+    expect(suggestionsFromMaintenance(undefined, catalogById)).toEqual([]);
   });
 
-  it('does not resolve a planned task when the done task is on an earlier sheet (pas de résolution dans le passé)', () => {
-    const sheets = [
-      { created_at: '2026-01-01T00:00:00Z', tasks: [makeApiTask({ id: 2, type: 'done' })] },
-      { created_at: '2026-01-05T00:00:00Z', tasks: [makeApiTask({ id: 1, type: 'planned' })] },
-    ];
-    const pending = unresolvedPlannedTasks(sheets, catalogById);
-    expect(pending).toHaveLength(1);
-    expect(pending[0].catalogTaskId).toBe(7);
+  it('orders overdue, to_plan, then standalone signalements', () => {
+    const summary = makeSummary({
+      tasks: [
+        makeRow({ catalog_task_id: 1, name: 'A à prévoir', status: MaintenanceStatusEnum.to_plan }),
+        makeRow({ catalog_task_id: 2, name: 'B dépassée', status: MaintenanceStatusEnum.overdue }),
+        makeRow({ catalog_task_id: 3, name: 'C à prévoir', status: MaintenanceStatusEnum.to_plan }),
+      ],
+      signalements: [makeSig({ name: 'Libre' })],
+    });
+    expect(suggestionsFromMaintenance(summary, catalogById).map((task) => task.name)).toEqual([
+      'B dépassée', 'A à prévoir', 'C à prévoir', 'Libre',
+    ]);
   });
 
-  it('resolves a planned task added done in the same sheet (auto-résolution intra-fiche)', () => {
-    const sheets = [
-      {
-        created_at: '2026-01-01T00:00:00Z',
-        tasks: [makeApiTask({ id: 1, type: 'planned' }), makeApiTask({ id: 2, type: 'done' })],
-      },
-    ];
-    expect(unresolvedPlannedTasks(sheets, catalogById)).toEqual([]);
+  it('never keeps up_to_date or not_recorded rows', () => {
+    const summary = makeSummary({
+      tasks: [
+        makeRow({ status: MaintenanceStatusEnum.up_to_date }),
+        makeRow({ catalog_task_id: 2, status: MaintenanceStatusEnum.not_recorded }),
+      ],
+    });
+    expect(suggestionsFromMaintenance(summary, catalogById)).toEqual([]);
   });
 
-  it('makes a resolved suggestion reappear when the resolving done task is removed', () => {
-    const sheetsWithDone = [
-      { created_at: '2026-01-01T00:00:00Z', tasks: [makeApiTask({ id: 1, type: 'planned' })] },
-      { created_at: '2026-01-05T00:00:00Z', tasks: [makeApiTask({ id: 2, type: 'done' })] },
-    ];
-    expect(unresolvedPlannedTasks(sheetsWithDone, catalogById)).toEqual([]);
+  it('takes description and photos from the attached signalements', () => {
+    const summary = makeSummary({
+      tasks: [makeRow({
+        signalements: [
+          makeSig({ description: 'Fuite', photos: ['/p1.png'] }),
+          makeSig({ task_id: 231, description: 'Bruit', photos: ['/p2.png'] }),
+        ],
+      })],
+    });
+    const [suggestion] = suggestionsFromMaintenance(summary, catalogById);
+    expect(suggestion).toMatchObject({
+      catalogTaskId: 1, type: 'planned', description: 'Fuite\nBruit', photos: ['/p1.png', '/p2.png'],
+      periodicityLabel: `${humanizeNumber(10000)} km`, parts: [],
+    });
+  });
 
-    const sheetsWithoutDone = [
-      { created_at: '2026-01-01T00:00:00Z', tasks: [makeApiTask({ id: 1, type: 'planned' })] },
-      { created_at: '2026-01-05T00:00:00Z', tasks: [] },
-    ];
-    expect(unresolvedPlannedTasks(sheetsWithoutDone, catalogById)).toHaveLength(1);
+  it('leaves catalogTaskId undefined for a free standalone signalement', () => {
+    const [suggestion] = suggestionsFromMaintenance(makeSummary({ signalements: [makeSig({ description: 'Bruit' })] }), catalogById);
+    expect(suggestion).toMatchObject({ catalogTaskId: undefined, name: 'Bruit train avant', description: 'Bruit', isWearTask: false });
+    expect(suggestion.periodicityLabel).toBeUndefined();
+  });
+
+  it('sets catalogTaskId for a standalone signalement on a non-cyclic catalog task', () => {
+    const [suggestion] = suggestionsFromMaintenance(
+      makeSummary({ signalements: [makeSig({ catalog_task_id: 2, name: 'Nettoyage' })] }),
+      catalogById,
+    );
+    expect(suggestion.catalogTaskId).toBe(2);
   });
 });
 
