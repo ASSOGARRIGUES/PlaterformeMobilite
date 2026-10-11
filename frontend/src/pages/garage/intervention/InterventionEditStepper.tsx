@@ -178,7 +178,6 @@ export function InterventionEditStepper({ sheetId }: InterventionEditStepperProp
         <StepTasksDone
           vehicle={vehicle}
           tasks={doneTasks}
-          suggestions={[]}
           onAddTask={(task) => addTask(task, 'done')}
           onUpdateTask={(task) => updateTaskLocal(task.localId, task, 'done')}
           onCommitTask={(task) => persistTask(task.localId, 'done')}

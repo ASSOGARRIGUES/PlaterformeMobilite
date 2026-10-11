@@ -41,6 +41,7 @@ const InterventionStepper = () => {
     doneTasks,
     plannedTasks,
     suggestions,
+    maintenanceSummary,
     history,
     catalogById,
     activeStep,
@@ -220,7 +221,7 @@ const InterventionStepper = () => {
           <StepTasksDone
             vehicle={vehicle}
             tasks={doneTasks}
-            suggestions={suggestions}
+            suggestionBlock={maintenanceSummary ? { suggestions, maintenanceSummary, catalogById } : undefined}
             onAddTask={(task) => addTask(task, 'done')}
             onUpdateTask={(task) => updateTask(task.localId, task, 'done')}
             onRemoveTask={(localId) => removeTask(localId, 'done')}

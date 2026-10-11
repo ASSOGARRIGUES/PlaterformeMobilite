@@ -1883,6 +1883,25 @@ export interface components {
             is_critical?: boolean;
             /** @description Si vrai, la tâche est saisie avec un niveau d'usure /10 plutôt que simplement cochée comme faite */
             is_wear_task?: boolean;
+            /**
+             * @description Icône affichée dans l'onglet Entretien
+             *
+             *     * `tool` - Outil (par défaut)
+             *     * `oil` - Huile
+             *     * `filter` - Filtre
+             *     * `air` - Air
+             *     * `belt` - Courroie / distribution
+             *     * `brake` - Freins
+             *     * `tire` - Pneus
+             *     * `spark` - Allumage
+             *     * `bearing` - Roulements
+             *     * `steering` - Direction / train
+             *     * `battery` - Batterie
+             *     * `light` - Éclairage
+             *     * `engine` - Moteur
+             *     * `body` - Carrosserie
+             */
+            icon?: components["schemas"]["IconEnum"];
         };
         TokenObtainPair: {
             email: string;

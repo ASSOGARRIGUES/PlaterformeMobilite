@@ -11,7 +11,7 @@ import {
   MaintenanceSourceEnum,
   MaintenanceStatusEnum,
 } from '../../../types/schema.d'
-import { humanizeNumber } from '../../../constants'
+import { humanizeNumber, plural } from '../../../constants'
 
 // Aucune règle de statut ici : status, source, main_axis, remaining, progress et counts
 // viennent de GET /api/garage/maintenance/{id}/ (story 2.10). On groupe, trie et formate.
@@ -84,11 +84,11 @@ export function formatDuration(days: number): string {
   const abs = Math.abs(days)
   if (abs < 31) {
     const d = Math.max(1, Math.round(abs))
-    return `${d} jour${d > 1 ? 's' : ''}`
+    return `${d} ${plural(d, 'jour', 'jours')}`
   }
   if (abs < 730) return `${Math.max(1, Math.round(abs / DAYS_PER_MONTH))} mois`
   const years = Math.round(abs / (12 * DAYS_PER_MONTH))
-  return `${years} an${years > 1 ? 's' : ''}`
+  return `${years} ${plural(years, 'an', 'ans')}`
 }
 
 /** « il y a 4 mois », par rapport à la date serveur. */
@@ -148,14 +148,6 @@ export function toPlanReason(task: MaintenanceTask): ToPlanReason | null {
   return 'echeance'
 }
 
-/** « Tous les 30 000 km ou 2 ans », pour une tâche jamais enregistrée. */
-export function periodicityLabel(task: MaintenanceTask): string | null {
-  const parts: string[] = []
-  if (task.periodicity.km) parts.push(`${humanizeNumber(task.periodicity.km)} km`)
-  if (task.periodicity.months) parts.push(formatDuration(task.periodicity.months * DAYS_PER_MONTH))
-  return parts.length ? `Tous les ${parts.join(' ou ')}` : null
-}
-
 /** DD/MM si l'année est celle de today (date serveur), DD/MM/YYYY sinon. */
 export function formatShortDate(date: string, today: string): string {
   const d = dayjs(date)
@@ -188,8 +180,6 @@ export function showNothingToPlan(summary: MaintenanceSummary): boolean {
   const { overdue, to_plan, up_to_date } = summary.counts
   return overdue + to_plan === 0 && up_to_date > 0
 }
-
-const plural = (count: number, singular: string, pluralForm: string) => (count > 1 ? pluralForm : singular)
 
 export type ReferentSummary = { color: 'red' | 'orange'; title: string; detail: string | null }
 

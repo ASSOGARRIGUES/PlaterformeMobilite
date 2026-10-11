@@ -33,7 +33,7 @@ import {
 } from '@tabler/icons-react'
 import { MaintenanceSheet, MaintenanceSummary } from '../../../types/garage'
 import { InterventionSheetStatusEnum } from '../../../types/schema.d'
-import { humanizeDate, humanizeNumber } from '../../../constants'
+import { humanizeDate, humanizeNumber, plural } from '../../../constants'
 import useAccessControl from '../../../hooks/useAccessControl'
 import { useDismissSignalement } from '../../../hooks/garage/useDismissSignalement'
 import { PhotoLightbox } from '../PhotoLightbox'
@@ -83,7 +83,7 @@ function SheetRow({ sheet, onOpen }: { sheet: MaintenanceSheet; onOpen: () => vo
   const taskCount = sheet.done_count + sheet.planned_count
   const details = [
     sheet.created_by_display,
-    `${taskCount} tâche${taskCount > 1 ? 's' : ''}`,
+    `${taskCount} ${plural(taskCount, 'tâche', 'tâches')}`,
     sheet.start_mileage != null ? `${humanizeNumber(sheet.start_mileage)} km` : null,
   ]
   return (

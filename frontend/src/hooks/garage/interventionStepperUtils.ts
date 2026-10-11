@@ -3,11 +3,15 @@ import {
   LocalTaskPart,
   InterventionTask,
   InterventionSheet,
+  MaintenanceSignalement,
   MaintenanceSummary,
+  MaintenanceTask,
   CreateInterventionTaskPayload,
   UpdateInterventionTaskPayload,
 } from '../../types/garage'
-import { TaskCatalogItem, periodicityLabel } from '../../components/garage/taskCardUtils'
+import { TaskCatalogItem, computePartsSubtotal } from '../../components/garage/taskCardUtils'
+import { catalogPeriodicityLabel, periodicityLabel } from '../../components/garage/periodicityUtils'
+import { groupMaintenanceTasks, sortedSignalements } from '../../components/garage/maintenance/maintenanceUtils'
 
 /** Payload minimal de création (POST .../tasks/) — parts/photos passent toujours par le PATCH ensuite */
 export function localTaskToCreatePayload(task: LocalTask): CreateInterventionTaskPayload {
@@ -71,7 +75,8 @@ export function localTaskFromApiTask(
     catalogTaskId: apiTask.catalog_task ?? undefined,
     name: apiTask.catalog_task != null ? (catalogItem?.name ?? 'Tâche') : (apiTask.name ?? ''),
     type: apiTask.type as LocalTask['type'],
-    periodicityLabel: catalogItem ? periodicityLabel(catalogItem) : undefined,
+    periodicityLabel: catalogItem ? catalogPeriodicityLabel(catalogItem) : undefined,
+    icon: catalogItem?.icon,
     isWearTask: !!catalogItem?.is_wear_task,
     wearLevel: apiTask.wear_level ?? undefined,
     description: apiTask.description ?? '',
@@ -98,49 +103,60 @@ export function taskIdentity(task: Pick<LocalTask, 'catalogTaskId'>): string | n
   return task.catalogTaskId != null ? `cat:${task.catalogTaskId}` : null
 }
 
+export type PendingSuggestions = {
+  overdue: MaintenanceTask[]
+  toPlan: MaintenanceTask[]
+  signalements: MaintenanceSignalement[]
+}
+
 /**
- * Suggestions du stepper : éléments des groupes « Dépassé » puis « À prévoir » de la synthèse
- * d'entretien (tâches, puis signalements autonomes). On filtre sur le statut tel que renvoyé par
- * l'API, sans rien recalculer.
+ * Suggestions du stepper : vue dérivée de la synthèse d'entretien, dans l'ordre et avec les statuts de l'onglet
+ * Entretien (aucune règle de statut ici). Une tâche déjà ajoutée en « Réalisées » n'est plus suggérée.
  */
-export function suggestionsFromMaintenance(
-  summary: MaintenanceSummary | undefined,
+export function pendingSuggestions(summary: MaintenanceSummary | undefined, doneTasks: LocalTask[]): PendingSuggestions {
+  if (!summary) return { overdue: [], toPlan: [], signalements: [] }
+  const doneIdentities = new Set(doneTasks.map(taskIdentity).filter((identity): identity is string => identity != null))
+  const consumedSignalementIds = new Set(doneTasks.map((task) => task.sourceSignalementId).filter((id): id is number => id != null))
+  const isDone = (catalogTaskId: number | null | undefined) => {
+    const identity = taskIdentity({ catalogTaskId: catalogTaskId ?? undefined })
+    return identity != null && doneIdentities.has(identity)
+  }
+  const { overdue, toPlan } = groupMaintenanceTasks(summary)
+  return {
+    overdue: overdue.filter((task) => !isDone(task.catalog_task_id)),
+    toPlan: toPlan.filter((task) => !isDone(task.catalog_task_id)),
+    signalements: sortedSignalements(summary).filter(
+      (signalement) => !consumedSignalementIds.has(signalement.task_id) && !isDone(signalement.catalog_task_id),
+    ),
+  }
+}
+
+/** Tâche « réalisée » créée au clic sur « + » : rien du signalement (description, photos) n'est copié. */
+export function localTaskFromSuggestion(
+  source: MaintenanceTask | MaintenanceSignalement,
   catalogById: Map<number, TaskCatalogItem>,
-): LocalTask[] {
-  if (!summary) return []
-  const rows = [
-    ...summary.tasks.filter((row) => row.status === 'overdue'),
-    ...summary.tasks.filter((row) => row.status === 'to_plan'),
-  ]
-  const fromRows = rows.map<LocalTask>((row) => {
-    const catalogItem = catalogById.get(row.catalog_task_id)
+): LocalTask {
+  const base = { localId: crypto.randomUUID(), name: source.name, type: 'done' as const, description: '', parts: [], photos: [] }
+  if ('task_id' in source) {
+    const catalogItem = source.catalog_task_id != null ? catalogById.get(source.catalog_task_id) : undefined
     return {
-      localId: `row-${row.catalog_task_id}`,
-      catalogTaskId: row.catalog_task_id,
-      name: row.name,
-      type: 'planned',
-      periodicityLabel: catalogItem ? periodicityLabel(catalogItem) : undefined,
-      isWearTask: row.is_wear_task,
-      description: row.signalements.map((signalement) => signalement.description).filter(Boolean).join('\n'),
-      parts: [],
-      photos: row.signalements.flatMap((signalement) => signalement.photos),
-    }
-  })
-  const fromSignalements = summary.signalements.map<LocalTask>((signalement) => {
-    const catalogItem = signalement.catalog_task_id != null ? catalogById.get(signalement.catalog_task_id) : undefined
-    return {
-      localId: `sig-${signalement.task_id}`,
-      catalogTaskId: signalement.catalog_task_id ?? undefined,
-      name: signalement.name,
-      type: 'planned',
-      periodicityLabel: catalogItem ? periodicityLabel(catalogItem) : undefined,
+      ...base,
+      catalogTaskId: source.catalog_task_id ?? undefined,
+      sourceSignalementId: source.task_id,
+      icon: catalogItem?.icon,
+      periodicityLabel: catalogItem ? catalogPeriodicityLabel(catalogItem) : undefined,
       isWearTask: !!catalogItem?.is_wear_task,
-      description: signalement.description,
-      parts: [],
-      photos: signalement.photos,
+      wearLevel: catalogItem?.is_wear_task ? 10 : undefined,
     }
-  })
-  return [...fromRows, ...fromSignalements]
+  }
+  return {
+    ...base,
+    catalogTaskId: source.catalog_task_id,
+    icon: source.icon,
+    periodicityLabel: periodicityLabel(source.periodicity) ?? undefined,
+    isWearTask: source.is_wear_task,
+    wearLevel: source.is_wear_task ? 10 : undefined,
+  }
 }
 
 export type SidePanelCardVisibility = {
@@ -195,7 +211,7 @@ export function dedupedHistorySummaries(
     })
     if (doneTasks.length > 0 && kept.length === 0) return
     const partsCost = doneTasks.reduce(
-      (total, task) => total + task.parts.reduce((sum, part) => sum + Number(part.unit_price) * (part.quantity ?? 1), 0),
+      (total, task) => total + computePartsSubtotal(localTaskFromApiTask(task, catalogById).parts),
       0,
     )
     summaries.push({

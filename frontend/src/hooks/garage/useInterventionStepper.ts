@@ -7,8 +7,7 @@ import {
   localTaskToCreatePayload,
   localTaskToUpdatePayload,
   localTaskFromApiTask,
-  suggestionsFromMaintenance,
-  taskIdentity,
+  pendingSuggestions,
   extractStepError,
 } from './interventionStepperUtils'
 
@@ -74,20 +73,8 @@ export function useInterventionStepper(sheetId: number) {
     id: vehicle?.id,
     queryOptions: { enabled: !!vehicle },
   })
-  // Mémo séparé du filtre : évite de régénérer les localId (et de replier les SuggestionRow) à chaque ajout
-  const baseSuggestions = useMemo(
-    () => suggestionsFromMaintenance(maintenanceData?.data, catalogById),
-    [maintenanceData, catalogById],
-  )
-  // Exclues si déjà ajoutées en "réalisées" dans la fiche en cours
-  const suggestions = useMemo<LocalTask[]>(() => {
-    const pending = baseSuggestions
-    const doneIdentities = new Set(doneTasks.map(taskIdentity).filter((identity): identity is string => identity != null))
-    return pending.filter((task) => {
-      const identity = taskIdentity(task)
-      return identity == null || !doneIdentities.has(identity)
-    })
-  }, [baseSuggestions, doneTasks])
+  // Vue dérivée de la synthèse et des tâches faites, sans état propre ni identifiant local : les clés React viennent de catalog_task_id / task_id
+  const suggestions = useMemo(() => pendingSuggestions(maintenanceData?.data, doneTasks), [maintenanceData, doneTasks])
 
   // Initialisation unique depuis sheet.tasks une fois la fiche ET le catalogue chargés (AC3)
   useEffect(() => {
@@ -117,7 +104,7 @@ export function useInterventionStepper(sheetId: number) {
         values: localTaskToCreatePayload({ ...picked, type: section }),
         successNotification: false,
       })
-      const rebuilt = { ...localTaskFromApiTask(response.data, catalogById), type: section }
+      const rebuilt = { ...localTaskFromApiTask(response.data, catalogById), type: section, sourceSignalementId: picked.sourceSignalementId }
       const setter = section === 'done' ? setDoneTasks : setPlannedTasks
       const syncSetter = section === 'done' ? setSyncedDoneTasks : setSyncedPlannedTasks
       setter((prev) => [rebuilt, ...prev])
@@ -197,7 +184,7 @@ export function useInterventionStepper(sheetId: number) {
           } catch (error) {
             throw new Error(`Échec de la synchronisation de "${task.name}" : ${extractStepError(error)}`)
           }
-          const rebuilt = { ...localTaskFromApiTask(response.data, catalogById), localId: task.localId, type: section }
+          const rebuilt = { ...localTaskFromApiTask(response.data, catalogById), localId: task.localId, type: section, sourceSignalementId: task.sourceSignalementId }
           setter((prev) => prev.map((item) => (item.localId === task.localId ? rebuilt : item)))
           syncSetter((prev) => prev.map((item) => (item.localId === task.localId ? rebuilt : item)))
         }
@@ -262,6 +249,7 @@ export function useInterventionStepper(sheetId: number) {
     doneTasks,
     plannedTasks,
     suggestions,
+    maintenanceSummary: maintenanceData?.data,
     history,
     catalogById,
     activeStep,

@@ -1,148 +1,33 @@
 import { ReactNode } from 'react'
-import { Anchor, Avatar, Badge, Button, Group, Image, Paper, Progress, Stack, Text, ThemeIcon, Tooltip, UnstyledButton } from '@mantine/core'
-import { IconAlertOctagon, IconArrowRight, IconChevronRight, IconHistory, IconHistoryOff, IconPencil, IconX } from '@tabler/icons-react'
-import { humanizeDate, humanizeNumber } from '../../../constants'
+import { Avatar, Badge, Group, Progress, Stack, Text, ThemeIcon, UnstyledButton } from '@mantine/core'
+import { IconChevronRight, IconHistoryOff, IconPencil } from '@tabler/icons-react'
 import { MaintenanceOtherWork, MaintenanceSignalement, MaintenanceTask } from '../../../types/garage'
 import { MaintenanceStatusEnum } from '../../../types/schema.d'
+import { PeriodicityBadge } from '../PeriodicityBadge'
+import { periodicityLabel } from '../periodicityUtils'
 import { taskIcon } from './taskIcons'
+import { CollapsibleSignalementRow, CollapsibleTaskRow } from './CollapsibleRows'
+import {
+  CriticalMark,
+  DismissButton,
+  OnDismiss,
+  OpenPhotos,
+  OpenSheet,
+  PhotoThumb,
+  RealizationLine,
+  RowCard,
+  SheetLink,
+  SignalementBlock,
+  SignalementMeta,
+} from './TaskRowParts'
 import {
   clampProgress,
-  formatShortDate,
   initials,
   mainAxisProgress,
   mainFigure,
-  periodicityLabel,
   secondaryFigure,
-  sinceLabel,
   toPlanReason,
 } from './maintenanceUtils'
-
-type OpenSheet = (sheetId: number) => void
-type OpenPhotos = (photos: string[]) => void
-
-/** Lien explicite vers une fiche : les cartes elles-mêmes ne sont pas cliquables. */
-function SheetLink({ sheetId, onOpenSheet }: { sheetId: number; onOpenSheet: OpenSheet }) {
-  return (
-    <Anchor component="button" inherit fw={600} onClick={() => onOpenSheet(sheetId)}>
-      Fiche #{sheetId} <IconArrowRight size={12} style={{ verticalAlign: '-2px' }} />
-    </Anchor>
-  )
-}
-
-function RowCard({ dashed = false, children }: { dashed?: boolean; children: ReactNode }) {
-  return (
-    <Paper withBorder radius="md" p="sm" bg={dashed ? 'gray.0' : undefined} style={{ borderStyle: dashed ? 'dashed' : undefined }}>
-      {children}
-    </Paper>
-  )
-}
-
-const CRITICAL_LABEL = 'Tâche critique : bloque le véhicule si elle est dépassée.'
-
-/** Panneau STOP : une tâche critique dépassée immobilise le véhicule (blocage automatique : Epic 4). */
-function CriticalMark() {
-  return (
-    <Tooltip label={CRITICAL_LABEL} events={{ hover: true, focus: true, touch: true }} multiline w={220}>
-      <IconAlertOctagon size={16} color="var(--mantine-color-red-7)" aria-label={CRITICAL_LABEL} style={{ flexShrink: 0 }} />
-    </Tooltip>
-  )
-}
-
-/** Sous-ligne : ⟲ [date] · il y a 4 mois · 128 000 km · Fiche #41 → [État 4/10]. */
-function RealizationLine({ date, km, wearLevel, wearIsReason = false, today, showDate, sheetLink }: {
-  date: string
-  km: number | null
-  wearLevel?: number | null
-  /** L'état de la pièce explique la présence dans « À prévoir » : pastille encadrée */
-  wearIsReason?: boolean
-  today: string
-  showDate: boolean
-  sheetLink?: ReactNode
-}) {
-  const parts = [showDate ? humanizeDate(date) : null, sinceLabel(date, today), km != null ? `${humanizeNumber(km)} km` : null]
-  // Un seul flux de texte : si la ligne se coupe, le lien suit avec l'interligne normal
-  return (
-    <Text size="xs" c="dimmed" component="div">
-      <IconHistory size={14} style={{ verticalAlign: '-3px', marginRight: 4 }} />
-      {parts.filter(Boolean).join(' · ')}
-      {sheetLink && <> · {sheetLink}</>}
-      {wearLevel != null && (
-        <Badge
-          size="sm"
-          variant={wearIsReason ? 'outline' : 'light'}
-          color={wearIsReason ? 'orange' : 'gray'}
-          tt="none"
-          ml={6}
-          style={{ verticalAlign: 'middle' }}
-          aria-label={wearIsReason ? `Raison : état de la pièce, ${wearLevel}/10` : undefined}
-        >
-          État {wearLevel}/10
-        </Badge>
-      )}
-    </Text>
-  )
-}
-
-function PhotoThumb({ photos, onOpenPhotos, size }: { photos: string[]; onOpenPhotos: OpenPhotos; size: number }) {
-  return (
-    <UnstyledButton
-      aria-label="Voir la photo"
-      onClick={() => onOpenPhotos(photos)}
-    >
-      <Image src={photos[0]} w={size} h={size} radius="sm" fit="cover" alt="" />
-    </UnstyledButton>
-  )
-}
-
-/** « Sim Gal · 15/07 · Fiche #10 → » */
-function SignalementMeta({ signalement, author, today, onOpenSheet }: {
-  signalement: MaintenanceSignalement
-  author: string
-  today: string
-  onOpenSheet: OpenSheet
-}) {
-  return (
-    <Text size="xs" c="dimmed">
-      {[author, formatShortDate(signalement.sheet_date, today)].filter(Boolean).join(' · ')} · <SheetLink sheetId={signalement.sheet_id} onOpenSheet={onOpenSheet} />
-    </Text>
-  )
-}
-
-type OnDismiss = (signalement: MaintenanceSignalement) => void
-
-/** Bouton « Écarter » : rendu seulement si l'utilisateur peut gérer les interventions (onDismiss défini). */
-function DismissButton({ signalement, onDismiss }: { signalement: MaintenanceSignalement; onDismiss?: OnDismiss }) {
-  if (!onDismiss) return null
-  return (
-    <Button variant="subtle" color="gray" size="compact-sm" mih={44} leftSection={<IconX size={14} />} onClick={() => onDismiss(signalement)}>
-      Écarter
-    </Button>
-  )
-}
-
-/** Signalement rattaché à une tâche : encadré dans la carte de la tâche (jamais en double). */
-function AttachedSignalement({ signalement, author, today, onOpenSheet, onOpenPhotos, onDismiss }: {
-  signalement: MaintenanceSignalement
-  author: string
-  today: string
-  onOpenSheet: OpenSheet
-  onOpenPhotos: OpenPhotos
-  onDismiss?: OnDismiss
-}) {
-  return (
-    <Paper bg="gray.0" radius="sm" p="xs">
-      <Group gap="sm" wrap="nowrap" align="flex-start">
-        <Avatar size={28} radius="xl" color="blue">{initials(author)}</Avatar>
-        <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-          <Text size="sm" fw={600}>{signalement.description || 'À faire au prochain passage'}</Text>
-          <SignalementMeta signalement={signalement} author={author} today={today} onOpenSheet={onOpenSheet} />
-        </Stack>
-        {signalement.photos.length > 0 && <PhotoThumb photos={signalement.photos} onOpenPhotos={onOpenPhotos} size={44} />}
-        <DismissButton signalement={signalement} onDismiss={onDismiss} />
-      </Group>
-    </Paper>
-  )
-}
 
 type MaintenanceTaskRowProps = {
   task: MaintenanceTask
@@ -153,13 +38,23 @@ type MaintenanceTaskRowProps = {
   stacked?: boolean
   dense?: boolean
   authorOf: (sheetId: number) => string
-  onOpenSheet: OpenSheet
+  /** Absent : aucun lien « Fiche #n » (stepper dans la PWA installée) */
+  onOpenSheet?: OpenSheet
   onOpenPhotos: OpenPhotos
   onDismiss?: OnDismiss
+  /** Emplacement à droite de la ligne principale (bouton « + » du stepper) */
+  action?: ReactNode
+  /** Carte compacte et dépliable (suggestions du stepper) */
+  collapsible?: boolean
 }
 
 /** Tâche cyclique : tuile icône · nom · dernière réalisation · écart à l'échéance · barre. */
-export function MaintenanceTaskRow({ task, color, today, showDate, stacked = false, dense = false, authorOf, onOpenSheet, onOpenPhotos, onDismiss }: MaintenanceTaskRowProps) {
+export function MaintenanceTaskRow(props: MaintenanceTaskRowProps) {
+  if (props.collapsible) return <CollapsibleTaskRow {...props} />
+  return <FullTaskRow {...props} />
+}
+
+function FullTaskRow({ task, color, today, showDate, stacked = false, dense = false, authorOf, onOpenSheet, onOpenPhotos, onDismiss, action }: MaintenanceTaskRowProps) {
   const TaskIcon = taskIcon(task.icon)
   const progress = mainAxisProgress(task)
   const figure = mainFigure(task)
@@ -168,7 +63,6 @@ export function MaintenanceTaskRow({ task, color, today, showDate, stacked = fal
   const reason = toPlanReason(task)
   const realization = task.last_realization
   // Tâche signalée mais jamais réalisée : pas d'échéance calculable, on rappelle pourquoi et la périodicité
-  const neverRecorded = ['Jamais enregistrée', periodicityLabel(task)].filter(Boolean).join(' · ')
   const realizationLine = realization ? (
     <RealizationLine
       date={realization.date}
@@ -182,7 +76,8 @@ export function MaintenanceTaskRow({ task, color, today, showDate, stacked = fal
   ) : (
     <Text size="xs" c="dimmed">
       <IconHistoryOff size={14} style={{ verticalAlign: '-3px', marginRight: 4 }} />
-      {neverRecorded}
+      Jamais enregistrée
+      <PeriodicityBadge label={periodicityLabel(task.periodicity)} style={{ marginLeft: 6, verticalAlign: 'middle' }} />
     </Text>
   )
 
@@ -217,13 +112,14 @@ export function MaintenanceTaskRow({ task, color, today, showDate, stacked = fal
               {secondary && <Text size="xs" c="dimmed">{secondary}</Text>}
             </Stack>
           )}
+          {action}
         </Group>
         {stacked && realizationLine}
         {progress != null && (
           <Progress size={dense ? 4 : 6} color={color} value={Math.max(4, clampProgress(progress) * 100)} />
         )}
         {task.signalements.map((signalement) => (
-          <AttachedSignalement
+          <SignalementBlock
             key={signalement.task_id}
             signalement={signalement}
             author={authorOf(signalement.sheet_id)}
@@ -241,7 +137,7 @@ export function MaintenanceTaskRow({ task, color, today, showDate, stacked = fal
 /** Tâche suivie jamais enregistrée : carte en pointillés, périodicité. */
 export function MaintenanceUnknownRow({ task }: { task: MaintenanceTask }) {
   const TaskIcon = taskIcon(task.icon)
-  const periodicity = periodicityLabel(task)
+  const periodicity = periodicityLabel(task.periodicity)
   return (
     <RowCard dashed>
       <Group gap="sm" wrap="nowrap">
@@ -253,7 +149,7 @@ export function MaintenanceUnknownRow({ task }: { task: MaintenanceTask }) {
             <Text fw={600} size="sm">{task.name}</Text>
             {task.is_critical && <CriticalMark />}
           </Group>
-          {periodicity && <Text size="xs" c="dimmed">{periodicity}</Text>}
+          {periodicity && <PeriodicityBadge label={periodicity} style={{ alignSelf: 'flex-start' }} />}
         </Stack>
         <Text size="xs" c="dimmed">Inconnu</Text>
       </Group>
@@ -262,14 +158,18 @@ export function MaintenanceUnknownRow({ task }: { task: MaintenanceTask }) {
 }
 
 /** Signalement autonome (groupe À prévoir) : avatar de l'auteur à la place de la tuile. */
-export function MaintenanceSignalementRow({ signalement, author, today, onOpenSheet, onOpenPhotos, onDismiss }: {
+export function MaintenanceSignalementRow(props: {
   signalement: MaintenanceSignalement
   author: string
   today: string
-  onOpenSheet: OpenSheet
+  onOpenSheet?: OpenSheet
   onOpenPhotos: OpenPhotos
   onDismiss?: OnDismiss
+  action?: ReactNode
+  collapsible?: boolean
 }) {
+  if (props.collapsible) return <CollapsibleSignalementRow {...props} />
+  const { signalement, author, today, onOpenSheet, onOpenPhotos, onDismiss, action } = props
   return (
     <RowCard>
       <Group gap="sm" wrap="nowrap">
@@ -281,6 +181,7 @@ export function MaintenanceSignalementRow({ signalement, author, today, onOpenSh
         </Stack>
         {signalement.photos.length > 0 && <PhotoThumb photos={signalement.photos} onOpenPhotos={onOpenPhotos} size={44} />}
         <DismissButton signalement={signalement} onDismiss={onDismiss} />
+        {action}
       </Group>
     </RowCard>
   )

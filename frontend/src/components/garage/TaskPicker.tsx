@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { useList } from '@refinedev/core'
-import { Drawer, TextInput, Stack, UnstyledButton, Group, Text, Badge, Button, Loader } from '@mantine/core'
+import { Drawer, TextInput, Stack, UnstyledButton, Group, Text, Button, Loader } from '@mantine/core'
 import { IconSearch, IconPlus } from '@tabler/icons-react'
 import { VehicleTypeEnum } from '../../types/schema.d'
 import { vehicleTypeLabelMap } from '../../constants'
 import { LocalTask } from '../../types/garage'
-import { buildTaskPickerRows, FREE_TASK_LABEL, TaskCatalogItem, periodicityLabel } from './taskCardUtils'
+import { buildTaskPickerRows, FREE_TASK_LABEL, TaskCatalogItem } from './taskCardUtils'
+import { catalogPeriodicityLabel } from './periodicityUtils'
+import { PeriodicityBadge } from './PeriodicityBadge'
+import { taskIcon } from './maintenance/taskIcons'
 
 type TaskPickerProps = {
   vehicleType: VehicleTypeEnum
@@ -13,6 +16,11 @@ type TaskPickerProps = {
   existingCatalogTaskIds?: number[]
   onClose: () => void
   onPick: (task: LocalTask) => void
+}
+
+function TaskIconMark({ icon }: { icon?: string }) {
+  const Icon = taskIcon(icon)
+  return <Icon size={20} stroke={2} style={{ flexShrink: 0 }} />
 }
 
 export function TaskPicker({ vehicleType, opened, existingCatalogTaskIds, onClose, onPick }: TaskPickerProps) {
@@ -45,7 +53,8 @@ export function TaskPicker({ vehicleType, opened, existingCatalogTaskIds, onClos
       name: task.name,
       // "Fait" par défaut : le flow d'ajout par défaut de cette story est le stepper d'intervention (tâches réalisées) ; l'appelant peut ré-affecter type: "planned" (ex: Epic 3)
       type: 'done',
-      periodicityLabel: periodicityLabel(task),
+      periodicityLabel: catalogPeriodicityLabel(task),
+      icon: task.icon,
       isWearTask: !!task.is_wear_task,
       // 10/10 = neuf, valeur de départ jusqu'à saisie réelle (0 signifierait "hors d'usage")
       wearLevel: task.is_wear_task ? 10 : undefined,
@@ -123,12 +132,11 @@ export function TaskPicker({ vehicleType, opened, existingCatalogTaskIds, onClos
                     style={{ minHeight: 48, padding: '8px 4px' }}
                   >
                     <Group justify="space-between" wrap="nowrap">
-                      <Text>{row.task.name}</Text>
-                      {periodicityLabel(row.task) && (
-                        <Badge variant="light" color="cyan">
-                          {periodicityLabel(row.task)}
-                        </Badge>
-                      )}
+                      <Group gap="xs" wrap="nowrap">
+                        <TaskIconMark icon={row.task.icon} />
+                        <Text>{row.task.name}</Text>
+                      </Group>
+                      <PeriodicityBadge label={catalogPeriodicityLabel(row.task)} />
                     </Group>
                   </UnstyledButton>
                 ) : (

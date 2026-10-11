@@ -10,7 +10,8 @@ type LocalTask = {
     catalogTaskId?: number;      // undefined = tâche libre
     name: string;                 // dénormalisé depuis le catalogue, ou saisi libre
     type: "done" | "planned";
-    periodicityLabel?: string;    // ex: "15 000 km / 1 an", purement informatif (chip)
+    periodicityLabel?: string;    // ex: "Tous les 15 000 km ou 1 an", purement informatif (chip)
+    icon?: string;                // dénormalisé depuis TaskCatalog.icon ; absent pour une tâche libre (IconTool par défaut)
     isWearTask: boolean;          // dénormalisé depuis TaskCatalog.is_wear_task ; false pour une tâche libre
     wearLevel?: number;           // 0-10, affiché seulement quand isWearTask est vrai
     description?: string;
@@ -19,6 +20,7 @@ type LocalTask = {
     serverId?: number;            // id côté serveur dès que POST .../tasks/ a réussi (story 2.6)
     photoIds?: (number | null)[]; // aligné sur photos ; id GaragePhoto si URL serveur, null si base64 pas encore uploadé
     sheetId?: number;             // fiche source (story 2.7)
+    sourceSignalementId?: number; // signalement dont la tâche est issue (« + » des suggestions) ; le signalement n'est plus suggéré tant que la tâche existe
 };
 
 // ── Fiches d'intervention (story 2.6) ────────────────────────────────────────

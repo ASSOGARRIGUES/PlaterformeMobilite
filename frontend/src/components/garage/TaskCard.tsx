@@ -4,7 +4,6 @@ import {
   Group,
   Stack,
   Text,
-  Badge,
   ActionIcon,
   Collapse,
   Slider,
@@ -18,10 +17,12 @@ import {
   UnstyledButton,
   Input,
 } from '@mantine/core'
-import { IconTool, IconTrash, IconChevronDown, IconChevronUp, IconX, IconCameraFilled, IconPlus } from '@tabler/icons-react'
+import { IconTrash, IconChevronDown, IconChevronUp, IconX, IconCameraFilled, IconPlus } from '@tabler/icons-react'
 import { LocalTask, LocalTaskPart } from '../../types/garage'
 import { computePartsSubtotal, isWearLevelCritical } from './taskCardUtils'
 import { PhotoLightbox } from './PhotoLightbox'
+import { PeriodicityBadge } from './PeriodicityBadge'
+import { taskIcon } from './maintenance/taskIcons'
 
 type TaskCardProps = {
   task: LocalTask
@@ -59,6 +60,7 @@ export function TaskCard({
   const expanded = expandedProp ?? internalExpanded
   const toggleExpanded = onToggleExpanded ?? (() => setInternalExpanded((e) => !e))
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
+  const TaskIcon = taskIcon(task.icon)
 
   const commit = (updated: LocalTask) => {
     onChange(updated)
@@ -99,16 +101,12 @@ export function TaskCard({
         <Group justify="space-between" wrap="nowrap">
           <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
             <Group gap="xs" wrap="nowrap">
-              <IconTool size={20} stroke={2} style={{ flexShrink: 0 }} />
+              <TaskIcon size={20} stroke={2} style={{ flexShrink: 0 }} />
               <Text fw={500} truncate="end">
                 {task.name}
               </Text>
             </Group>
-            {task.periodicityLabel && (
-              <Badge variant="light" color="cyan" style={{ alignSelf: 'flex-start', marginLeft: 28 }}>
-                {task.periodicityLabel}
-              </Badge>
-            )}
+            <PeriodicityBadge label={task.periodicityLabel} style={{ alignSelf: 'flex-start', marginLeft: 28 }} />
           </Stack>
           <Group gap="xs" wrap="nowrap" style={{ flexShrink: 0 }}>
             {!readOnly && (

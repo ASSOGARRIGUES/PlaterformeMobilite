@@ -105,6 +105,10 @@ export function humanizeNumber(number: number) {
     return number.toLocaleString('fr-FR');
 }
 
+export function plural(count: number, singular: string, pluralForm: string) {
+    return count > 1 ? pluralForm : singular;
+}
+
 export function humanizeFirstName(name: string | undefined){
     if (!name) return '';
     return capitalizeFirstLetter(name.toLowerCase());

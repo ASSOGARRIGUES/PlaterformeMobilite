@@ -13,7 +13,7 @@ from .alerts import get_config, TASK_STATUS_CHOICES, PLANNING_SOURCE_CHOICES, AX
 class TaskCatalogSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskCatalog
-        fields = ['id', 'name', 'vehicle_types', 'km_periodicity', 'month_periodicity', 'is_critical', 'is_wear_task']
+        fields = ['id', 'name', 'vehicle_types', 'km_periodicity', 'month_periodicity', 'is_critical', 'is_wear_task', 'icon']
 
 
 class MileageEntrySerializer(serializers.ModelSerializer):

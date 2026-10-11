@@ -74,6 +74,13 @@ class TaskCatalogAPITestCase(APITestCase):
         self.assertIn('Voiture only', names)
         self.assertIn('Scouter only', names)
 
+    def test_list_returns_icon(self):
+        TaskCatalog.objects.create(name='Defaut', vehicle_types=['voiture'])
+        TaskCatalog.objects.create(name='Vidange', vehicle_types=['voiture'], icon='oil')
+        response = self.client.get('/api/garage/task-catalog/')
+        icons = {t['name']: t['icon'] for t in response.data['results']}
+        self.assertEqual(icons, {'Defaut': 'tool', 'Vidange': 'oil'})
+
     def test_archived_field_not_in_response(self):
         TaskCatalog.objects.create(name='Task', vehicle_types=['voiture'])
         response = self.client.get('/api/garage/task-catalog/')

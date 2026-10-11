@@ -125,7 +125,8 @@ export function InterventionStepperShell({
 
         <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
           <ScrollArea style={{ flex: 1, minHeight: 0 }} p="md" scrollbarSize={isWorkshopLayout ? 11 : 4}>
-            {children}
+            {/* Le contenu interne du ScrollArea est un `display: table` qui s'élargit au contenu le plus large : width 0 + min-width 100% l'en empêche */}
+            <div style={{ width: 0, minWidth: '100%' }}>{children}</div>
           </ScrollArea>
 
           {showSidePanel && (

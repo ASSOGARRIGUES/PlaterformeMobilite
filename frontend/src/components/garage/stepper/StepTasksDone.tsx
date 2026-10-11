@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   ActionIcon,
-  Badge,
   Box,
   Button,
   Collapse,
   Group,
-  Image,
   Loader,
   SimpleGrid,
   Stack,
@@ -16,19 +14,29 @@ import {
 import { useMediaQuery } from '@mantine/hooks'
 import { IconBulb, IconChevronDown, IconPlus, IconTool } from '@tabler/icons-react'
 import { components } from '../../../types/schema'
-import { LocalTask } from '../../../types/garage'
+import { LocalTask, MaintenanceSignalement, MaintenanceSummary, MaintenanceTask } from '../../../types/garage'
 import { TaskCard } from '../TaskCard'
 import { TaskPicker } from '../TaskPicker'
 import { PhotoLightbox } from '../PhotoLightbox'
-import { computePartsSubtotal } from '../taskCardUtils'
+import { TaskCatalogItem } from '../taskCardUtils'
+import { MaintenanceSignalementRow, MaintenanceTaskRow } from '../maintenance/MaintenanceTaskRow'
+import { MAINTENANCE_SECTION_COLORS, sheetAuthor } from '../maintenance/maintenanceUtils'
 import { WIDE_TASK_GRID_QUERY } from '../../../hooks/garage/breakpoints'
+import { PendingSuggestions, localTaskFromSuggestion } from '../../../hooks/garage/interventionStepperUtils'
 
 type Vehicle = components['schemas']['Vehicle']
+
+export type SuggestionBlock = {
+  suggestions: PendingSuggestions
+  maintenanceSummary: MaintenanceSummary
+  catalogById: Map<number, TaskCatalogItem>
+}
 
 type StepTasksDoneProps = {
   vehicle: Vehicle
   tasks: LocalTask[]
-  suggestions: LocalTask[]
+  /** Absent en édition d'une fiche validée : pas de bloc Suggestions */
+  suggestionBlock?: SuggestionBlock
   onAddTask: (task: LocalTask) => Promise<void>
   onUpdateTask: (task: LocalTask) => void
   onCommitTask?: (task: LocalTask) => void
@@ -36,112 +44,10 @@ type StepTasksDoneProps = {
   isMutating: boolean
 }
 
-/** Ligne de suggestion, dépliable pour voir la description/les photos de la tâche telle que réalisée à la fiche précédente. */
-function SuggestionRow({ suggestion, onAdd, disabled }: { suggestion: LocalTask; onAdd: () => void; disabled: boolean }) {
-  const [open, setOpen] = useState(false)
-  const [previewIndex, setPreviewIndex] = useState<number | null>(null)
-  const hasDetails = !!suggestion.description || suggestion.photos.length > 0 || suggestion.parts.length > 0
-
-  return (
-    <Box style={{ borderLeft: '2px solid var(--mantine-color-cyan-4)', paddingLeft: 10 }}>
-      <Group justify="space-between" wrap="nowrap" style={{ paddingTop: 8, paddingBottom: 8 }}>
-        <UnstyledButton
-          onClick={() => hasDetails && setOpen((o) => !o)}
-          style={{ flex: 1, cursor: hasDetails ? 'pointer' : 'default' }}
-        >
-          <Group gap="xs" wrap="nowrap">
-            <Text size="sm">{suggestion.name}</Text>
-            {suggestion.periodicityLabel && (
-              <Badge variant="light" color="cyan" size="sm">
-                {suggestion.periodicityLabel}
-              </Badge>
-            )}
-            {hasDetails && (
-              <IconChevronDown
-                size={14}
-                style={{ transition: 'transform 150ms ease', transform: open ? 'rotate(180deg)' : undefined }}
-              />
-            )}
-          </Group>
-        </UnstyledButton>
-        <ActionIcon
-          variant="subtle"
-          color="cyan"
-          radius="md"
-          aria-label="Ajouter la tâche suggérée"
-          onClick={onAdd}
-          disabled={disabled}
-        >
-          <IconPlus size={16} />
-        </ActionIcon>
-      </Group>
-
-      {hasDetails && (
-        <Collapse in={open}>
-          <Stack gap={6} pb={8}>
-            {suggestion.description && (
-              <Text size="sm" c="dimmed">
-                {suggestion.description}
-              </Text>
-            )}
-            {suggestion.parts.length > 0 && (
-              <Stack gap={2}>
-                {suggestion.parts.map((part) => (
-                  <Group key={part.localId} justify="space-between" wrap="nowrap">
-                    <Text size="sm">
-                      {part.name} {part.quantity > 1 ? `× ${part.quantity}` : ''}
-                    </Text>
-                    <Text size="sm" ff="monospace">
-                      {(part.unitPrice * part.quantity).toFixed(2)} €
-                    </Text>
-                  </Group>
-                ))}
-                <Group justify="space-between" wrap="nowrap">
-                  <Text size="sm" fw={600}>
-                    Sous-total
-                  </Text>
-                  <Text size="sm" fw={600} ff="monospace">
-                    {computePartsSubtotal(suggestion.parts).toFixed(2)} €
-                  </Text>
-                </Group>
-              </Stack>
-            )}
-            {suggestion.photos.length > 0 && (
-              <Group gap="xs">
-                {suggestion.photos.map((photo, index) => (
-                  <Image
-                    key={index}
-                    src={photo}
-                    w={60}
-                    h={60}
-                    radius={4}
-                    fit="cover"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => setPreviewIndex(index)}
-                  />
-                ))}
-              </Group>
-            )}
-          </Stack>
-        </Collapse>
-      )}
-
-      {previewIndex !== null && (
-        <PhotoLightbox
-          photos={suggestion.photos}
-          index={previewIndex}
-          onIndexChange={setPreviewIndex}
-          onClose={() => setPreviewIndex(null)}
-        />
-      )}
-    </Box>
-  )
-}
-
 export function StepTasksDone({
   vehicle,
   tasks,
-  suggestions,
+  suggestionBlock,
   onAddTask,
   onUpdateTask,
   onCommitTask,
@@ -151,6 +57,10 @@ export function StepTasksDone({
   const [pickerOpen, setPickerOpen] = useState(false)
   const [suggestionsOpen, setSuggestionsOpen] = useState(true)
   const isWideGrid = useMediaQuery(WIDE_TASK_GRID_QUERY, false)
+  // Application installée : un nouvel onglet en sortirait, le lien « Fiche #n » est alors masqué
+  const isStandalone = useMediaQuery('(display-mode: standalone)', false)
+  const [lightboxPhotos, setLightboxPhotos] = useState<string[] | null>(null)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
   // Ouvre automatiquement la carte de la dernière tâche ajoutée, pour inciter à remplir les détails.
   // Les nouvelles tâches sont ajoutées en tête de liste (cf. useInterventionStepper/useValidatedInterventionEdit),
   // donc "premier élément du tableau après un ajout" suffit à identifier la nouvelle tâche, sans suivre son id.
@@ -184,7 +94,7 @@ export function StepTasksDone({
     .map((task) => task.catalogTaskId)
     .filter((id): id is number => id !== undefined)
 
-  const addButton = (
+  const pickerButton = (
     <Button
       variant="light"
       size="xs"
@@ -196,52 +106,98 @@ export function StepTasksDone({
     </Button>
   )
 
+  const suggestionsCount = suggestionBlock
+    ? suggestionBlock.suggestions.overdue.length + suggestionBlock.suggestions.toPlan.length + suggestionBlock.suggestions.signalements.length
+    : 0
+  const addButton = (source: MaintenanceTask | MaintenanceSignalement, catalogById: Map<number, TaskCatalogItem>) => (
+    <ActionIcon
+      variant="outline"
+      color="cyan"
+      size={32}
+      radius="md"
+      aria-label="Ajouter la tâche suggérée"
+      disabled={isMutating}
+      onClick={() => addTask(localTaskFromSuggestion(source, catalogById))}
+    >
+      <IconPlus size={18} />
+    </ActionIcon>
+  )
+
+  const renderSuggestions = ({ suggestions: { overdue, toPlan, signalements }, maintenanceSummary, catalogById }: SuggestionBlock) => {
+    const rowProps = {
+      collapsible: true as const,
+      today: maintenanceSummary.today,
+      showDate: false,
+      authorOf: (sheetId: number) => sheetAuthor(maintenanceSummary, sheetId),
+      // Nouvel onglet : les saisies de l'étape courante ne sont enregistrées qu'au changement d'étape
+      onOpenSheet: isStandalone ? undefined : (sheetId: number) => window.open(`/garage/intervention/${sheetId}`, '_blank', 'noopener,noreferrer'),
+      onOpenPhotos: (photos: string[]) => {
+        setLightboxIndex(0)
+        setLightboxPhotos(photos)
+      },
+    }
+    return (
+      <Box>
+        <UnstyledButton
+          onClick={() => setSuggestionsOpen((open) => !open)}
+          aria-expanded={suggestionsOpen}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '10px 2px',
+            borderBottom: '1px solid var(--mantine-color-gray-3)',
+          }}
+        >
+          <IconBulb size={16} color="var(--mantine-color-cyan-7)" />
+          <Text fw={700} size="sm">
+            Suggestions
+          </Text>
+          <Text c="dimmed" fw={600} size="sm">
+            ({suggestionsCount})
+          </Text>
+          <IconChevronDown
+            size={16}
+            style={{
+              marginLeft: 'auto',
+              transition: 'transform 150ms ease',
+              transform: suggestionsOpen ? 'rotate(180deg)' : undefined,
+            }}
+          />
+        </UnstyledButton>
+        <Collapse in={suggestionsOpen}>
+          <Stack gap={6} pt="xs" pb={4}>
+            {overdue.map((task) => (
+              <MaintenanceTaskRow key={task.catalog_task_id} task={task} color={MAINTENANCE_SECTION_COLORS.overdue} {...rowProps} action={addButton(task, catalogById)} />
+            ))}
+            {toPlan.map((task) => (
+              <MaintenanceTaskRow key={task.catalog_task_id} task={task} color={MAINTENANCE_SECTION_COLORS.toPlan} {...rowProps} action={addButton(task, catalogById)} />
+            ))}
+            {signalements.map((signalement) => (
+              <MaintenanceSignalementRow
+                key={signalement.task_id}
+                signalement={signalement}
+                author={rowProps.authorOf(signalement.sheet_id)}
+                today={rowProps.today}
+                onOpenSheet={rowProps.onOpenSheet}
+                onOpenPhotos={rowProps.onOpenPhotos}
+                collapsible
+                action={addButton(signalement, catalogById)}
+              />
+            ))}
+          </Stack>
+        </Collapse>
+      </Box>
+    )
+  }
+
   return (
     <Stack gap="md">
-      {suggestions.length > 0 && (
-        <Box>
-          <UnstyledButton
-            onClick={() => setSuggestionsOpen((open) => !open)}
-            aria-expanded={suggestionsOpen}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '10px 2px',
-              borderBottom: '1px solid var(--mantine-color-gray-3)',
-            }}
-          >
-            <IconBulb size={16} color="var(--mantine-color-cyan-7)" />
-            <Text fw={700} size="sm">
-              Suggestions
-            </Text>
-            <Text c="dimmed" fw={600} size="sm">
-              ({suggestions.length})
-            </Text>
-            <IconChevronDown
-              size={16}
-              style={{
-                marginLeft: 'auto',
-                transition: 'transform 150ms ease',
-                transform: suggestionsOpen ? 'rotate(180deg)' : undefined,
-              }}
-            />
-          </UnstyledButton>
-          <Collapse in={suggestionsOpen}>
-            <Stack gap={6} pt={4} pb={4}>
-              {suggestions.map((suggestion) => (
-                <SuggestionRow
-                  key={suggestion.localId}
-                  suggestion={suggestion}
-                  disabled={isMutating}
-                  onAdd={() => addTask({ ...suggestion, localId: crypto.randomUUID(), serverId: undefined, type: 'done' })}
-                />
-              ))}
-            </Stack>
-          </Collapse>
-        </Box>
+      {lightboxPhotos && (
+        <PhotoLightbox photos={lightboxPhotos} index={lightboxIndex} onIndexChange={setLightboxIndex} onClose={() => setLightboxPhotos(null)} />
       )}
+      {suggestionBlock && suggestionsCount > 0 && renderSuggestions(suggestionBlock)}
 
       <Group
         justify="space-between"
@@ -250,7 +206,7 @@ export function StepTasksDone({
           borderBottom: '1px solid var(--mantine-color-gray-3)',
           position: 'sticky',
           top: 0,
-          zIndex: 1,
+          zIndex: 10,
           background: 'var(--mantine-color-body)',
         }}
       >
@@ -263,7 +219,7 @@ export function StepTasksDone({
             ({tasks.length})
           </Text>
         </Group>
-        {addButton}
+        {pickerButton}
       </Group>
 
       {tasks.length === 0 && (

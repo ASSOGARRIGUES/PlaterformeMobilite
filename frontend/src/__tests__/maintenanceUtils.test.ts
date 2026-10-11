@@ -9,7 +9,6 @@ import {
   secondaryFigure,
   formatShortDate,
   sinceLabel,
-  periodicityLabel,
   initials,
   sheetAuthor,
   maintenanceBadge,
@@ -209,15 +208,6 @@ describe('sinceLabel', () => {
   it('says how long ago, from the server date', () => {
     expect(sinceLabel('2026-06-01', '2026-10-01')).toBe('il y a 4 mois');
     expect(sinceLabel('2026-10-01', '2026-10-01')).toBe("aujourd'hui");
-  });
-});
-
-describe('periodicityLabel', () => {
-  it('joins both axes', () => {
-    expect(periodicityLabel(makeTask({ periodicity: { km: 30000, months: 24 } }))).toBe(`Tous les ${humanizeNumber(30000)} km ou 2 ans`);
-    expect(periodicityLabel(makeTask({ periodicity: { km: null, months: 6 } }))).toBe('Tous les 6 mois');
-    expect(periodicityLabel(makeTask({ periodicity: { km: null, months: 12 } }))).toBe('Tous les 12 mois');
-    expect(periodicityLabel(makeTask({ periodicity: { km: null, months: null } }))).toBeNull();
   });
 });
 

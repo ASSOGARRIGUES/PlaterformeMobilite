@@ -5462,6 +5462,26 @@ components:
           type: boolean
           description: Si vrai, la tâche est saisie avec un niveau d'usure /10 plutôt
             que simplement cochée comme faite
+        icon:
+          allOf:
+          - $ref: '#/components/schemas/IconEnum'
+          description: |-
+            Icône affichée dans l'onglet Entretien
+
+            * `tool` - Outil (par défaut)
+            * `oil` - Huile
+            * `filter` - Filtre
+            * `air` - Air
+            * `belt` - Courroie / distribution
+            * `brake` - Freins
+            * `tire` - Pneus
+            * `spark` - Allumage
+            * `bearing` - Roulements
+            * `steering` - Direction / train
+            * `battery` - Batterie
+            * `light` - Éclairage
+            * `engine` - Moteur
+            * `body` - Carrosserie
       required:
       - id
       - name
