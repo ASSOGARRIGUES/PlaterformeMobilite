@@ -514,6 +514,25 @@ class MileageHistoryAPITestCase(APITestCase):
         response = self.client.get(self._url(self.vehicle_c))
         self.assertEqual(response.status_code, 403)
 
+    def _superuser_with_view_vehicle(self):
+        # Superuser sans Action assignée : get_actions() renvoie toutes les Actions.
+        return User.objects.create_superuser(
+            username='root@test.com', email='root@test.com', password='pass',
+            phone='0600000009', first_name='Root', last_name='Admin',
+        )
+
+    def test_superuser_sees_mileage_history_of_any_action(self):
+        self.client.force_authenticate(user=self._superuser_with_view_vehicle())
+        response = self.client.get(self._url(self.vehicle_c))
+        self.assertEqual(response.status_code, 200)
+
+    def test_superuser_sees_intervention_sheets_of_any_action(self):
+        sheet = InterventionSheet.objects.create(vehicle=self.vehicle_c, created_by=self.garagiste)
+        self.client.force_authenticate(user=self._superuser_with_view_vehicle())
+        response = self.client.get('/api/garage/intervention/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(sheet.id, [s['id'] for s in response.data['results']])
+
     def test_non_numeric_vehicle_pk_returns_404(self):
         self.client.force_authenticate(user=self.garagiste)
         response = self.client.get('/api/garage/mileage/abc/')

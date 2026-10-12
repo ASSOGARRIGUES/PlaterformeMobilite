@@ -52,7 +52,7 @@ class MileageHistoryViewSet(GarageMultiActionMixin, viewsets.ReadOnlyModelViewSe
             raise NotFound()
         user = request.user
         if user.has_perm('garage.view_vehicle'):
-            if not user.actions.filter(pk=vehicle.action_id).exists():
+            if not user.get_actions().filter(pk=vehicle.action_id).exists():
                 raise PermissionDenied()
         else:
             if vehicle.action_id != user.current_action_id:
@@ -302,7 +302,7 @@ class MaintenanceViewSet(viewsets.ViewSet):
             vehicle = Vehicle.objects.get(pk=pk)
         except (Vehicle.DoesNotExist, ValueError):
             raise NotFound()
-        if not user.actions.filter(pk=vehicle.action_id).exists():
+        if not user.get_actions().filter(pk=vehicle.action_id).exists():
             raise PermissionDenied()
         data = load_maintenance_data([vehicle])
         summary = compute_maintenance_summary(data, vehicle, timezone.localdate(), get_config())
