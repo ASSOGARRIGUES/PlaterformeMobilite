@@ -138,11 +138,15 @@ export function useValidatedInterventionEdit(sheetId: number) {
     )
   }
 
-  /** Sauvegarde (PATCH) le diff entre l'état local courant et le dernier état connu du serveur. */
-  const persistTask = async (localId: string, section: Section) => {
+  /**
+   * Sauvegarde (PATCH) le diff entre la tâche validée et le dernier état connu du serveur.
+   * `committed` est la tâche transmise par `onCommit` : le state de la closure peut être périmé
+   * (le Slider appelle onChange puis onChangeEnd dans le même tick).
+   */
+  const persistTask = async (localId: string, section: Section, committed?: LocalTask) => {
     const list = section === 'done' ? doneTasks : plannedTasks
     const syncedList = section === 'done' ? syncedDoneTasks : syncedPlannedTasks
-    const current = list.find((task) => task.localId === localId)
+    const current = committed ?? list.find((task) => task.localId === localId)
     const synced = syncedList.find((task) => task.localId === localId)
     if (!current || !synced || !current.serverId) return
     const payload = localTaskToUpdatePayload(current, synced)

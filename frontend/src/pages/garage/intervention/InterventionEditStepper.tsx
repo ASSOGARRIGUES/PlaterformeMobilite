@@ -180,7 +180,7 @@ export function InterventionEditStepper({ sheetId }: InterventionEditStepperProp
           tasks={doneTasks}
           onAddTask={(task) => addTask(task, 'done')}
           onUpdateTask={(task) => updateTaskLocal(task.localId, task, 'done')}
-          onCommitTask={(task) => persistTask(task.localId, 'done')}
+          onCommitTask={(task) => persistTask(task.localId, 'done', task)}
           onRemoveTask={(localId) => removeTask(localId, 'done')}
           isMutating={isMutating}
         />
@@ -192,7 +192,7 @@ export function InterventionEditStepper({ sheetId }: InterventionEditStepperProp
           tasks={plannedTasks}
           onAddTask={(task) => addTask(task, 'planned')}
           onUpdateTask={(task) => updateTaskLocal(task.localId, task, 'planned')}
-          onCommitTask={(task) => persistTask(task.localId, 'planned')}
+          onCommitTask={(task) => persistTask(task.localId, 'planned', task)}
           onRemoveTask={(localId) => removeTask(localId, 'planned')}
           isMutating={isMutating}
         />
