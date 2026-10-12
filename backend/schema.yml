@@ -1778,6 +1778,701 @@ paths:
               schema:
                 $ref: '#/components/schemas/Contract'
           description: ''
+  /api/garage/config/:
+    get:
+      operationId: api_garage_config_retrieve
+      description: Seuils d'usure exposés au front (plus de valeurs codées en dur).
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceConfig'
+          description: ''
+  /api/garage/inspection/:
+    get:
+      operationId: api_garage_inspection_list
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: query
+        name: contract
+        schema:
+          type: number
+      - in: query
+        name: created_at__gte
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: created_at__lte
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: created_by
+        schema:
+          type: integer
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - open
+          - validated
+        description: |-
+          * `open` - Ouverte
+          * `validated` - Validée
+      - in: query
+        name: status__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: vehicle
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInspectionSheetList'
+          description: ''
+    post:
+      operationId: api_garage_inspection_create
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MutationInspectionSheet'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MutationInspectionSheet'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MutationInspectionSheet'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationInspectionSheet'
+          description: ''
+  /api/garage/inspection/{id}/:
+    get:
+      operationId: api_garage_inspection_retrieve
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inspection sheet.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InspectionSheet'
+          description: ''
+    put:
+      operationId: api_garage_inspection_update
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inspection sheet.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MutationInspectionSheet'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MutationInspectionSheet'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MutationInspectionSheet'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationInspectionSheet'
+          description: ''
+    patch:
+      operationId: api_garage_inspection_partial_update
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inspection sheet.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMutationInspectionSheet'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMutationInspectionSheet'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMutationInspectionSheet'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationInspectionSheet'
+          description: ''
+    delete:
+      operationId: api_garage_inspection_destroy
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inspection sheet.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/garage/inspection/{id}/audit-log/:
+    get:
+      operationId: api_garage_inspection_audit_log_list
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: query
+        name: contract
+        schema:
+          type: number
+      - in: query
+        name: created_at__gte
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: created_at__lte
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: created_by
+        schema:
+          type: integer
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inspection sheet.
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - open
+          - validated
+        description: |-
+          * `open` - Ouverte
+          * `validated` - Validée
+      - in: query
+        name: status__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: vehicle
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuditLogList'
+          description: ''
+  /api/garage/inspection/{id}/damages/:
+    post:
+      operationId: api_garage_inspection_damages_create
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inspection sheet.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MutationInspectionDamage'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MutationInspectionDamage'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MutationInspectionDamage'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InspectionDamage'
+          description: ''
+  /api/garage/inspection/{id}/damages/{damage_pk}/:
+    patch:
+      operationId: api_garage_inspection_damages_partial_update
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: damage_pk
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inspection sheet.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateInspectionDamage'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateInspectionDamage'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateInspectionDamage'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InspectionDamage'
+          description: ''
+        '204':
+          description: No response body
+    delete:
+      operationId: api_garage_inspection_damages_destroy
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: damage_pk
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inspection sheet.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InspectionDamage'
+          description: ''
+        '204':
+          description: No response body
+  /api/garage/inspection/{id}/tasks/:
+    post:
+      operationId: api_garage_inspection_tasks_create
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inspection sheet.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MutationInspectionTask'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MutationInspectionTask'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MutationInspectionTask'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InspectionTask'
+          description: ''
+  /api/garage/inspection/{id}/tasks/{task_pk}/:
+    patch:
+      operationId: api_garage_inspection_tasks_partial_update
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inspection sheet.
+        required: true
+      - in: path
+        name: task_pk
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateInspectionTask'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateInspectionTask'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateInspectionTask'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InspectionTask'
+          description: ''
+        '204':
+          description: No response body
+    delete:
+      operationId: api_garage_inspection_tasks_destroy
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inspection sheet.
+        required: true
+      - in: path
+        name: task_pk
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InspectionTask'
+          description: ''
+        '204':
+          description: No response body
+  /api/garage/inspection/{id}/tasks/{task_pk}/dismiss/:
+    post:
+      operationId: api_garage_inspection_tasks_dismiss_create
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inspection sheet.
+        required: true
+      - in: path
+        name: task_pk
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/garage/inspection/{id}/validate/:
+    post:
+      operationId: api_garage_inspection_validate_create
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inspection sheet.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InspectionSheet'
+          description: ''
+  /api/garage/inspection/measurable-tasks/:
+    get:
+      operationId: api_garage_inspection_measurable_tasks_list
+      description: |-
+        Remplace le filtrage standard current_action pour les viewsets garage.
+        Si l'utilisateur a garage.view_vehicle, il voit les véhicules de toutes ses Actions.
+        Sinon, filtrage standard par current_action.
+      parameters:
+      - in: query
+        name: contract
+        schema:
+          type: number
+      - in: query
+        name: created_at__gte
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: created_at__lte
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: created_by
+        schema:
+          type: integer
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - open
+          - validated
+        description: |-
+          * `open` - Ouverte
+          * `validated` - Validée
+      - in: query
+        name: status__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Les valeurs multiples doivent être séparées par des virgules.
+        explode: false
+        style: form
+      - in: query
+        name: vehicle
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMeasurableTaskList'
+          description: ''
   /api/garage/intervention/:
     get:
       operationId: api_garage_intervention_list
@@ -2105,6 +2800,7 @@ paths:
         name: task_pk
         schema:
           type: string
+          pattern: ^\d+$
         required: true
       tags:
       - api
@@ -3322,6 +4018,34 @@ components:
       required:
       - id
       - name
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        author_display:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        action:
+          type: string
+          maxLength: 50
+        field_name:
+          type: string
+          maxLength: 100
+        old_value:
+          type: string
+        new_value:
+          type: string
+      required:
+      - action
+      - author_display
+      - created_at
+      - id
     Beneficiary:
       type: object
       properties:
@@ -3745,6 +4469,172 @@ components:
       - id
       - title
       - updated_at
+    InspectionDamage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        sheet:
+          type: integer
+          readOnly: true
+        description:
+          type: string
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/GaragePhoto'
+          readOnly: true
+      required:
+      - description
+      - id
+      - photos
+      - sheet
+    InspectionSheet:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        vehicle:
+          allOf:
+          - $ref: '#/components/schemas/Vehicle'
+          readOnly: true
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        current_step:
+          type: integer
+          maximum: 7
+          minimum: 1
+        status:
+          $ref: '#/components/schemas/InterventionSheetStatusEnum'
+        start_mileage:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        oil_ok:
+          type: boolean
+          nullable: true
+        coolant_ok:
+          type: boolean
+          nullable: true
+        washer_ok:
+          type: boolean
+          nullable: true
+        lights_ok:
+          type: boolean
+          nullable: true
+        lights_notes:
+          type: string
+        road_test_done:
+          type: boolean
+          nullable: true
+        road_test_notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_expired:
+          type: boolean
+          readOnly: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
+        wear_measurements:
+          type: array
+          items:
+            $ref: '#/components/schemas/InspectionWearMeasurement'
+          readOnly: true
+        damages:
+          type: array
+          items:
+            $ref: '#/components/schemas/InspectionDamage'
+          readOnly: true
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/InspectionTask'
+          readOnly: true
+      required:
+      - created_at
+      - created_by
+      - damages
+      - expires_at
+      - id
+      - is_expired
+      - tasks
+      - updated_at
+      - vehicle
+      - wear_measurements
+    InspectionTask:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        sheet:
+          type: integer
+          readOnly: true
+        catalog_task:
+          type: integer
+          nullable: true
+        name:
+          type: string
+          description: Nom de la tâche libre (hors catalogue) — laisser vide si catalog_task
+            est renseigné
+          maxLength: 200
+        description:
+          type: string
+        dismissed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/GaragePhoto'
+          readOnly: true
+      required:
+      - dismissed_at
+      - id
+      - photos
+      - sheet
+    InspectionWearMeasurement:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        catalog_task:
+          type: integer
+        catalog_task_name:
+          type: string
+          readOnly: true
+        level:
+          type: integer
+          maximum: 10
+          minimum: 0
+      required:
+      - catalog_task
+      - catalog_task_name
+      - id
+      - level
     InterventionSheet:
       type: object
       properties:
@@ -3888,6 +4778,20 @@ components:
       description: |-
         * `km` - Kilométrage
         * `months` - Durée
+    MaintenanceConfig:
+      type: object
+      properties:
+        wear_alert_threshold:
+          type: integer
+          maximum: 10
+          minimum: 0
+          description: Niveau d'usure (sur 10) en-dessous duquel une alerte est générée
+        wear_critical_threshold:
+          type: integer
+          maximum: 10
+          minimum: 0
+          description: Niveau d'usure (sur 10) en-dessous duquel le véhicule passe
+            en maintenance
     MaintenanceCounts:
       type: object
       properties:
@@ -3931,6 +4835,24 @@ components:
       - progress
       - remaining
       - soon
+    MaintenanceMeasurement:
+      type: object
+      properties:
+        sheet_id:
+          type: integer
+        date:
+          type: string
+          format: date
+        km:
+          type: integer
+          nullable: true
+        level:
+          type: integer
+      required:
+      - date
+      - km
+      - level
+      - sheet_id
     MaintenanceMonthsAxis:
       type: object
       properties:
@@ -4058,6 +4980,14 @@ components:
       - start_date
       - start_mileage
       - status
+    MaintenanceSheetKindEnum:
+      enum:
+      - intervention
+      - inspection
+      type: string
+      description: |-
+        * `intervention` - Fiche d'intervention
+        * `inspection` - Fiche de contrôle
     MaintenanceSignalement:
       type: object
       properties:
@@ -4065,6 +4995,8 @@ components:
           type: integer
         sheet_id:
           type: integer
+        sheet_kind:
+          $ref: '#/components/schemas/MaintenanceSheetKindEnum'
         sheet_date:
           type: string
           format: date
@@ -4090,6 +5022,7 @@ components:
       - photos
       - sheet_date
       - sheet_id
+      - sheet_kind
       - source
       - task_id
     MaintenanceSourceEnum:
@@ -4097,11 +5030,13 @@ components:
       - echeance
       - signalement
       - usure
+      - mesure
       type: string
       description: |-
         * `echeance` - Échéance
         * `signalement` - Signalement
         * `usure` - Usure
+        * `mesure` - Mesure
     MaintenanceStatusEnum:
       enum:
       - overdue
@@ -4177,6 +5112,10 @@ components:
           allOf:
           - $ref: '#/components/schemas/MaintenanceRealization'
           nullable: true
+        last_measurement:
+          allOf:
+          - $ref: '#/components/schemas/MaintenanceMeasurement'
+          nullable: true
         km:
           allOf:
           - $ref: '#/components/schemas/MaintenanceKmAxis'
@@ -4200,6 +5139,7 @@ components:
       - is_critical
       - is_wear_task
       - km
+      - last_measurement
       - last_realization
       - main_axis
       - months
@@ -4208,6 +5148,38 @@ components:
       - signalements
       - source
       - status
+    MeasurableTask:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        icon:
+          allOf:
+          - $ref: '#/components/schemas/IconEnum'
+          description: |-
+            Icône affichée dans l'onglet Entretien
+
+            * `tool` - Outil (par défaut)
+            * `oil` - Huile
+            * `filter` - Filtre
+            * `air` - Air
+            * `belt` - Courroie / distribution
+            * `brake` - Freins
+            * `tire` - Pneus
+            * `spark` - Allumage
+            * `bearing` - Roulements
+            * `steering` - Direction / train
+            * `battery` - Batterie
+            * `light` - Éclairage
+            * `engine` - Moteur
+            * `body` - Carrosserie
+      required:
+      - id
+      - name
     MileageCorrection:
       type: object
       properties:
@@ -4408,6 +5380,100 @@ components:
       - root_contract_id
       - start_date
       - vehicle
+    MutationInspectionDamage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        description:
+          type: string
+        photos:
+          type: array
+          items:
+            type: string
+            format: uri
+          writeOnly: true
+      required:
+      - description
+      - id
+    MutationInspectionSheet:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        vehicle:
+          type: integer
+        current_step:
+          type: integer
+          maximum: 7
+          minimum: 1
+        status:
+          allOf:
+          - $ref: '#/components/schemas/InterventionSheetStatusEnum'
+          readOnly: true
+        start_mileage:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        oil_ok:
+          type: boolean
+          nullable: true
+        coolant_ok:
+          type: boolean
+          nullable: true
+        washer_ok:
+          type: boolean
+          nullable: true
+        lights_ok:
+          type: boolean
+          nullable: true
+        lights_notes:
+          type: string
+        road_test_done:
+          type: boolean
+          nullable: true
+        road_test_notes:
+          type: string
+        wear_measurements:
+          type: array
+          items:
+            $ref: '#/components/schemas/MutationWearMeasurement'
+      required:
+      - id
+      - status
+      - vehicle
+    MutationInspectionTask:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        catalog_task:
+          type: integer
+          nullable: true
+        name:
+          type: string
+          description: Nom de la tâche libre (hors catalogue) — laisser vide si catalog_task
+            est renseigné
+          maxLength: 200
+        description:
+          type: string
+        photos:
+          type: array
+          items:
+            type: string
+            format: uri
+          writeOnly: true
+      required:
+      - id
     MutationVehicle:
       type: object
       properties:
@@ -4475,9 +5541,44 @@ components:
       - kilometer
       - modele
       - year
+    MutationWearMeasurement:
+      type: object
+      properties:
+        catalog_task:
+          type: integer
+        level:
+          type: integer
+          maximum: 10
+          minimum: 0
+      required:
+      - catalog_task
+      - level
     NullEnum:
       enum:
       - null
+    PaginatedAuditLogList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLog'
     PaginatedBeneficiaryList:
       type: object
       required:
@@ -4570,6 +5671,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/InAppBroadcast'
+    PaginatedInspectionSheetList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/InspectionSheet'
     PaginatedInterventionSheetList:
       type: object
       required:
@@ -4593,6 +5717,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/InterventionSheet'
+    PaginatedMeasurableTaskList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeasurableTask'
     PaginatedMileageEntryList:
       type: object
       required:
@@ -5121,6 +6268,55 @@ components:
         renewed_from:
           type: integer
           nullable: true
+    PatchedMutationInspectionSheet:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        vehicle:
+          type: integer
+        current_step:
+          type: integer
+          maximum: 7
+          minimum: 1
+        status:
+          allOf:
+          - $ref: '#/components/schemas/InterventionSheetStatusEnum'
+          readOnly: true
+        start_mileage:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        oil_ok:
+          type: boolean
+          nullable: true
+        coolant_ok:
+          type: boolean
+          nullable: true
+        washer_ok:
+          type: boolean
+          nullable: true
+        lights_ok:
+          type: boolean
+          nullable: true
+        lights_notes:
+          type: string
+        road_test_done:
+          type: boolean
+          nullable: true
+        road_test_notes:
+          type: string
+        wear_measurements:
+          type: array
+          items:
+            $ref: '#/components/schemas/MutationWearMeasurement'
     PatchedMutationVehicle:
       type: object
       properties:
@@ -5223,6 +6419,36 @@ components:
           type: string
           format: date-time
           readOnly: true
+    PatchedUpdateInspectionDamage:
+      type: object
+      properties:
+        description:
+          type: string
+        add_photos:
+          type: array
+          items:
+            type: string
+            format: uri
+        remove_photo_ids:
+          type: array
+          items:
+            type: integer
+    PatchedUpdateInspectionTask:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        add_photos:
+          type: array
+          items:
+            type: string
+            format: uri
+        remove_photo_ids:
+          type: array
+          items:
+            type: integer
     PatchedUser:
       type: object
       properties:

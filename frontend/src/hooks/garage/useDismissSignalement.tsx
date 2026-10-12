@@ -4,7 +4,7 @@ import { Text } from '@mantine/core'
 import { showNotification } from '@mantine/notifications'
 import { MaintenanceSignalement } from '../../types/garage'
 
-/** « Écarter » un signalement (story 2.13) : confirmation, POST …/dismiss/, puis rechargement de la synthèse d'entretien. */
+/** « Écarter » un signalement (story 2.13, intervention ou contrôle selon sheet_kind) : confirmation, POST …/dismiss/, puis rechargement de la synthèse d'entretien. */
 export function useDismissSignalement(vehicleId: number) {
   const apiUrl = useApiUrl()
   const invalidate = useInvalidate()
@@ -13,7 +13,7 @@ export function useDismissSignalement(vehicleId: number) {
   const dismiss = async (signalement: MaintenanceSignalement) => {
     try {
       await mutateAsync({
-        url: `${apiUrl}/garage/intervention/${signalement.sheet_id}/tasks/${signalement.task_id}/dismiss/`,
+        url: `${apiUrl}/garage/${signalement.sheet_kind}/${signalement.sheet_id}/tasks/${signalement.task_id}/dismiss/`,
         method: 'post',
         values: {},
         successNotification: false,

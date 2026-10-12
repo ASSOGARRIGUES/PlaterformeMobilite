@@ -18,6 +18,7 @@ import {
   maintenanceInfo,
   filterOtherWork,
   toPlanReason,
+  mainAxisProgress,
 } from '../components/garage/maintenance/maintenanceUtils';
 import {
   MaintenanceSummary,
@@ -29,12 +30,14 @@ import {
 } from '../types/garage';
 import {
   MaintenanceAxisEnum,
+  MaintenanceSheetKindEnum,
   MaintenanceSourceEnum,
   MaintenanceStatusEnum,
   InterventionSheetStatusEnum,
   IconEnum,
 } from '../types/schema.d';
 import { humanizeNumber } from '../constants';
+import { periodicityLabel } from '../components/garage/periodicityUtils';
 
 function makeTask(overrides: Partial<MaintenanceTask> = {}): MaintenanceTask {
   return {
@@ -47,6 +50,7 @@ function makeTask(overrides: Partial<MaintenanceTask> = {}): MaintenanceTask {
     status: MaintenanceStatusEnum.up_to_date,
     source: null,
     last_realization: { sheet_id: 41, task_id: 210, date: '2025-03-12', km: 62000, wear_level: null },
+    last_measurement: null,
     km: { lifespan: 15000, due: 77000, remaining: 3000, progress: 0.8, soon: 2000 },
     months: null,
     main_axis: MaintenanceAxisEnum.km,
@@ -59,7 +63,7 @@ function makeSignalement(overrides: Partial<MaintenanceSignalement> = {}): Maint
   return {
     task_id: 230,
     sheet_id: 44,
-    sheet_date: '2026-09-12',
+    sheet_kind: MaintenanceSheetKindEnum.intervention, sheet_date: '2026-09-12',
     catalog_task_id: null,
     name: 'Bruit train avant',
     description: '',
@@ -172,7 +176,7 @@ describe('sortedSignalements', () => {
     const summary = makeSummary({
       signalements: [
         makeSignalement({ task_id: 1, sheet_date: '2026-03-01' }),
-        makeSignalement({ task_id: 2, sheet_date: '2026-09-12' }),
+        makeSignalement({ task_id: 2, sheet_kind: MaintenanceSheetKindEnum.intervention, sheet_date: '2026-09-12' }),
       ],
     });
     expect(sortedSignalements(summary).map((s) => s.task_id)).toEqual([2, 1]);
@@ -273,6 +277,17 @@ describe('mainFigure / secondaryFigure', () => {
     const task = makeTask({ km: kmAxis(2000, 0.87), months: null });
     expect(mainFigure(task)).toBe(`dans ${humanizeNumber(2000)} km`);
     expect(secondaryFigure(task)).toBeNull();
+  });
+
+  it('tolerates a wear task without periodicity nor realization', () => {
+    const task = makeTask({
+      periodicity: { km: null, months: null }, km: null, months: null, main_axis: null, last_realization: null,
+      last_measurement: { sheet_id: 12, date: '2026-10-03', km: 61000, level: 6 },
+    });
+    expect(mainAxisProgress(task)).toBeNull();
+    expect(mainFigure(task)).toBeNull();
+    expect(secondaryFigure(task)).toBeNull();
+    expect(periodicityLabel(task.periodicity)).toBeNull();
   });
 
   it('returns null without main axis', () => {
@@ -402,12 +417,20 @@ describe('filterOtherWork', () => {
 describe('toPlanReason', () => {
   const toPlan = (overrides: Partial<MaintenanceTask>) => makeTask({ status: MaintenanceStatusEnum.to_plan, ...overrides });
 
+  it('falls back to « echeance » for a measure source until the measure display exists (story 3.3)', () => {
+    expect(toPlanReason(toPlan({
+      source: MaintenanceSourceEnum.mesure,
+      last_measurement: { sheet_id: 12, date: '2026-10-03', km: 61000, level: 3 },
+    }))).toBe('echeance');
+  });
+
   it('reads the source of a to_plan task', () => {
     expect(toPlanReason(toPlan({ source: MaintenanceSourceEnum.echeance }))).toBe('echeance');
     expect(toPlanReason(toPlan({ source: MaintenanceSourceEnum.signalement, signalements: [makeSignalement()] }))).toBe('signalement');
     expect(toPlanReason(toPlan({
       source: MaintenanceSourceEnum.usure,
       last_realization: { sheet_id: 41, task_id: 210, date: '2025-03-12', km: 62000, wear_level: 4 },
+      last_measurement: null,
     }))).toBe('usure');
   });
 

@@ -1,5 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
+from datetime import timedelta
 from django.db import transaction
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import viewsets, serializers
@@ -8,24 +10,37 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from api.views import MUTATION_ACTION
 from api.models import Vehicle, Contract
-from .models import TaskCatalog, MileageEntry, InterventionSheet, InterventionTask, GaragePhoto
+from .models import (
+    TaskCatalog, MileageEntry, InterventionSheet, InterventionTask, GaragePhoto,
+    InspectionSheet, InspectionTask, InspectionDamage,
+)
 from .serializers import (
     TaskCatalogSerializer, MileageEntrySerializer, MileageCorrectionSerializer,
     InterventionSheetSerializer, MutationInterventionSheetSerializer,
     InterventionTaskSerializer, MutationInterventionTaskSerializer,
     UpdateInterventionTaskSerializer, AuditLogSerializer, MaintenanceSummarySerializer,
+    InspectionSheetSerializer, MutationInspectionSheetSerializer, InspectionTaskSerializer,
+    MutationInspectionTaskSerializer, UpdateInspectionTaskSerializer, InspectionDamageSerializer,
+    MutationInspectionDamageSerializer, UpdateInspectionDamageSerializer, MeasurableTaskSerializer,
+    MaintenanceConfigSerializer, get_measurable_tasks, check_measurements,
 )
-from .filters import TaskCatalogFilter, InterventionSheetFilter
+from .filters import TaskCatalogFilter, InterventionSheetFilter, InspectionSheetFilter
 from .mixins import GarageMultiActionMixin
-from .alerts import get_config, load_maintenance_data, compute_maintenance_summary
+from .sheet_rules import create_sheet_mileage_entry, sync_sheet_mileage_date
+from .alerts import get_config, load_maintenance_data, compute_maintenance_summary, is_signalement_open
 from .audit import (
     log_field_change, log_task_added, log_task_deleted, log_task_dismissed, get_audit_logs_for_sheet,
-    format_parts, format_photo_ids,
+    format_parts, format_photo_ids, log_damage_added, log_damage_deleted, format_measurements,
+    get_audit_logs_for_inspection,
 )
+
+
+SHEET_MODEL_BY_MILEAGE_SOURCE = {'intervention': InterventionSheet, 'inspection': InspectionSheet}
 
 
 class TaskCatalogViewSet(viewsets.ReadOnlyModelViewSet):
@@ -112,8 +127,9 @@ class MileageHistoryViewSet(GarageMultiActionMixin, viewsets.ReadOnlyModelViewSe
             root = original
             while root.corrects_id:
                 root = root.corrects
-            if root.source == 'intervention' and root.source_id:
-                InterventionSheet.objects.filter(pk=root.source_id).update(start_mileage=correction.value)
+            sheet_model = SHEET_MODEL_BY_MILEAGE_SOURCE.get(root.source)
+            if sheet_model is not None and root.source_id:
+                sheet_model.objects.filter(pk=root.source_id).update(start_mileage=correction.value)
 
             latest = MileageEntry.objects.filter(
                 vehicle_id=vehicle_pk, is_corrected=False
@@ -122,6 +138,20 @@ class MileageHistoryViewSet(GarageMultiActionMixin, viewsets.ReadOnlyModelViewSe
                 Vehicle.objects.filter(pk=vehicle_pk).update(kilometer=latest.value)
 
         return Response(MileageEntrySerializer(correction).data, status=201)
+
+
+def dismiss_signalement(request, sheet, task, kind):
+    """Écarte un signalement (tâche « à prévoir » d'une fiche d'intervention ou de contrôle validée)."""
+    if sheet.status != 'validated':
+        raise serializers.ValidationError("Seuls les signalements d'une fiche validée peuvent être écartés.")
+    if task.dismissed_at is not None:
+        raise serializers.ValidationError("Ce signalement est déjà écarté.")
+    if not is_signalement_open(sheet.vehicle, kind, task.id):
+        raise serializers.ValidationError("Ce signalement est déjà clos par une réalisation ultérieure.")
+    task.dismissed_at = timezone.now()
+    task.dismissed_by = request.user
+    task.save(update_fields=['dismissed_at', 'dismissed_by'])
+    log_task_dismissed(task, request.user)
 
 
 class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
@@ -214,21 +244,14 @@ class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
         return Response(AuditLogSerializer(logs, many=True).data)
 
     @extend_schema(request=None, responses={204: None})
-    @action(detail=True, methods=['post'], url_path=r'tasks/(?P<task_pk>[^/.]+)/dismiss')
+    @action(detail=True, methods=['post'], url_path=r'tasks/(?P<task_pk>\d+)/dismiss')
     @transaction.atomic
     def dismiss_task(self, request, pk=None, task_pk=None):
         sheet = self.get_object()
         task = get_object_or_404(InterventionTask.objects.select_for_update(), pk=task_pk, sheet=sheet)
-        if sheet.status != 'validated':
-            raise serializers.ValidationError("Seuls les signalements d'une fiche validée peuvent être écartés.")
         if task.type != 'planned':
             raise serializers.ValidationError("Seule une tâche à prévoir peut être écartée.")
-        if task.dismissed_at is not None:
-            raise serializers.ValidationError("Ce signalement est déjà écarté.")
-        task.dismissed_at = timezone.now()
-        task.dismissed_by = request.user
-        task.save(update_fields=['dismissed_at', 'dismissed_by'])
-        log_task_dismissed(task, request.user)
+        dismiss_signalement(request, sheet, task, 'intervention')
         return Response(status=204)
 
     @action(detail=True, methods=['post'], url_path='validate')
@@ -247,43 +270,251 @@ class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
             sheet.status = 'validated'
             sheet.save(update_fields=['status'])
 
-            # Le kilométrage saisi est celui à l'entrée du véhicule : le relevé est daté à la date
-            # de début (et non de fin), sans quoi une fiche antidatée sans date de fin serait datée
-            # d'aujourd'hui et ferait reculer Vehicle.kilometer.
-            mileage_date = sheet.start_date
-            mileage_entry = MileageEntry.objects.create(
-                vehicle=sheet.vehicle,
-                value=sheet.start_mileage,
-                date=mileage_date,
-                source='intervention',
-                source_id=sheet.id,
-                author=request.user,
-            )
-
-            more_recent_entry = (
-                MileageEntry.objects
-                .filter(vehicle=sheet.vehicle)
-                .exclude(pk=mileage_entry.pk)
-                .order_by('-date', '-id')
-                .first()
-            )
-            warnings = []
-            if more_recent_entry and (more_recent_entry.date, more_recent_entry.id) > (mileage_date, mileage_entry.id):
-                warnings.append({
-                    'code': 'mileage_not_applied',
-                    'message': f"Le kilométrage du véhicule n'a pas été mis à jour : une saisie plus récente "
-                               f"({more_recent_entry.value} km au {more_recent_entry.date:%d/%m/%Y}) existe déjà. "
-                               f"Si l'une des deux valeurs est erronée, corrigez-la depuis l'historique kilométrique "
-                               f"du véhicule.",
-                    'more_recent_entry': {
-                        'value': more_recent_entry.value,
-                        'date': more_recent_entry.date.isoformat(),
-                    },
-                })
+            warnings = create_sheet_mileage_entry(sheet, 'intervention', request.user)
 
         data = InterventionSheetSerializer(sheet, context=self.get_serializer_context()).data
         data['warnings'] = warnings
         return Response(data)
+
+
+def _delete_photo(photo):
+    """Supprime la photo en base ; le fichier part seulement si la transaction est validée."""
+    storage, name = photo.image.storage, photo.image.name
+    photo.delete()
+    transaction.on_commit(lambda: storage.delete(name))
+
+
+def _vehicle_in_scope(user, vehicle):
+    if user.has_perm('garage.view_vehicle'):
+        return user.get_actions().filter(pk=vehicle.action_id).exists()
+    return vehicle.action_id == user.current_action_id
+
+
+class InspectionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
+    queryset = InspectionSheet.objects.select_related('vehicle', 'created_by').prefetch_related(
+        'wear_measurements__catalog_task', 'damages', 'tasks',
+    ).all()
+    permission_classes = [IsAuthenticated]
+    filter_backends = [SearchFilter, DjangoFilterBackend]
+    search_fields = ['vehicle__imat', 'vehicle__brand', 'vehicle__modele', 'created_by__first_name', 'created_by__last_name']
+    filterset_class = InspectionSheetFilter
+
+    MANAGE_ACTIONS = ('create', 'update', 'partial_update', 'destroy', 'tasks', 'task_detail', 'damages',
+                      'damage_detail', 'validate', 'measurable_tasks')
+
+    def get_serializer_class(self):
+        if self.action in MUTATION_ACTION:
+            return MutationInspectionSheetSerializer
+        return InspectionSheetSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.action == 'list':
+            cutoff = timezone.now() - timedelta(hours=get_config().inspection_open_max_hours)
+            queryset = queryset.filter(Q(status='validated') | Q(created_at__gt=cutoff))
+        return queryset
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if self.action in self.MANAGE_ACTIONS and not request.user.has_perm('garage.manage_inspection'):
+            raise PermissionDenied()
+        if self.action == 'dismiss_task' and not request.user.has_perm('garage.manage_intervention'):
+            raise PermissionDenied()
+
+    @staticmethod
+    def _ensure_not_expired(sheet):
+        if sheet.is_expired(get_config()):
+            raise serializers.ValidationError("Cette fiche de contrôle a expiré : elle ne peut plus être modifiée.")
+
+    def update(self, request, *args, **kwargs):
+        self._ensure_not_expired(self.get_object())
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        sheet = self.get_object()
+        if sheet.status != 'open':
+            raise serializers.ValidationError("Une fiche de contrôle validée ne peut pas être supprimée.")
+        with transaction.atomic():
+            for model in (InspectionTask, InspectionDamage):
+                ids = list(model.objects.filter(sheet=sheet).values_list('id', flat=True))
+                for photo in GaragePhoto.objects.filter(
+                    content_type=ContentType.objects.get_for_model(model), object_id__in=ids,
+                ):
+                    _delete_photo(photo)
+            return super().destroy(request, *args, **kwargs)
+
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        was_validated = instance.status == 'validated'
+        fields = ('start_date', 'oil_ok', 'coolant_ok', 'washer_ok', 'lights_ok', 'lights_notes',
+                  'road_test_done', 'road_test_notes')
+
+        def measurements():
+            return [(m.catalog_task.name, m.level) for m in instance.wear_measurements.select_related('catalog_task')]
+
+        snapshot = {f: getattr(instance, f) for f in fields} if was_validated else {}
+        measurements_before = measurements() if was_validated else []
+        updated = serializer.save()
+        if was_validated:
+            for field, old in snapshot.items():
+                log_field_change(updated, field, old, getattr(updated, field), self.request.user)
+            if updated.start_date != snapshot['start_date']:
+                sync_sheet_mileage_date(updated, 'inspection')
+            if 'wear_measurements' in serializer.validated_data:
+                log_field_change(
+                    updated, 'wear_measurements', format_measurements(measurements_before),
+                    format_measurements(measurements()), self.request.user,
+                )
+
+    @extend_schema(
+        parameters=[OpenApiParameter('vehicle', int, OpenApiParameter.QUERY, required=True)],
+        responses=MeasurableTaskSerializer(many=True),
+    )
+    @action(detail=False, methods=['get'], url_path='measurable-tasks')
+    def measurable_tasks(self, request):
+        try:
+            vehicle_id = int(request.query_params.get('vehicle', ''))
+        except ValueError:
+            raise serializers.ValidationError({'vehicle': "Le paramètre vehicle est requis (identifiant numérique)."})
+        vehicle = Vehicle.objects.filter(pk=vehicle_id).first()
+        if vehicle is None or not _vehicle_in_scope(request.user, vehicle):
+            raise NotFound()
+        return Response(MeasurableTaskSerializer(get_measurable_tasks(vehicle), many=True).data)
+
+    @extend_schema(request=MutationInspectionTaskSerializer, responses={201: InspectionTaskSerializer})
+    @action(detail=True, methods=['post'], url_path='tasks')
+    @transaction.atomic
+    def tasks(self, request, pk=None):
+        sheet = self.get_object()
+        self._ensure_not_expired(sheet)
+        serializer = MutationInspectionTaskSerializer(data=request.data, context={'sheet': sheet})
+        serializer.is_valid(raise_exception=True)
+        task = serializer.save()
+        if sheet.status == 'validated':
+            log_task_added(task, request.user)
+        return Response(InspectionTaskSerializer(task, context=self.get_serializer_context()).data, status=201)
+
+    @extend_schema(request=UpdateInspectionTaskSerializer, responses={200: InspectionTaskSerializer, 204: None})
+    @action(detail=True, methods=['patch', 'delete'], url_path=r'tasks/(?P<task_pk>\d+)')
+    @transaction.atomic
+    def task_detail(self, request, pk=None, task_pk=None):
+        sheet = self.get_object()
+        self._ensure_not_expired(sheet)
+        task = get_object_or_404(InspectionTask, pk=task_pk, sheet=sheet)
+        return self._item_detail(
+            request, sheet, task, UpdateInspectionTaskSerializer, InspectionTaskSerializer,
+            ('name', 'description'), log_task_deleted,
+        )
+
+    @extend_schema(request=MutationInspectionDamageSerializer, responses={201: InspectionDamageSerializer})
+    @action(detail=True, methods=['post'], url_path='damages')
+    @transaction.atomic
+    def damages(self, request, pk=None):
+        sheet = self.get_object()
+        self._ensure_not_expired(sheet)
+        serializer = MutationInspectionDamageSerializer(data=request.data, context={'sheet': sheet})
+        serializer.is_valid(raise_exception=True)
+        damage = serializer.save()
+        if sheet.status == 'validated':
+            log_damage_added(damage, request.user)
+        return Response(InspectionDamageSerializer(damage, context=self.get_serializer_context()).data, status=201)
+
+    @extend_schema(request=UpdateInspectionDamageSerializer, responses={200: InspectionDamageSerializer, 204: None})
+    @action(detail=True, methods=['patch', 'delete'], url_path=r'damages/(?P<damage_pk>\d+)')
+    @transaction.atomic
+    def damage_detail(self, request, pk=None, damage_pk=None):
+        sheet = self.get_object()
+        self._ensure_not_expired(sheet)
+        damage = get_object_or_404(InspectionDamage, pk=damage_pk, sheet=sheet)
+        return self._item_detail(
+            request, sheet, damage, UpdateInspectionDamageSerializer, InspectionDamageSerializer,
+            ('description',), log_damage_deleted,
+        )
+
+    def _item_detail(self, request, sheet, item, update_serializer, read_serializer, fields, log_deleted):
+        """PATCH / DELETE d'une tâche ou d'un dégât, tracé si la fiche est validée."""
+        model = type(item)
+        content_type = ContentType.objects.get_for_model(model)
+        was_validated = sheet.status == 'validated'
+        if request.method == 'DELETE':
+            for photo in GaragePhoto.objects.filter(content_type=content_type, object_id=item.pk):
+                _delete_photo(photo)
+            if was_validated:
+                log_deleted(item, request.user)
+            item.delete()
+            return Response(status=204)
+
+        def photo_ids():
+            return set(
+                GaragePhoto.objects.filter(content_type=content_type, object_id=item.pk).values_list('id', flat=True)
+            )
+
+        snapshot = {f: getattr(item, f) for f in fields}
+        photos_before = photo_ids() if was_validated else set()
+        serializer = update_serializer(item, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        if was_validated:
+            for field in fields:
+                if field in serializer.validated_data:
+                    log_field_change(item, field, snapshot[field], getattr(item, field), request.user)
+            photos_after = photo_ids()
+            if photos_before != photos_after:
+                log_field_change(
+                    item, 'photos', format_photo_ids(photos_before), format_photo_ids(photos_after), request.user,
+                )
+        return Response(read_serializer(item, context=self.get_serializer_context()).data)
+
+    @extend_schema(responses=AuditLogSerializer(many=True))
+    @action(detail=True, methods=['get'], url_path='audit-log')
+    def audit_log(self, request, pk=None):
+        sheet = self.get_object()
+        return Response(AuditLogSerializer(get_audit_logs_for_inspection(sheet), many=True).data)
+
+    @extend_schema(request=None, responses={204: None})
+    @action(detail=True, methods=['post'], url_path=r'tasks/(?P<task_pk>\d+)/dismiss')
+    @transaction.atomic
+    def dismiss_task(self, request, pk=None, task_pk=None):
+        sheet = self.get_object()
+        task = get_object_or_404(InspectionTask.objects.select_for_update(), pk=task_pk, sheet=sheet)
+        dismiss_signalement(request, sheet, task, 'inspection')
+        return Response(status=204)
+
+    @extend_schema(request=None, responses=InspectionSheetSerializer)
+    @action(detail=True, methods=['post'], url_path='validate')
+    def validate(self, request, pk=None):
+        sheet = self.get_object()
+
+        with transaction.atomic():
+            sheet = InspectionSheet.objects.select_for_update().select_related('vehicle').get(pk=sheet.pk)
+            if sheet.status == 'validated':
+                raise serializers.ValidationError("Cette fiche est déjà validée.")
+            self._ensure_not_expired(sheet)
+            if sheet.start_mileage is None:
+                raise serializers.ValidationError("Le kilométrage est requis avant de valider la fiche.")
+            if sheet.start_date is None:
+                raise serializers.ValidationError("La date est requise avant de valider la fiche.")
+            check_measurements(sheet.vehicle, [
+                {'catalog_task': m.catalog_task, 'level': m.level}
+                for m in sheet.wear_measurements.select_related('catalog_task')
+            ])
+
+            sheet.status = 'validated'
+            sheet.save(update_fields=['status'])
+            warnings = create_sheet_mileage_entry(sheet, 'inspection', request.user)
+
+        data = InspectionSheetSerializer(sheet, context=self.get_serializer_context()).data
+        data['warnings'] = warnings
+        return Response(data)
+
+
+class GarageConfigView(APIView):
+    """Seuils d'usure exposés au front (plus de valeurs codées en dur)."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=MaintenanceConfigSerializer)
+    def get(self, request):
+        return Response(MaintenanceConfigSerializer(get_config()).data)
 
 
 class MaintenanceViewSet(viewsets.ViewSet):

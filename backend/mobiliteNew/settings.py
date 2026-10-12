@@ -251,5 +251,6 @@ SPECTACULAR_SETTINGS = {
         'MaintenanceStatusEnum': 'garage.alerts.TASK_STATUS_CHOICES',
         'MaintenanceSourceEnum': 'garage.alerts.PLANNING_SOURCE_CHOICES',
         'MaintenanceAxisEnum': 'garage.alerts.AXIS_CHOICES',
+        'MaintenanceSheetKindEnum': 'garage.alerts.SHEET_KIND_CHOICES',
     }
 }

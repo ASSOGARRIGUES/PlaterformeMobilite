@@ -3,6 +3,7 @@ import { Anchor, Avatar, Badge, Button, Group, Image, Paper, Stack, Text, Toolti
 import { IconAlertOctagon, IconArrowRight, IconHistory, IconX } from '@tabler/icons-react'
 import { humanizeDate, humanizeNumber } from '../../../constants'
 import { MaintenanceSignalement } from '../../../types/garage'
+import { MaintenanceSheetKindEnum } from '../../../types/schema.d'
 import { formatShortDate, initials, sinceLabel } from './maintenanceUtils'
 
 export type OpenSheet = (sheetId: number) => void
@@ -89,7 +90,7 @@ export function PhotoThumb({ photos, onOpenPhotos, size }: { photos: string[]; o
   )
 }
 
-/** « Sim Gal · 15/07 · Fiche #10 → » */
+/** « Sim Gal · 15/07 · Fiche #10 → » ; pas de lien pour un signalement de contrôle (pas de page de détail avant la 3.3). */
 export function SignalementMeta({ signalement, author, today, onOpenSheet }: {
   signalement: MaintenanceSignalement
   author: string
@@ -99,7 +100,7 @@ export function SignalementMeta({ signalement, author, today, onOpenSheet }: {
   return (
     <Text size="xs" c="dimmed">
       {[author, formatShortDate(signalement.sheet_date, today)].filter(Boolean).join(' · ')}
-      {onOpenSheet && <> · <SheetLink sheetId={signalement.sheet_id} onOpenSheet={onOpenSheet} /></>}
+      {onOpenSheet && signalement.sheet_kind === MaintenanceSheetKindEnum.intervention && <> · <SheetLink sheetId={signalement.sheet_id} onOpenSheet={onOpenSheet} /></>}
     </Text>
   )
 }

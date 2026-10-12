@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib import admin
 from api.models import Vehicle
-from .models import MileageEntry, TaskCatalog, MaintenanceConfig, InterventionSheet, AuditLog
+from .models import MileageEntry, TaskCatalog, MaintenanceConfig, InterventionSheet, InspectionSheet, AuditLog
 
 
 class TaskCatalogForm(forms.ModelForm):
@@ -20,8 +20,8 @@ class TaskCatalogForm(forms.ModelForm):
 @admin.register(TaskCatalog)
 class TaskCatalogAdmin(admin.ModelAdmin):
     form = TaskCatalogForm
-    list_display = ('name', 'icon', 'vehicle_types', 'km_periodicity', 'month_periodicity', 'soon_km', 'soon_months', 'is_critical', 'is_wear_task', 'archived')
-    list_filter = ('is_critical', 'is_wear_task', 'archived')
+    list_display = ('name', 'icon', 'vehicle_types', 'km_periodicity', 'month_periodicity', 'soon_km', 'soon_months', 'is_critical', 'is_wear_task', 'measured_in_inspection', 'archived')
+    list_filter = ('is_critical', 'is_wear_task', 'measured_in_inspection', 'archived')
     search_fields = ('name',)
     list_editable = ('archived',)
 
@@ -49,6 +49,11 @@ class MaintenanceConfigAdmin(admin.ModelAdmin):
 @admin.register(InterventionSheet)
 class InterventionSheetAdmin(admin.ModelAdmin):
     list_display = ('vehicle', 'status', 'current_step', 'created_by', 'created_at')
+
+
+@admin.register(InspectionSheet)
+class InspectionSheetAdmin(admin.ModelAdmin):
+    list_display = ('vehicle', 'status', 'current_step', 'created_by', 'start_date')
 
 
 @admin.register(AuditLog)

@@ -9,7 +9,7 @@ import {
   dedupedHistorySummaries,
 } from '../hooks/garage/interventionStepperUtils';
 import { LocalTask, InterventionTask, InterventionSheet, MaintenanceSummary, MaintenanceTask, MaintenanceSignalement } from '../types/garage';
-import { IconEnum, MaintenanceAxisEnum, MaintenanceSourceEnum, MaintenanceStatusEnum } from '../types/schema.d';
+import { IconEnum, MaintenanceAxisEnum, MaintenanceSheetKindEnum, MaintenanceSourceEnum, MaintenanceStatusEnum } from '../types/schema.d';
 import { humanizeNumber } from '../constants';
 import { TaskCatalogItem } from '../components/garage/taskCardUtils';
 
@@ -129,7 +129,7 @@ describe('localTaskFromApiTask', () => {
 describe('pendingSuggestions', () => {
   function makeSig(overrides: Partial<MaintenanceSignalement> = {}): MaintenanceSignalement {
     return {
-      task_id: 230, sheet_id: 44, sheet_date: '2026-09-12', catalog_task_id: null, name: 'Bruit train avant',
+      task_id: 230, sheet_id: 44, sheet_kind: MaintenanceSheetKindEnum.intervention, sheet_date: '2026-09-12', catalog_task_id: null, name: 'Bruit train avant',
       description: '', source: MaintenanceSourceEnum.signalement, photos: [],
       ...overrides,
     };
@@ -139,7 +139,7 @@ describe('pendingSuggestions', () => {
     return {
       catalog_task_id: 1, name: 'Vidange', icon: IconEnum.oil, periodicity: { km: 10000, months: null },
       is_critical: false, is_wear_task: false, status: MaintenanceStatusEnum.to_plan, source: null,
-      last_realization: null, km: null, months: null, main_axis: null, signalements: [],
+      last_realization: null, last_measurement: null, km: null, months: null, main_axis: null, signalements: [],
       ...overrides,
     };
   }
@@ -219,7 +219,7 @@ describe('pendingSuggestions', () => {
 describe('localTaskFromSuggestion', () => {
   function makeSig(overrides: Partial<MaintenanceSignalement> = {}): MaintenanceSignalement {
     return {
-      task_id: 230, sheet_id: 44, sheet_date: '2026-09-12', catalog_task_id: null, name: 'Bruit train avant',
+      task_id: 230, sheet_id: 44, sheet_kind: MaintenanceSheetKindEnum.intervention, sheet_date: '2026-09-12', catalog_task_id: null, name: 'Bruit train avant',
       description: '', source: MaintenanceSourceEnum.signalement, photos: [],
       ...overrides,
     };
@@ -229,7 +229,7 @@ describe('localTaskFromSuggestion', () => {
     return {
       catalog_task_id: 1, name: 'Vidange', icon: IconEnum.oil, periodicity: { km: 10000, months: null },
       is_critical: false, is_wear_task: false, status: MaintenanceStatusEnum.to_plan, source: null,
-      last_realization: null, km: null, months: null, main_axis: null, signalements: [],
+      last_realization: null, last_measurement: null, km: null, months: null, main_axis: null, signalements: [],
       ...overrides,
     };
   }

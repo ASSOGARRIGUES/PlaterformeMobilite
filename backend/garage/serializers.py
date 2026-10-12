@@ -6,8 +6,12 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from api.models import Contract, Vehicle
 from api.serializers import VehicleSerializer, UserSerializer
-from .models import TaskCatalog, MileageEntry, InterventionSheet, InterventionTask, InterventionTaskPart, GaragePhoto, AuditLog
-from .alerts import get_config, TASK_STATUS_CHOICES, PLANNING_SOURCE_CHOICES, AXIS_CHOICES
+from .models import (
+    TaskCatalog, MileageEntry, InterventionSheet, InterventionTask, InterventionTaskPart, GaragePhoto, AuditLog,
+    InspectionSheet, InspectionTask, InspectionDamage, InspectionWearMeasurement, MaintenanceConfig,
+)
+from .sheet_rules import check_start_mileage, check_start_date_not_future
+from .alerts import get_config, TASK_STATUS_CHOICES, PLANNING_SOURCE_CHOICES, AXIS_CHOICES, SHEET_KIND_CHOICES
 
 
 class TaskCatalogSerializer(serializers.ModelSerializer):
@@ -259,32 +263,10 @@ class MutationInterventionSheetSerializer(serializers.ModelSerializer):
         if start_mileage is not None:
             vehicle = attrs.get('vehicle') or (self.instance.vehicle if self.instance else None)
             if vehicle is not None:
-                from garage.models import MileageEntry
-                reference = None
-                if effective_start_date is not None:
-                    reference = (
-                        MileageEntry.objects
-                        .filter(vehicle=vehicle, date__lte=effective_start_date)
-                        .order_by('-date', '-id')
-                        .first()
-                    )
-                if reference is not None:
-                    reference_km = reference.value
-                    reference_label = f"au kilométrage relevé le {reference.date:%d/%m/%Y}"
-                else:
-                    reference_km = vehicle.kilometer
-                    reference_label = "au kilométrage actuel du véhicule"
-                if start_mileage < reference_km:
-                    raise serializers.ValidationError({
-                        'start_mileage': f"Le kilométrage ({start_mileage}) ne peut pas être inférieur "
-                                          f"{reference_label} ({reference_km})."
-                    })
+                check_start_mileage(vehicle, start_mileage, effective_start_date)
 
-        today = timezone.now().date()
-        if start_date is not None and start_date > today:
-            raise serializers.ValidationError({
-                'start_date': "La date de début ne peut pas être postérieure à aujourd'hui."
-            })
+        check_start_date_not_future(start_date)
+        today = timezone.localdate()
         end_date = attrs.get('end_date')
         if end_date is not None and end_date > today:
             raise serializers.ValidationError({
@@ -307,6 +289,328 @@ class MutationInterventionSheetSerializer(serializers.ModelSerializer):
         validated_data['status'] = 'open'
         validated_data['current_step'] = 1
         return super().create(validated_data)
+
+
+# ── Fiche de contrôle (story 3.1) ────────────────────────────────────────────
+
+def _photos_of(instance, request):
+    photos = GaragePhoto.objects.filter(
+        content_type=ContentType.objects.get_for_model(type(instance)), object_id=instance.pk,
+    )
+    return [
+        {'id': photo.id, 'url': request.build_absolute_uri(photo.image.url) if request is not None else photo.image.url}
+        for photo in photos
+    ]
+
+
+def _add_photos(instance, images):
+    content_type = ContentType.objects.get_for_model(type(instance))
+    for image in images:
+        GaragePhoto.objects.create(image=image, content_type=content_type, object_id=instance.pk)
+
+
+def _remove_photos(instance, photo_ids):
+    content_type = ContentType.objects.get_for_model(type(instance))
+    for photo in GaragePhoto.objects.filter(pk__in=photo_ids, content_type=content_type, object_id=instance.pk):
+        photo.image.delete(save=False)
+        photo.delete()
+
+
+def get_measurable_tasks(vehicle):
+    """Tâches du catalogue mesurées en contrôle, non archivées et applicables au type du véhicule.
+
+    Filtre du type en Python (comme alerts.py) : le filtre JSON de SQLite est fragile.
+    """
+    tasks = TaskCatalog.objects.filter(measured_in_inspection=True, archived=False).order_by('name', 'id')
+    return [task for task in tasks if vehicle.type in (task.vehicle_types or [])]
+
+
+class MeasurableTaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TaskCatalog
+        fields = ['id', 'name', 'icon']
+
+
+class InspectionWearMeasurementSerializer(serializers.ModelSerializer):
+    catalog_task_name = serializers.CharField(source='catalog_task.name', read_only=True)
+
+    class Meta:
+        model = InspectionWearMeasurement
+        fields = ['id', 'catalog_task', 'catalog_task_name', 'level']
+
+
+class InspectionDamageSerializer(serializers.ModelSerializer):
+    photos = serializers.SerializerMethodField()
+
+    @extend_schema_field(GaragePhotoSerializer(many=True))
+    def get_photos(self, obj):
+        return _photos_of(obj, self.context.get('request'))
+
+    class Meta:
+        model = InspectionDamage
+        fields = ['id', 'sheet', 'description', 'photos']
+        read_only_fields = ['sheet']
+
+
+class InspectionTaskSerializer(serializers.ModelSerializer):
+    photos = serializers.SerializerMethodField()
+
+    @extend_schema_field(GaragePhotoSerializer(many=True))
+    def get_photos(self, obj):
+        return _photos_of(obj, self.context.get('request'))
+
+    class Meta:
+        model = InspectionTask
+        fields = ['id', 'sheet', 'catalog_task', 'name', 'description', 'dismissed_at', 'photos']
+        read_only_fields = ['sheet', 'dismissed_at']
+
+
+class MutationInspectionTaskSerializer(serializers.ModelSerializer):
+    photos = serializers.ListField(child=Base64ImageField(), required=False, write_only=True)
+
+    class Meta:
+        model = InspectionTask
+        fields = ['id', 'catalog_task', 'name', 'description', 'photos']
+
+    def validate(self, attrs):
+        catalog_task = attrs.get('catalog_task')
+        if not catalog_task and not (attrs.get('name') or '').strip():
+            raise serializers.ValidationError({'name': "Le nom est requis pour une tâche libre."})
+        if catalog_task:
+            vehicle = self.context['sheet'].vehicle
+            if catalog_task.archived or vehicle.type not in (catalog_task.vehicle_types or []):
+                raise serializers.ValidationError({
+                    'catalog_task': f"« {catalog_task.name} » n'est pas disponible pour ce véhicule."
+                })
+            attrs['name'] = ''
+        return attrs
+
+    def create(self, validated_data):
+        photos = validated_data.pop('photos', [])
+        with transaction.atomic():
+            task = InspectionTask.objects.create(sheet=self.context['sheet'], **validated_data)
+            _add_photos(task, photos)
+        return task
+
+
+class UpdateInspectionTaskSerializer(serializers.Serializer):
+    name = serializers.CharField(required=False, allow_blank=True)
+    description = serializers.CharField(required=False, allow_blank=True)
+    add_photos = serializers.ListField(child=Base64ImageField(), required=False)
+    remove_photo_ids = serializers.ListField(child=serializers.IntegerField(), required=False)
+
+    def validate(self, attrs):
+        if 'name' in attrs and not attrs['name'].strip() and not self.instance.catalog_task:
+            raise serializers.ValidationError({'name': "Le nom est requis pour une tâche libre."})
+        return attrs
+
+    def update(self, instance, validated_data):
+        with transaction.atomic():
+            _remove_photos(instance, validated_data.get('remove_photo_ids', []))
+            _add_photos(instance, validated_data.get('add_photos', []))
+            for field in ('name', 'description'):
+                if field in validated_data:
+                    setattr(instance, field, validated_data[field])
+            instance.save()
+        return instance
+
+
+class MutationInspectionDamageSerializer(serializers.ModelSerializer):
+    photos = serializers.ListField(child=Base64ImageField(), required=False, write_only=True)
+
+    class Meta:
+        model = InspectionDamage
+        fields = ['id', 'description', 'photos']
+
+    def create(self, validated_data):
+        photos = validated_data.pop('photos', [])
+        with transaction.atomic():
+            damage = InspectionDamage.objects.create(sheet=self.context['sheet'], **validated_data)
+            _add_photos(damage, photos)
+        return damage
+
+
+class UpdateInspectionDamageSerializer(serializers.Serializer):
+    description = serializers.CharField(required=False)
+    add_photos = serializers.ListField(child=Base64ImageField(), required=False)
+    remove_photo_ids = serializers.ListField(child=serializers.IntegerField(), required=False)
+
+    def update(self, instance, validated_data):
+        with transaction.atomic():
+            _remove_photos(instance, validated_data.get('remove_photo_ids', []))
+            _add_photos(instance, validated_data.get('add_photos', []))
+            if 'description' in validated_data:
+                instance.description = validated_data['description']
+                instance.save()
+        return instance
+
+
+class InspectionSheetSerializer(serializers.ModelSerializer):
+    vehicle = VehicleSerializer(read_only=True)
+    created_by = UserSerializer(read_only=True)
+    wear_measurements = InspectionWearMeasurementSerializer(many=True, read_only=True)
+    damages = InspectionDamageSerializer(many=True, read_only=True)
+    tasks = InspectionTaskSerializer(many=True, read_only=True)
+    is_expired = serializers.SerializerMethodField()
+    expires_at = serializers.SerializerMethodField()
+
+    def _config(self):
+        # self.context est partagé avec le sérialiseur racine : une seule lecture de la config par requête
+        return self.context.setdefault('maintenance_config', get_config())
+
+    def get_is_expired(self, obj) -> bool:
+        return obj.is_expired(self._config())
+
+    def get_expires_at(self, obj) -> serializers.DateTimeField(allow_null=True):
+        return obj.expires_at(self._config()) if obj.status == 'open' else None
+
+    class Meta:
+        model = InspectionSheet
+        fields = ['id', 'vehicle', 'created_by', 'current_step', 'status', 'start_mileage', 'start_date',
+                  'oil_ok', 'coolant_ok', 'washer_ok', 'lights_ok', 'lights_notes', 'road_test_done',
+                  'road_test_notes', 'created_at', 'updated_at', 'is_expired', 'expires_at',
+                  'wear_measurements', 'damages', 'tasks']
+
+
+class MutationWearMeasurementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InspectionWearMeasurement
+        fields = ['catalog_task', 'level']
+        validators = []  # l'unicité (fiche, tâche) est contrôlée dans la fiche
+
+
+def check_measurements(vehicle, measurements, unchanged_ids=frozenset()):
+    """Chaque mesure doit viser une tâche mesurée en contrôle, applicable au véhicule, une seule fois.
+
+    `unchanged_ids` : tâches dont la mesure est déjà enregistrée à l'identique, dispensées du contrôle
+    d'éligibilité (une tâche archivée depuis ne doit pas bloquer l'édition de la fiche).
+    """
+    allowed_ids = {task.id for task in get_measurable_tasks(vehicle)}
+    seen = set()
+    for measurement in measurements:
+        task = measurement['catalog_task']
+        if task.id not in allowed_ids and task.id not in unchanged_ids:
+            raise serializers.ValidationError({
+                'wear_measurements': f"« {task.name} » ne peut pas être mesurée en contrôle pour ce véhicule."
+            })
+        if task.id in seen:
+            raise serializers.ValidationError({
+                'wear_measurements': f"« {task.name} » est mesurée plusieurs fois."
+            })
+        seen.add(task.id)
+
+
+class MutationInspectionSheetSerializer(serializers.ModelSerializer):
+    vehicle = serializers.PrimaryKeyRelatedField(queryset=Vehicle.objects.none())
+    current_step = serializers.IntegerField(min_value=1, max_value=7, required=False)
+    wear_measurements = MutationWearMeasurementSerializer(many=True, required=False)
+
+    class Meta:
+        model = InspectionSheet
+        fields = ['id', 'vehicle', 'current_step', 'status', 'start_mileage', 'start_date', 'oil_ok', 'coolant_ok',
+                  'washer_ok', 'lights_ok', 'lights_notes', 'road_test_done', 'road_test_notes',
+                  'wear_measurements']
+        read_only_fields = ['status']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get('request')
+        if request is not None and request.user.is_authenticated:  # anonyme : génération du schéma OpenAPI
+            user = request.user
+            if user.has_perm('garage.view_vehicle'):
+                self.fields['vehicle'].queryset = Vehicle.objects.filter(action__in=user.get_actions())
+            else:
+                self.fields['vehicle'].queryset = Vehicle.objects.filter(action=user.current_action)
+
+    def validate(self, attrs):
+        validated = self.instance is not None and self.instance.status == 'validated'
+        if self.instance:
+            if 'vehicle' in attrs and attrs['vehicle'] != self.instance.vehicle:
+                raise serializers.ValidationError({
+                    'vehicle': "Le véhicule d'une fiche ne peut pas être modifié après sa création."
+                })
+            if validated and 'start_mileage' in attrs and attrs['start_mileage'] != self.instance.start_mileage:
+                raise serializers.ValidationError({
+                    'start_mileage': "Le kilométrage d'une fiche validée ne peut être modifié que via la "
+                                      "correction kilométrique (voir l'historique du véhicule)."
+                })
+            if validated and 'current_step' in attrs and attrs['current_step'] != self.instance.current_step:
+                raise serializers.ValidationError({
+                    'current_step': "L'étape d'une fiche validée ne peut pas être modifiée."
+                })
+            if validated and 'start_date' in attrs and attrs['start_date'] is None:
+                raise serializers.ValidationError({
+                    'start_date': "La date de début d'une fiche validée ne peut pas être effacée."
+                })
+        else:
+            self._check_no_open_sheet(attrs.get('vehicle'))
+
+        vehicle = attrs.get('vehicle') or (self.instance.vehicle if self.instance else None)
+        start_date = attrs.get('start_date')
+        if start_date is not None:
+            effective_start_date = start_date
+        else:
+            effective_start_date = self.instance.start_date if self.instance else timezone.localdate()
+        start_mileage = attrs.get('start_mileage', self.instance.start_mileage if self.instance else None)
+        if start_mileage is not None and vehicle is not None and ('start_mileage' in attrs or 'start_date' in attrs):
+            check_start_mileage(vehicle, start_mileage, effective_start_date)
+        check_start_date_not_future(start_date)
+        if 'wear_measurements' in attrs and vehicle is not None:
+            unchanged_ids = set()
+            if self.instance:
+                existing = {(m.catalog_task_id, m.level) for m in self.instance.wear_measurements.all()}
+                unchanged_ids = {
+                    m['catalog_task'].id for m in attrs['wear_measurements']
+                    if (m['catalog_task'].id, m['level']) in existing
+                }
+            check_measurements(vehicle, attrs['wear_measurements'], unchanged_ids)
+        return attrs
+
+    @staticmethod
+    def _check_no_open_sheet(vehicle):
+        if vehicle is None:
+            return
+        config = get_config()
+        open_sheets = InspectionSheet.objects.filter(vehicle=vehicle, status='open')
+        if any(not sheet.is_expired(config) for sheet in open_sheets):
+            raise serializers.ValidationError({'vehicle': "Une fiche de contrôle est déjà ouverte pour ce véhicule."})
+
+    def create(self, validated_data):
+        measurements = validated_data.pop('wear_measurements', [])
+        validated_data['created_by'] = self.context['request'].user
+        validated_data['status'] = 'open'
+        validated_data.setdefault('current_step', 1)
+        if validated_data.get('start_date') is None:
+            validated_data['start_date'] = timezone.localdate()
+        with transaction.atomic():
+            # Verrou sur le véhicule : deux créations simultanées ne peuvent pas ouvrir deux fiches.
+            vehicle = Vehicle.objects.select_for_update().get(pk=validated_data['vehicle'].pk)
+            self._check_no_open_sheet(vehicle)
+            sheet = super().create(validated_data)
+            self._replace_measurements(sheet, measurements)
+        return sheet
+
+    def update(self, instance, validated_data):
+        measurements = validated_data.pop('wear_measurements', None)
+        with transaction.atomic():
+            sheet = super().update(instance, validated_data)
+            if measurements is not None:
+                self._replace_measurements(sheet, measurements)
+        return sheet
+
+    @staticmethod
+    def _replace_measurements(sheet, measurements):
+        sheet.wear_measurements.all().delete()
+        InspectionWearMeasurement.objects.bulk_create(
+            InspectionWearMeasurement(sheet=sheet, catalog_task=m['catalog_task'], level=m['level'])
+            for m in measurements
+        )
+
+
+class MaintenanceConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MaintenanceConfig
+        fields = ['wear_alert_threshold', 'wear_critical_threshold']
 
 
 # ── Synthèse d'entretien (story 2.10) — sérialiseurs de réponse uniquement ────
@@ -338,6 +642,7 @@ class MaintenanceRealizationSerializer(serializers.Serializer):
 class MaintenanceSignalementSerializer(serializers.Serializer):
     task_id = serializers.IntegerField()
     sheet_id = serializers.IntegerField()
+    sheet_kind = serializers.ChoiceField(choices=SHEET_KIND_CHOICES)
     sheet_date = serializers.DateField()
     catalog_task_id = serializers.IntegerField(allow_null=True)
     name = serializers.CharField()
@@ -356,6 +661,13 @@ class MaintenancePeriodicitySerializer(serializers.Serializer):
     months = serializers.IntegerField(allow_null=True)
 
 
+class MaintenanceMeasurementSerializer(serializers.Serializer):
+    sheet_id = serializers.IntegerField()
+    date = serializers.DateField()
+    km = serializers.IntegerField(allow_null=True)
+    level = serializers.IntegerField()
+
+
 class MaintenanceTaskSerializer(serializers.Serializer):
     catalog_task_id = serializers.IntegerField()
     name = serializers.CharField()
@@ -366,6 +678,7 @@ class MaintenanceTaskSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=TASK_STATUS_CHOICES)
     source = serializers.ChoiceField(choices=PLANNING_SOURCE_CHOICES, allow_null=True)
     last_realization = MaintenanceRealizationSerializer(allow_null=True)
+    last_measurement = MaintenanceMeasurementSerializer(allow_null=True)
     km = MaintenanceKmAxisSerializer(allow_null=True)
     months = MaintenanceMonthsAxisSerializer(allow_null=True)
     main_axis = serializers.ChoiceField(choices=AXIS_CHOICES, allow_null=True)
