@@ -5,7 +5,7 @@ import { IconSearch, IconPlus } from '@tabler/icons-react'
 import { VehicleTypeEnum } from '../../types/schema.d'
 import { vehicleTypeLabelMap } from '../../constants'
 import { LocalTask } from '../../types/garage'
-import { buildTaskPickerRows, FREE_TASK_LABEL, TaskCatalogItem } from './taskCardUtils'
+import { buildTaskPickerRows, FREE_TASK_LABEL, newLocalId, TaskCatalogItem } from './taskCardUtils'
 import { catalogPeriodicityLabel } from './periodicityUtils'
 import { PeriodicityBadge } from './PeriodicityBadge'
 import { taskIcon } from './maintenance/taskIcons'
@@ -48,7 +48,7 @@ export function TaskPicker({ vehicleType, opened, existingCatalogTaskIds, onClos
 
   const pickCatalogTask = (task: TaskCatalogItem) => {
     onPick({
-      localId: crypto.randomUUID(),
+      localId: newLocalId(),
       catalogTaskId: task.id,
       name: task.name,
       // "Fait" par défaut : le flow d'ajout par défaut de cette story est le stepper d'intervention (tâches réalisées) ; l'appelant peut ré-affecter type: "planned" (ex: Epic 3)
@@ -68,7 +68,7 @@ export function TaskPicker({ vehicleType, opened, existingCatalogTaskIds, onClos
   const confirmFreeTask = () => {
     if (!freeTaskName?.trim()) return
     onPick({
-      localId: crypto.randomUUID(),
+      localId: newLocalId(),
       name: freeTaskName.trim(),
       type: 'done',
       isWearTask: false,

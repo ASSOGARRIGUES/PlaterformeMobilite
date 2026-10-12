@@ -9,7 +9,7 @@ import {
   CreateInterventionTaskPayload,
   UpdateInterventionTaskPayload,
 } from '../../types/garage'
-import { TaskCatalogItem, computePartsSubtotal } from '../../components/garage/taskCardUtils'
+import { TaskCatalogItem, computePartsSubtotal, newLocalId } from '../../components/garage/taskCardUtils'
 import { catalogPeriodicityLabel, periodicityLabel } from '../../components/garage/periodicityUtils'
 import { groupMaintenanceTasks, sortedSignalements } from '../../components/garage/maintenance/maintenanceUtils'
 
@@ -71,7 +71,7 @@ export function localTaskFromApiTask(
 ): LocalTask {
   const catalogItem = apiTask.catalog_task != null ? catalogById.get(apiTask.catalog_task) : undefined
   return {
-    localId: crypto.randomUUID(),
+    localId: newLocalId(),
     catalogTaskId: apiTask.catalog_task ?? undefined,
     name: apiTask.catalog_task != null ? (catalogItem?.name ?? 'Tâche') : (apiTask.name ?? ''),
     type: apiTask.type as LocalTask['type'],
@@ -81,7 +81,7 @@ export function localTaskFromApiTask(
     wearLevel: apiTask.wear_level ?? undefined,
     description: apiTask.description ?? '',
     parts: apiTask.parts.map((part) => ({
-      localId: crypto.randomUUID(),
+      localId: newLocalId(),
       name: part.name,
       unitPrice: Number(part.unit_price),
       quantity: part.quantity ?? 1,
@@ -136,7 +136,7 @@ export function localTaskFromSuggestion(
   source: MaintenanceTask | MaintenanceSignalement,
   catalogById: Map<number, TaskCatalogItem>,
 ): LocalTask {
-  const base = { localId: crypto.randomUUID(), name: source.name, type: 'done' as const, description: '', parts: [], photos: [] }
+  const base = { localId: newLocalId(), name: source.name, type: 'done' as const, description: '', parts: [], photos: [] }
   if ('task_id' in source) {
     const catalogItem = source.catalog_task_id != null ? catalogById.get(source.catalog_task_id) : undefined
     return {

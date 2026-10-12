@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { computePartsSubtotal, buildTaskPickerRows, isWearLevelCritical, TaskCatalogItem } from '../components/garage/taskCardUtils';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { computePartsSubtotal, buildTaskPickerRows, isWearLevelCritical, newLocalId, TaskCatalogItem } from '../components/garage/taskCardUtils';
 
 describe('computePartsSubtotal', () => {
   it('returns 0 for an empty list', () => {
@@ -59,5 +59,22 @@ describe('isWearLevelCritical', () => {
   it('accepts an explicit custom threshold', () => {
     expect(isWearLevelCritical(5, 6)).toBe(true);
     expect(isWearLevelCritical(7, 6)).toBe(false);
+  });
+});
+
+describe('newLocalId', () => {
+  const uuidV4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it('uses crypto.randomUUID when available', () => {
+    expect(newLocalId()).toMatch(uuidV4);
+  });
+
+  it('falls back to getRandomValues outside a secure context (no randomUUID)', () => {
+    vi.stubGlobal('crypto', { getRandomValues: crypto.getRandomValues.bind(crypto) });
+    const first = newLocalId();
+    expect(first).toMatch(uuidV4);
+    expect(newLocalId()).not.toBe(first);
   });
 });

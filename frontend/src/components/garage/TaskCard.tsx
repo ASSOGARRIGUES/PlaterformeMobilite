@@ -19,7 +19,7 @@ import {
 } from '@mantine/core'
 import { IconTrash, IconChevronDown, IconChevronUp, IconX, IconCameraFilled, IconPlus } from '@tabler/icons-react'
 import { LocalTask, LocalTaskPart } from '../../types/garage'
-import { computePartsSubtotal, isWearLevelCritical } from './taskCardUtils'
+import { computePartsSubtotal, isWearLevelCritical, newLocalId } from './taskCardUtils'
 import { PhotoLightbox } from './PhotoLightbox'
 import { PeriodicityBadge } from './PeriodicityBadge'
 import { taskIcon } from './maintenance/taskIcons'
@@ -70,7 +70,7 @@ export function TaskCard({
   const updateParts = (parts: LocalTaskPart[]) => onChange({ ...task, parts })
 
   const addPart = () => {
-    commit({ ...task, parts: [...task.parts, { localId: crypto.randomUUID(), name: '', unitPrice: 0, quantity: 1 }] })
+    commit({ ...task, parts: [...task.parts, { localId: newLocalId(), name: '', unitPrice: 0, quantity: 1 }] })
   }
 
   const updatePart = (localId: string, patch: Partial<LocalTaskPart>) => {
