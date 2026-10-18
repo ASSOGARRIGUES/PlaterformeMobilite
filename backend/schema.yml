@@ -4213,6 +4213,38 @@ components:
         * `bug` - Bug
         * `feature` - Feature
         * `suggestion` - Suggestions
+    CatalogTaskIconEnum:
+      enum:
+      - tool
+      - oil
+      - filter
+      - air
+      - belt
+      - brake
+      - tire
+      - spark
+      - bearing
+      - steering
+      - battery
+      - light
+      - engine
+      - body
+      type: string
+      description: |-
+        * `tool` - Outil (par défaut)
+        * `oil` - Huile
+        * `filter` - Filtre
+        * `air` - Air
+        * `belt` - Courroie / distribution
+        * `brake` - Freins
+        * `tire` - Pneus
+        * `spark` - Allumage
+        * `bearing` - Roulements
+        * `steering` - Direction / train
+        * `battery` - Batterie
+        * `light` - Éclairage
+        * `engine` - Moteur
+        * `body` - Carrosserie
     Contract:
       type: object
       properties:
@@ -4516,6 +4548,16 @@ components:
       - id
       - photos
       - sheet
+    InspectionMileageEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        value:
+          type: integer
+      required:
+      - id
+      - value
     InspectionSheet:
       type: object
       properties:
@@ -4565,6 +4607,11 @@ components:
           nullable: true
         road_test_notes:
           type: string
+        validated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
         created_at:
           type: string
           format: date-time
@@ -4579,6 +4626,11 @@ components:
         expires_at:
           type: string
           format: date-time
+          nullable: true
+          readOnly: true
+        mileage_entry:
+          allOf:
+          - $ref: '#/components/schemas/InspectionMileageEntry'
           nullable: true
           readOnly: true
         wear_measurements:
@@ -4603,8 +4655,10 @@ components:
       - expires_at
       - id
       - is_expired
+      - mileage_entry
       - tasks
       - updated_at
+      - validated_at
       - vehicle
       - wear_measurements
     InspectionTask:
@@ -4660,12 +4714,17 @@ components:
         catalog_task_name:
           type: string
           readOnly: true
+        catalog_task_icon:
+          allOf:
+          - $ref: '#/components/schemas/CatalogTaskIconEnum'
+          readOnly: true
         level:
           type: integer
           maximum: 10
           minimum: 0
       required:
       - catalog_task
+      - catalog_task_icon
       - catalog_task_name
       - id
       - level
@@ -4819,14 +4878,22 @@ components:
           type: integer
           maximum: 10
           minimum: 0
-          description: Niveau d'usure (sur 10) à partir duquel (et en dessous) l'élément
-            est signalé « À prévoir »
+          description: 'Seuil d''usure (sur 10) : un élément mesuré à ce niveau ou
+            en dessous est signalé « À prévoir »'
         wear_critical_threshold:
           type: integer
           maximum: 10
           minimum: 0
-          description: Niveau d'usure (sur 10) à partir duquel (et en dessous) l'élément
-            est signalé « En retard »
+          description: 'Seuil d''usure (sur 10) : un élément mesuré à ce niveau ou
+            en dessous est signalé « En retard »'
+        inspection_edit_days:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Délai (jours) après la validation pendant lequel tout garagiste
+            peut modifier une fiche de contrôle ; au-delà, seule une personne autorisée
+            à modifier une fiche validée le peut
     MaintenanceCounts:
       type: object
       properties:
@@ -5151,6 +5218,8 @@ components:
           allOf:
           - $ref: '#/components/schemas/MaintenanceMeasurement'
           nullable: true
+        measure_prevails:
+          type: boolean
         km:
           allOf:
           - $ref: '#/components/schemas/MaintenanceKmAxis'
@@ -5177,6 +5246,7 @@ components:
       - last_measurement
       - last_realization
       - main_axis
+      - measure_prevails
       - months
       - name
       - periodicity

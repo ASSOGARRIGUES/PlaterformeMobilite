@@ -31,7 +31,7 @@ from .serializers import (
 )
 from .filters import TaskCatalogFilter, InterventionSheetFilter, InspectionSheetFilter
 from .mixins import GarageMultiActionMixin
-from .sheet_rules import create_sheet_mileage_entry, sync_sheet_mileage_date
+from .sheet_rules import create_sheet_mileage_entry, sync_sheet_mileage_date, chain_root
 from .alerts import get_config, load_maintenance_data, compute_maintenance_summary, is_signalement_open
 from .audit import (
     log_field_change, log_task_added, log_task_deleted, log_task_dismissed, get_audit_logs_for_sheet,
@@ -124,9 +124,7 @@ class MileageHistoryViewSet(GarageMultiActionMixin, viewsets.ReadOnlyModelViewSe
 
             # Le km d'une fiche validée ne se corrige que par ici : la fiche suit la correction,
             # sinon l'échéance km de ses tâches reste calculée sur la valeur erronée.
-            root = original
-            while root.corrects_id:
-                root = root.corrects
+            root = chain_root(original)
             sheet_model = SHEET_MODEL_BY_MILEAGE_SOURCE.get(root.source)
             if sheet_model is not None and root.source_id:
                 sheet_model.objects.filter(pk=root.source_id).update(start_mileage=correction.value)
@@ -326,8 +324,21 @@ class InspectionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
         if sheet.is_expired(get_config()):
             raise serializers.ValidationError("Cette fiche de contrôle a expiré : elle ne peut plus être modifiée.")
 
+    def _ensure_editable(self, sheet):
+        """Fiche expirée refusée ; fiche validée modifiable dans le délai, puis par les seuls responsables."""
+        self._ensure_not_expired(sheet)
+        config = get_config()
+        deadline = sheet.edit_deadline(config)
+        if (deadline is not None and timezone.now() > deadline
+                and not self.request.user.has_perm('garage.edit_validated_inspection')):
+            days = config.inspection_edit_days
+            raise PermissionDenied(
+                f"Cette fiche a été validée il y a plus de {days} {'jour' if days == 1 else 'jours'} : "
+                f"seule une personne responsable peut la modifier."
+            )
+
     def update(self, request, *args, **kwargs):
-        self._ensure_not_expired(self.get_object())
+        self._ensure_editable(self.get_object())
         return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
@@ -386,7 +397,7 @@ class InspectionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
     @transaction.atomic
     def tasks(self, request, pk=None):
         sheet = self.get_object()
-        self._ensure_not_expired(sheet)
+        self._ensure_editable(sheet)
         serializer = MutationInspectionTaskSerializer(data=request.data, context={'sheet': sheet})
         serializer.is_valid(raise_exception=True)
         task = serializer.save()
@@ -399,7 +410,7 @@ class InspectionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
     @transaction.atomic
     def task_detail(self, request, pk=None, task_pk=None):
         sheet = self.get_object()
-        self._ensure_not_expired(sheet)
+        self._ensure_editable(sheet)
         task = get_object_or_404(InspectionTask, pk=task_pk, sheet=sheet)
         return self._item_detail(
             request, sheet, task, UpdateInspectionTaskSerializer, InspectionTaskSerializer,
@@ -411,7 +422,7 @@ class InspectionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
     @transaction.atomic
     def damages(self, request, pk=None):
         sheet = self.get_object()
-        self._ensure_not_expired(sheet)
+        self._ensure_editable(sheet)
         serializer = MutationInspectionDamageSerializer(data=request.data, context={'sheet': sheet})
         serializer.is_valid(raise_exception=True)
         damage = serializer.save()
@@ -424,7 +435,7 @@ class InspectionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
     @transaction.atomic
     def damage_detail(self, request, pk=None, damage_pk=None):
         sheet = self.get_object()
-        self._ensure_not_expired(sheet)
+        self._ensure_editable(sheet)
         damage = get_object_or_404(InspectionDamage, pk=damage_pk, sheet=sheet)
         return self._item_detail(
             request, sheet, damage, UpdateInspectionDamageSerializer, InspectionDamageSerializer,
@@ -494,13 +505,19 @@ class InspectionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
                 raise serializers.ValidationError("Le kilométrage est requis avant de valider la fiche.")
             if sheet.start_date is None:
                 raise serializers.ValidationError("La date est requise avant de valider la fiche.")
-            check_measurements(sheet.vehicle, [
-                {'catalog_task': m.catalog_task, 'level': m.level}
-                for m in sheet.wear_measurements.select_related('catalog_task')
-            ])
+            measurements = list(sheet.wear_measurements.select_related('catalog_task'))
+            check_measurements(sheet.vehicle, [{'catalog_task': m.catalog_task, 'level': m.level} for m in measurements])
+            measured_ids = {m.catalog_task_id for m in measurements}
+            missing = [task.name for task in get_measurable_tasks(sheet.vehicle) if task.id not in measured_ids]
+            if missing:
+                raise serializers.ValidationError({
+                    'wear_measurements': "Toutes les usures doivent être mesurées avant de valider la fiche. "
+                                         f"Manquantes : {', '.join(missing)}."
+                })
 
             sheet.status = 'validated'
-            sheet.save(update_fields=['status'])
+            sheet.validated_at = timezone.now()
+            sheet.save(update_fields=['status', 'validated_at'])
             warnings = create_sheet_mileage_entry(sheet, 'inspection', request.user)
 
         data = InspectionSheetSerializer(sheet, context=self.get_serializer_context()).data

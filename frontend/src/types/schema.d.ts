@@ -1325,6 +1325,24 @@ export interface components {
          * @enum {string}
          */
         BugTypeEnum: BugTypeEnum;
+        /**
+         * @description * `tool` - Outil (par défaut)
+         *     * `oil` - Huile
+         *     * `filter` - Filtre
+         *     * `air` - Air
+         *     * `belt` - Courroie / distribution
+         *     * `brake` - Freins
+         *     * `tire` - Pneus
+         *     * `spark` - Allumage
+         *     * `bearing` - Roulements
+         *     * `steering` - Direction / train
+         *     * `battery` - Batterie
+         *     * `light` - Éclairage
+         *     * `engine` - Moteur
+         *     * `body` - Carrosserie
+         * @enum {string}
+         */
+        CatalogTaskIconEnum: CatalogTaskIconEnum;
         Contract: {
             readonly id: number;
             start_kilometer?: number;
@@ -1439,6 +1457,10 @@ export interface components {
             description: string;
             readonly photos: components["schemas"]["GaragePhoto"][];
         };
+        InspectionMileageEntry: {
+            id: number;
+            value: number;
+        };
         InspectionSheet: {
             readonly id: number;
             readonly vehicle: components["schemas"]["Vehicle"];
@@ -1457,12 +1479,15 @@ export interface components {
             road_test_done?: boolean | null;
             road_test_notes?: string;
             /** Format: date-time */
+            readonly validated_at: string | null;
+            /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
             readonly updated_at: string;
             readonly is_expired: boolean;
             /** Format: date-time */
             readonly expires_at: string | null;
+            readonly mileage_entry: components["schemas"]["InspectionMileageEntry"] | null;
             readonly wear_measurements: components["schemas"]["InspectionWearMeasurement"][];
             readonly damages: components["schemas"]["InspectionDamage"][];
             readonly tasks: components["schemas"]["InspectionTask"][];
@@ -1488,6 +1513,7 @@ export interface components {
             readonly id: number;
             catalog_task: number;
             readonly catalog_task_name: string;
+            readonly catalog_task_icon: components["schemas"]["CatalogTaskIconEnum"];
             level: number;
         };
         InterventionSheet: {
@@ -1548,10 +1574,15 @@ export interface components {
          */
         MaintenanceAxisEnum: MaintenanceAxisEnum;
         MaintenanceConfig: {
-            /** @description Niveau d'usure (sur 10) à partir duquel (et en dessous) l'élément est signalé « À prévoir » */
+            /** @description Seuil d'usure (sur 10) : un élément mesuré à ce niveau ou en dessous est signalé « À prévoir » */
             wear_alert_threshold?: number;
-            /** @description Niveau d'usure (sur 10) à partir duquel (et en dessous) l'élément est signalé « En retard » */
+            /** @description Seuil d'usure (sur 10) : un élément mesuré à ce niveau ou en dessous est signalé « En retard » */
             wear_critical_threshold?: number;
+            /**
+             * Format: int64
+             * @description Délai (jours) après la validation pendant lequel tout garagiste peut modifier une fiche de contrôle ; au-delà, seule une personne autorisée à modifier une fiche validée le peut
+             */
+            inspection_edit_days?: number;
         };
         MaintenanceCounts: {
             overdue: number;
@@ -1677,6 +1708,7 @@ export interface components {
             source: (components["schemas"]["MaintenanceSourceEnum"] | components["schemas"]["NullEnum"]) | null;
             last_realization: components["schemas"]["MaintenanceRealization"] | null;
             last_measurement: components["schemas"]["MaintenanceMeasurement"] | null;
+            measure_prevails: boolean;
             km: components["schemas"]["MaintenanceKmAxis"] | null;
             months: components["schemas"]["MaintenanceMonthsAxis"] | null;
             main_axis: (components["schemas"]["MaintenanceAxisEnum"] | components["schemas"]["NullEnum"]) | null;
@@ -5769,6 +5801,22 @@ export enum BugTypeEnum {
     bug = "bug",
     feature = "feature",
     suggestion = "suggestion"
+}
+export enum CatalogTaskIconEnum {
+    tool = "tool",
+    oil = "oil",
+    filter = "filter",
+    air = "air",
+    belt = "belt",
+    brake = "brake",
+    tire = "tire",
+    spark = "spark",
+    bearing = "bearing",
+    steering = "steering",
+    battery = "battery",
+    light = "light",
+    engine = "engine",
+    body = "body"
 }
 export enum ContractStatusEnum {
     waiting = "waiting",

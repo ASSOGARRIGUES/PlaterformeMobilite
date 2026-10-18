@@ -26,7 +26,7 @@ def _setup_garage_groups(sender, **kwargs):
         ],
         'Responsable garagiste': [
             'view_dashboard', 'view_vehicle', 'manage_intervention', 'manage_inspection',
-            'correct_mileage', 'override_maintenance_block',
+            'correct_mileage', 'override_maintenance_block', 'edit_validated_inspection',
         ],
         'Référents': [
             'view_dashboard', 'view_vehicle',

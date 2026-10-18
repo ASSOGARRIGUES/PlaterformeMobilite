@@ -10,7 +10,7 @@ from .models import (
     TaskCatalog, MileageEntry, InterventionSheet, InterventionTask, InterventionTaskPart, GaragePhoto, AuditLog,
     InspectionSheet, InspectionTask, InspectionDamage, InspectionWearMeasurement, MaintenanceConfig,
 )
-from .sheet_rules import check_start_mileage, check_start_date_not_future
+from .sheet_rules import check_start_mileage, check_start_date_not_future, sheet_mileage_chain
 from .alerts import get_config, TASK_STATUS_CHOICES, PLANNING_SOURCE_CHOICES, AXIS_CHOICES, SHEET_KIND_CHOICES
 
 
@@ -333,10 +333,11 @@ class MeasurableTaskSerializer(serializers.ModelSerializer):
 
 class InspectionWearMeasurementSerializer(serializers.ModelSerializer):
     catalog_task_name = serializers.CharField(source='catalog_task.name', read_only=True)
+    catalog_task_icon = serializers.ChoiceField(source='catalog_task.icon', choices=TaskCatalog.ICON_CHOICES, read_only=True)
 
     class Meta:
         model = InspectionWearMeasurement
-        fields = ['id', 'catalog_task', 'catalog_task_name', 'level']
+        fields = ['id', 'catalog_task', 'catalog_task_name', 'catalog_task_icon', 'level']
 
 
 class InspectionDamageSerializer(serializers.ModelSerializer):
@@ -445,6 +446,11 @@ class UpdateInspectionDamageSerializer(serializers.Serializer):
         return instance
 
 
+class InspectionMileageEntrySerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    value = serializers.IntegerField()
+
+
 class InspectionSheetSerializer(serializers.ModelSerializer):
     vehicle = VehicleSerializer(read_only=True)
     created_by = UserSerializer(read_only=True)
@@ -453,10 +459,19 @@ class InspectionSheetSerializer(serializers.ModelSerializer):
     tasks = InspectionTaskSerializer(many=True, read_only=True)
     is_expired = serializers.SerializerMethodField()
     expires_at = serializers.SerializerMethodField()
+    mileage_entry = serializers.SerializerMethodField()
 
     def _config(self):
         # self.context est partagé avec le sérialiseur racine : une seule lecture de la config par requête
         return self.context.setdefault('maintenance_config', get_config())
+
+    @extend_schema_field(InspectionMileageEntrySerializer(allow_null=True))
+    def get_mileage_entry(self, obj):
+        """Relevé km courant (non corrigé) de la fiche validée : celui que la correction kilométrique vise."""
+        if obj.status != 'validated':
+            return None
+        chain = sheet_mileage_chain('inspection', obj.id)
+        return {'id': chain[-1].id, 'value': chain[-1].value} if chain else None
 
     def get_is_expired(self, obj) -> bool:
         return obj.is_expired(self._config())
@@ -468,8 +483,9 @@ class InspectionSheetSerializer(serializers.ModelSerializer):
         model = InspectionSheet
         fields = ['id', 'vehicle', 'created_by', 'current_step', 'status', 'start_mileage', 'start_date',
                   'oil_ok', 'coolant_ok', 'washer_ok', 'lights_ok', 'lights_notes', 'road_test_done',
-                  'road_test_notes', 'created_at', 'updated_at', 'is_expired', 'expires_at',
-                  'wear_measurements', 'damages', 'tasks']
+                  'road_test_notes', 'validated_at', 'created_at', 'updated_at', 'is_expired', 'expires_at',
+                  'mileage_entry', 'wear_measurements', 'damages', 'tasks']
+        read_only_fields = ['validated_at']
 
 
 class MutationWearMeasurementSerializer(serializers.ModelSerializer):
@@ -477,6 +493,14 @@ class MutationWearMeasurementSerializer(serializers.ModelSerializer):
         model = InspectionWearMeasurement
         fields = ['catalog_task', 'level']
         validators = []  # l'unicité (fiche, tâche) est contrôlée dans la fiche
+
+
+def check_measurements_complete(measurements):
+    """En PATCH (partial), DRF dispense les champs imbriqués d'être renseignés : on les exige ici."""
+    if any('catalog_task' not in m or 'level' not in m for m in measurements):
+        raise serializers.ValidationError({
+            'wear_measurements': "Chaque mesure doit indiquer la tâche et un niveau d'usure."
+        })
 
 
 def check_measurements(vehicle, measurements, unchanged_ids=frozenset()):
@@ -556,6 +580,7 @@ class MutationInspectionSheetSerializer(serializers.ModelSerializer):
             check_start_mileage(vehicle, start_mileage, effective_start_date)
         check_start_date_not_future(start_date)
         if 'wear_measurements' in attrs and vehicle is not None:
+            check_measurements_complete(attrs['wear_measurements'])
             unchanged_ids = set()
             if self.instance:
                 existing = {(m.catalog_task_id, m.level) for m in self.instance.wear_measurements.all()}
@@ -563,6 +588,14 @@ class MutationInspectionSheetSerializer(serializers.ModelSerializer):
                     m['catalog_task'].id for m in attrs['wear_measurements']
                     if (m['catalog_task'].id, m['level']) in existing
                 }
+            if validated:
+                kept = {m['catalog_task'].id for m in attrs['wear_measurements']}
+                removed = [m.catalog_task.name for m in self.instance.wear_measurements.all()
+                           if m.catalog_task_id not in kept]
+                if removed:
+                    raise serializers.ValidationError({
+                        'wear_measurements': f"La mesure « {removed[0]} » ne peut pas être retirée d'une fiche validée."
+                    })
             check_measurements(vehicle, attrs['wear_measurements'], unchanged_ids)
         return attrs
 
@@ -610,7 +643,7 @@ class MutationInspectionSheetSerializer(serializers.ModelSerializer):
 class MaintenanceConfigSerializer(serializers.ModelSerializer):
     class Meta:
         model = MaintenanceConfig
-        fields = ['wear_alert_threshold', 'wear_critical_threshold']
+        fields = ['wear_alert_threshold', 'wear_critical_threshold', 'inspection_edit_days']
 
 
 # ── Synthèse d'entretien (story 2.10) — sérialiseurs de réponse uniquement ────
@@ -679,6 +712,7 @@ class MaintenanceTaskSerializer(serializers.Serializer):
     source = serializers.ChoiceField(choices=PLANNING_SOURCE_CHOICES, allow_null=True)
     last_realization = MaintenanceRealizationSerializer(allow_null=True)
     last_measurement = MaintenanceMeasurementSerializer(allow_null=True)
+    measure_prevails = serializers.BooleanField()
     km = MaintenanceKmAxisSerializer(allow_null=True)
     months = MaintenanceMonthsAxisSerializer(allow_null=True)
     main_axis = serializers.ChoiceField(choices=AXIS_CHOICES, allow_null=True)

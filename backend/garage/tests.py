@@ -25,6 +25,7 @@ from .alerts import (
     compute_other_work, CatalogTask, TaskOccurrence, WearMeasurement, is_signalement_open,
 )
 from .admin import MaintenanceConfigAdmin, TaskCatalogAdmin, TaskCatalogForm
+from .serializers import get_measurable_tasks
 
 User = get_user_model()
 
@@ -2396,6 +2397,13 @@ class InspectionSheetAPITestCase(APITestCase):
             vehicle=vehicle or self.vehicle, created_by=self.garagiste, status='validated', **kwargs,
         )
 
+    def _measure_missing(self, sheet, level=8):
+        """Complète la fiche : la validation exige une mesure par tâche mesurable du type de véhicule."""
+        done = set(sheet.wear_measurements.values_list('catalog_task_id', flat=True))
+        for task in get_measurable_tasks(sheet.vehicle):
+            if task.id not in done:
+                InspectionWearMeasurement.objects.create(sheet=sheet, catalog_task=task, level=level)
+
     def _listed_ids(self):
         data = self.client.get(self._url()).data
         return [row['id'] for row in (data['results'] if isinstance(data, dict) else data)]
@@ -2414,7 +2422,7 @@ class InspectionSheetAPITestCase(APITestCase):
         self.assertEqual((sheet.status, sheet.current_step, sheet.start_date), ('open', 1, timezone.localdate()))
         response = self.client.patch(self._url(sheet), {
             'current_step': 3, 'start_mileage': 10200, 'oil_ok': True, 'coolant_ok': False, 'lights_ok': True,
-            'wear_measurements': [{'catalog_task': self.brakes.id, 'level': 6}],
+            'wear_measurements': [{'catalog_task': self.brakes.id, 'level': 6}, {'catalog_task': self.tires.id, 'level': 7}],
         }, format='json')
         self.assertEqual(response.status_code, 200, response.data)
         response = self.client.post(self._url(sheet, 'validate/'))
@@ -2431,6 +2439,7 @@ class InspectionSheetAPITestCase(APITestCase):
             vehicle=self.vehicle, value=10000, date=datetime.date(2026, 5, 1), source='creation', author=self.garagiste,
         )
         sheet = self._open_sheet(start_mileage=10100, start_date=datetime.date(2026, 3, 1))
+        self._measure_missing(sheet)
         response = self.client.post(self._url(sheet, 'validate/'))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['warnings'][0]['code'], 'mileage_not_applied')
@@ -2638,6 +2647,7 @@ class InspectionSheetAPITestCase(APITestCase):
         InspectionWearMeasurement.objects.create(sheet=sheet, catalog_task=self.brakes, level=2)
         row = next(r for r in self._maintenance()['tasks'] if r['catalog_task_id'] == self.brakes.id)
         self.assertEqual(row['status'], 'not_recorded')  # fiche encore ouverte : mesure ignorée
+        self._measure_missing(sheet)
         self.client.post(self._url(sheet, 'validate/'))
         row = next(r for r in self._maintenance()['tasks'] if r['catalog_task_id'] == self.brakes.id)
         self.assertEqual(row['status'], 'overdue')
@@ -2814,6 +2824,7 @@ class InspectionSheetAPITestCase(APITestCase):
 
     def test_mileage_correction_updates_inspection_sheet(self):
         sheet = self._open_sheet(start_mileage=10100, start_date=datetime.date(2026, 3, 1))
+        self._measure_missing(sheet)
         self.client.post(self._url(sheet, 'validate/'))
         entry = MileageEntry.objects.get(source='inspection')
         responsible = User.objects.create_user(username='resp@test.com', email='resp@test.com', password='pass', phone='0600000023')
@@ -2835,7 +2846,7 @@ class InspectionSheetAPITestCase(APITestCase):
     def test_config_endpoint_exposes_thresholds(self):
         response = self.client.get('/api/garage/config/')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, {'wear_alert_threshold': 5, 'wear_critical_threshold': 2})
+        self.assertEqual(response.data, {'wear_alert_threshold': 5, 'wear_critical_threshold': 2, 'inspection_edit_days': 3})
         self.client.force_authenticate(user=None)
         self.assertIn(self.client.get('/api/garage/config/').status_code, (401, 403))
 
@@ -2910,6 +2921,7 @@ class InspectionSheetAPITestCase(APITestCase):
 
     def test_start_date_change_on_validated_sheet_moves_mileage_entry(self):
         sheet = self._open_sheet(start_mileage=10100, start_date=datetime.date(2026, 3, 1))
+        self._measure_missing(sheet)
         self.client.post(self._url(sheet, 'validate/'))
         response = self.client.patch(self._url(sheet), {'start_date': '2026-03-05'}, format='json')
         self.assertEqual(response.status_code, 200, response.data)
@@ -2937,3 +2949,440 @@ class InspectionSheetAPITestCase(APITestCase):
             'wear_measurements': [{'catalog_task': self.brakes.id, 'level': 3}],
         }, format='json')
         self.assertEqual(response.status_code, 400)
+
+    # ── Story 3.3 : validated_at, fenêtre d'édition, mesures complètes, relevé km courant ──
+
+    def _responsible(self):
+        user = User.objects.create_user(username='resp2@test.com', email='resp2@test.com', password='pass', phone='0600000024')
+        user.actions.set([self.action_a])
+        user.current_action = self.action_a
+        user.save()
+        user.groups.add(Group.objects.get(name='Responsable garagiste'))
+        return user
+
+    def _validated_at(self, delta, **kwargs):
+        """Fiche validée il y a `delta` (horloge réelle) ; updated_at suit validated_at par défaut."""
+        sheet = self._validated_sheet(**kwargs)
+        InspectionSheet.objects.filter(pk=sheet.pk).update(validated_at=timezone.now() - delta)
+        sheet.refresh_from_db()
+        return sheet
+
+    def test_validation_sets_validated_at_and_open_sheet_has_none(self):
+        sheet = self._open_sheet(start_mileage=10100, start_date=datetime.date(2026, 3, 1))
+        self.assertIsNone(self.client.get(self._url(sheet)).data['validated_at'])
+        self._measure_missing(sheet)
+        before = timezone.now()
+        response = self.client.post(self._url(sheet, 'validate/'))
+        self.assertEqual(response.status_code, 200, response.data)
+        sheet.refresh_from_db()
+        self.assertGreaterEqual(sheet.validated_at, before)
+        self.assertIsNotNone(response.data['validated_at'])
+
+    def test_patch_cannot_change_validated_at(self):
+        sheet = self._validated_sheet()
+        InspectionSheet.objects.filter(pk=sheet.pk).update(validated_at=timezone.now())
+        sheet.refresh_from_db()
+        response = self.client.patch(self._url(sheet), {'validated_at': '2020-01-01T00:00:00Z', 'oil_ok': True}, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        updated = InspectionSheet.objects.get(pk=sheet.pk)
+        self.assertEqual(updated.validated_at, sheet.validated_at)
+
+    def test_validation_requires_every_measurable_task_measured(self):
+        sheet = self._open_sheet(start_mileage=10100, start_date=datetime.date(2026, 3, 1))
+        InspectionWearMeasurement.objects.create(sheet=sheet, catalog_task=self.brakes, level=5)
+        response = self.client.post(self._url(sheet, 'validate/'))
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Pneus test', str(response.data['wear_measurements']))
+        self.assertNotIn('Freins test', str(response.data['wear_measurements']))
+        sheet.refresh_from_db()
+        self.assertEqual((sheet.status, sheet.validated_at), ('open', None))
+        InspectionWearMeasurement.objects.create(sheet=sheet, catalog_task=self.tires, level=5)
+        self.assertEqual(self.client.post(self._url(sheet, 'validate/')).status_code, 200)
+
+    def test_validation_only_requires_tasks_of_the_vehicle_type(self):
+        sheet = self._open_sheet(vehicle=self.scooter, start_mileage=150, start_date=datetime.date(2026, 3, 1))
+        response = self.client.post(self._url(sheet, 'validate/'))
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Pneus test', str(response.data['wear_measurements']))
+        InspectionWearMeasurement.objects.create(sheet=sheet, catalog_task=self.tires, level=5)  # pas de freins sur scooter
+        self.assertEqual(self.client.post(self._url(sheet, 'validate/')).status_code, 200)
+
+    def test_validation_without_any_measurable_task_is_allowed(self):
+        TaskCatalog.objects.filter(measured_in_inspection=True).update(measured_in_inspection=False)
+        sheet = self._open_sheet(start_mileage=10100, start_date=datetime.date(2026, 3, 1))
+        self.assertEqual(self.client.post(self._url(sheet, 'validate/')).status_code, 200)
+
+    def test_measurement_cannot_be_removed_from_validated_sheet_but_unmeasured_task_not_required(self):
+        sheet = self._validated_sheet()
+        InspectionWearMeasurement.objects.create(sheet=sheet, catalog_task=self.brakes, level=5)
+        response = self.client.patch(self._url(sheet), {'wear_measurements': []}, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Freins test', str(response.data['wear_measurements']))
+        self.assertEqual(sheet.wear_measurements.count(), 1)
+        # Pneus jamais mesurés (catalogue étendu après coup) : n'empêche pas la modification
+        response = self.client.patch(self._url(sheet), {
+            'wear_measurements': [{'catalog_task': self.brakes.id, 'level': 4}],
+        }, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+
+    def test_measurement_level_is_required(self):
+        sheet = self._open_sheet()
+        response = self.client.patch(self._url(sheet), {'wear_measurements': [{'catalog_task': self.brakes.id}]}, format='json')
+        self.assertEqual(response.status_code, 400)
+
+    # fenêtre de modification
+
+    def _edit_attempts(self, sheet):
+        damage = InspectionDamage.objects.create(sheet=sheet, description='Rayure')
+        task = InspectionTask.objects.create(sheet=sheet, name='Phares')
+        return {
+            'sheet': self.client.patch(self._url(sheet), {'oil_ok': True}, format='json').status_code,
+            'damage_add': self.client.post(self._url(sheet, 'damages/'), {'description': 'Bosse'}, format='json').status_code,
+            'damage_patch': self.client.patch(self._url(sheet, f'damages/{damage.id}/'), {'description': 'Rayure 2'}, format='json').status_code,
+            'damage_delete': self.client.delete(self._url(sheet, f'damages/{damage.id}/')).status_code,
+            'task_add': self.client.post(self._url(sheet, 'tasks/'), {'name': 'Essuie-glace'}, format='json').status_code,
+            'task_patch': self.client.patch(self._url(sheet, f'tasks/{task.id}/'), {'name': 'Phares avant'}, format='json').status_code,
+            'task_delete': self.client.delete(self._url(sheet, f'tasks/{task.id}/')).status_code,
+        }
+
+    def test_edit_within_window_is_open_to_any_garagiste(self):
+        sheet = self._validated_at(datetime.timedelta(days=2, hours=23))
+        self.assertEqual(set(self._edit_attempts(sheet).values()), {200, 201, 204})
+
+    def test_edit_after_window_is_refused_to_garagiste_on_every_endpoint(self):
+        sheet = self._validated_at(datetime.timedelta(days=3, hours=1))
+        codes = self._edit_attempts(sheet)
+        self.assertEqual(set(codes.values()), {403}, codes)
+        response = self.client.patch(self._url(sheet), {'oil_ok': True}, format='json')
+        self.assertIn('plus de 3 jours', response.data['detail'])
+        self.assertIn('responsable', response.data['detail'])
+
+    def test_edit_after_window_is_allowed_with_edit_validated_inspection(self):
+        sheet = self._validated_at(datetime.timedelta(days=30))
+        self.client.force_authenticate(user=self._responsible())
+        self.assertEqual(set(self._edit_attempts(sheet).values()), {200, 201, 204})
+
+    def test_edit_window_follows_config_and_message_uses_it(self):
+        config = get_config()
+        config.inspection_edit_days = 1
+        config.save()
+        sheet = self._validated_at(datetime.timedelta(days=2))
+        response = self.client.patch(self._url(sheet), {'oil_ok': True}, format='json')
+        self.assertEqual(response.status_code, 403)
+        self.assertIn('plus de 1 jour :', response.data['detail'])
+        config.inspection_edit_days = 5
+        config.save()
+        self.assertEqual(self.client.patch(self._url(sheet), {'oil_ok': True}, format='json').status_code, 200)
+
+    def test_edit_window_exact_limit_uses_frozen_clock(self):
+        from unittest import mock
+        sheet = self._validated_sheet()
+        validated = datetime.datetime(2026, 6, 1, 12, 0, tzinfo=datetime.timezone.utc)
+        InspectionSheet.objects.filter(pk=sheet.pk).update(validated_at=validated)
+        limit = validated + datetime.timedelta(days=3)
+        with mock.patch('django.utils.timezone.now', return_value=limit):
+            self.assertEqual(self.client.patch(self._url(sheet), {'oil_ok': True}, format='json').status_code, 200)
+        with mock.patch('django.utils.timezone.now', return_value=limit + datetime.timedelta(seconds=1)):
+            self.assertEqual(self.client.patch(self._url(sheet), {'oil_ok': False}, format='json').status_code, 403)
+
+    def test_open_sheet_is_not_concerned_by_edit_window(self):
+        sheet = self._open_sheet()
+        InspectionSheet.objects.filter(pk=sheet.pk).update(validated_at=timezone.now() - datetime.timedelta(days=90))
+        self.assertEqual(self.client.patch(self._url(sheet), {'oil_ok': True}, format='json').status_code, 200)
+
+    def test_validated_sheet_without_validated_at_falls_back_on_updated_at(self):
+        sheet = self._validated_sheet()  # validated_at nul (donnée ancienne)
+        self.assertIsNone(sheet.validated_at)
+        InspectionSheet.objects.filter(pk=sheet.pk).update(updated_at=timezone.now() - datetime.timedelta(days=10))
+        self.assertEqual(self.client.patch(self._url(sheet), {'oil_ok': True}, format='json').status_code, 403)
+        InspectionSheet.objects.filter(pk=sheet.pk).update(updated_at=timezone.now() - datetime.timedelta(days=1))
+        self.assertEqual(self.client.patch(self._url(sheet), {'oil_ok': True}, format='json').status_code, 200)
+
+    def test_dismiss_task_is_not_concerned_by_edit_window(self):
+        sheet = self._validated_at(datetime.timedelta(days=30))
+        task = InspectionTask.objects.create(sheet=sheet, catalog_task=self.oil)
+        self.client.force_authenticate(user=self._responsible())
+        response = self.client.post(self._url(sheet, f'tasks/{task.id}/dismiss/'))
+        self.assertEqual(response.status_code, 204, getattr(response, 'data', None))
+
+    def test_edit_validated_inspection_permission_belongs_to_responsable_garagiste_only(self):
+        self.assertTrue(self._responsible().has_perm('garage.edit_validated_inspection'))
+        self.assertFalse(self.garagiste.has_perm('garage.edit_validated_inspection'))
+        self.assertFalse(self.referent.has_perm('garage.edit_validated_inspection'))
+
+    # relevé km courant, icône, config
+
+    def test_mileage_entry_is_root_entry_then_follows_corrections(self):
+        sheet = self._open_sheet(start_mileage=10100, start_date=datetime.date(2026, 3, 1))
+        self.assertIsNone(self.client.get(self._url(sheet)).data['mileage_entry'])
+        self._measure_missing(sheet)
+        self.client.post(self._url(sheet, 'validate/'))
+        root = MileageEntry.objects.get(source='inspection')
+        self.assertEqual(self.client.get(self._url(sheet)).data['mileage_entry'], {'id': root.id, 'value': 10100})
+        self.client.force_authenticate(user=self._responsible())
+        response = self.client.post(
+            f'/api/garage/mileage/{self.vehicle.id}/correct/',
+            {'entry': root.id, 'value': 10150, 'reason': 'Erreur'}, format='json',
+        )
+        self.assertEqual(response.status_code, 201, response.data)
+        correction = MileageEntry.objects.get(corrects=root)
+        self.assertEqual(self.client.get(self._url(sheet)).data['mileage_entry'], {'id': correction.id, 'value': 10150})
+
+    def test_wear_measurement_exposes_catalog_task_icon(self):
+        sheet = self._validated_sheet()
+        InspectionWearMeasurement.objects.create(sheet=sheet, catalog_task=self.brakes, level=5)
+        measurement = self.client.get(self._url(sheet)).data['wear_measurements'][0]
+        self.assertEqual(measurement['catalog_task_icon'], self.brakes.icon)
+
+    def test_maintenance_task_exposes_measure_prevails(self):
+        sheet = self._validated_sheet(start_date=datetime.date(2026, 3, 1))
+        InspectionWearMeasurement.objects.create(sheet=sheet, catalog_task=self.brakes, level=5)
+        rows = {r['catalog_task_id']: r for r in self._maintenance()['tasks']}
+        self.assertIs(rows[self.brakes.id]['measure_prevails'], True)
+        self.assertIs(rows[self.tires.id]['measure_prevails'], False)
+
+
+class MeasurePrevailsTestCase(SimpleTestCase):
+    """measure_prevails : la mesure prévaut si elle est plus récente que la dernière pose (la pose à égalité)."""
+    WEAR = _catalog(id=1, name='Plaquettes', is_wear_task=True)
+    POSE = datetime.date(2026, 3, 1)
+
+    def _prevails(self, occurrences, measurements):
+        rows = compute_task_statuses(_data([self.WEAR], occurrences, measurements), VEHICLE, TODAY, CONFIG)
+        return rows[0]['measure_prevails']
+
+    def test_newer_measure_prevails(self):
+        pose = _occurrence(1, 1, date=self.POSE)
+        self.assertIs(self._prevails([pose], [_measurement(2, 4, date=datetime.date(2026, 4, 1))]), True)
+
+    def test_same_date_pose_prevails(self):
+        pose = _occurrence(1, 1, date=self.POSE)
+        self.assertIs(self._prevails([pose], [_measurement(2, 4, date=self.POSE)]), False)
+
+    def test_older_measure_does_not_prevail(self):
+        pose = _occurrence(1, 1, date=self.POSE)
+        self.assertIs(self._prevails([pose], [_measurement(2, 4, date=datetime.date(2026, 2, 1))]), False)
+
+    def test_measure_without_pose_prevails(self):
+        self.assertIs(self._prevails([], [_measurement(2, 4)]), True)
+
+    def test_no_measure_does_not_prevail(self):
+        self.assertIs(self._prevails([_occurrence(1, 1, date=self.POSE)], []), False)
+
+
+class AuditReadabilityTestCase(TestCase):
+    """describe_audit_entry et AuditLogAdmin : un journal lisible par un responsable, en lecture seule."""
+
+    def setUp(self):
+        from .audit import (
+            log_field_change, log_task_added, log_task_deleted, log_task_dismissed, log_damage_added,
+            log_damage_deleted,
+        )
+        self.audit = SimpleNamespace(
+            field=log_field_change, task_added=log_task_added, task_deleted=log_task_deleted,
+            task_dismissed=log_task_dismissed, damage_added=log_damage_added, damage_deleted=log_damage_deleted,
+        )
+        TaskCatalog.objects.all().delete()
+        action = Action.objects.create(name='Action A')
+        parking = Parking.objects.create(name='Dépôt')
+        self.user = User.objects.create_user(
+            username='k@test.com', email='k@test.com', password='pass', phone='0600000031',
+            first_name='Karim', last_name='Garagiste',
+        )
+        self.vehicle = Vehicle.objects.create(
+            brand='Peugeot', modele='208', year=2020, imat='AB-123-CD', fleet_id=31, kilometer=1000,
+            status='available', parking=parking, action=action, fuel_type='essence', transmission='manuelle',
+            type='voiture',
+        )
+        self.sheet = InspectionSheet.objects.create(
+            vehicle=self.vehicle, created_by=self.user, status='validated', start_mileage=1000,
+            start_date=datetime.date(2026, 10, 3),
+        )
+        self.intervention = InterventionSheet.objects.create(
+            vehicle=self.vehicle, created_by=self.user, status='validated', start_mileage=1000,
+            start_date=datetime.date(2026, 9, 1), end_date=datetime.date(2026, 9, 1),
+        )
+        self.superuser = User.objects.create_superuser(
+            username='su@test.com', email='su@test.com', password='pass', phone='0600000032',
+        )
+
+    def _describe(self, entry):
+        from .audit import describe_audit_entry
+        return describe_audit_entry(AuditLog.objects.get(pk=entry.pk))
+
+    def _last(self):
+        return AuditLog.objects.order_by('-id').first()
+
+    def _field(self, instance, field, old, new):
+        self.audit.field(instance, field, old, new, self.user)
+        return self._describe(self._last())
+
+    def test_boolean_fields_read_ok_defect(self):
+        for field, label in (('oil_ok', "Niveau d'huile"), ('coolant_ok', 'Niveau de refroidissement'),
+                             ('washer_ok', 'Niveau de lave-glace'), ('lights_ok', 'Éclairage')):
+            d = self._field(self.sheet, field, True, False)
+            self.assertEqual((d['action'], d['field'], d['change']), ('Modification', label, 'OK → Défaut'))
+        self.assertEqual(self._field(self.sheet, 'oil_ok', None, True)['change'], 'Non vérifié → OK')
+
+    def test_road_test_reads_done_not_done(self):
+        d = self._field(self.sheet, 'road_test_done', True, False)
+        self.assertEqual((d['field'], d['change']), ('Essai routier', 'Réalisé → Non réalisé'))
+
+    def test_text_fields_and_empty_values(self):
+        d = self._field(self.sheet, 'lights_notes', '', 'Feu stop gauche')
+        self.assertEqual((d['field'], d['change']), ("Notes d'éclairage", 'vide → Feu stop gauche'))
+        d = self._field(self.sheet, 'road_test_notes', 'RAS', '')
+        self.assertEqual((d['field'], d['change']), ("Observations de l'essai", 'RAS → vide'))
+
+    def test_start_date_is_formatted(self):
+        d = self._field(self.sheet, 'start_date', datetime.date(2026, 10, 3), datetime.date(2026, 10, 4))
+        self.assertEqual((d['field'], d['change']), ('Date de début', '03/10/2026 → 04/10/2026'))
+
+    def test_photos_read_as_counts(self):
+        d = self._field(self.sheet, 'photos', '#1, #2, #3', '#1, #2')
+        self.assertEqual((d['field'], d['change']), ('Photos', '3 photos → 2 photos'))
+        self.assertEqual(self._field(self.sheet, 'photos', 'Aucune photo', '#4')['change'], '0 photo → 1 photo')
+
+    def test_wear_measurements_keep_their_readable_text(self):
+        d = self._field(self.sheet, 'wear_measurements', 'Pneus : 6/10', 'Pneus : 5/10')
+        self.assertEqual((d['field'], d['change']), ('Usure', 'Pneus : 6/10 → Pneus : 5/10'))
+
+    def test_task_and_intervention_fields_have_french_labels(self):
+        task = InterventionTask.objects.create(sheet=self.intervention, type='done', description='x')
+        for field, label in (('name', 'Nom'), ('description', 'Description'), ('wear_level', "Niveau d'usure"),
+                             ('parts', 'Pièces')):
+            self.assertEqual(self._field(task, field, 'a', 'b')['field'], label)
+        self.assertEqual(self._field(task, 'wear_level', '6', '5')['change'], '6/10 → 5/10')
+
+    def test_add_delete_and_dismiss_actions(self):
+        damage = InspectionDamage.objects.create(sheet=self.sheet, description='Rayure')
+        task = InspectionTask.objects.create(sheet=self.sheet, name='Phares')
+        self.audit.damage_added(damage, self.user)
+        self.assertEqual(self._describe(self._last())['action'], "Ajout d'un dégât")
+        self.audit.damage_deleted(damage, self.user)
+        self.assertEqual(self._describe(self._last())['action'], "Suppression d'un dégât")
+        self.audit.task_added(task, self.user)
+        self.assertEqual(self._describe(self._last())['action'], "Ajout d'une tâche")
+        self.audit.task_dismissed(task, self.user)
+        self.assertEqual(self._describe(self._last())['action'], "Écartement d'une tâche")
+        self.audit.task_deleted(task, self.user)
+        self.assertEqual(self._describe(self._last())['action'], "Suppression d'une tâche")
+
+    def test_sheet_is_resolved_from_sheet_task_and_damage(self):
+        damage = InspectionDamage.objects.create(sheet=self.sheet, description='Rayure')
+        self.audit.damage_added(damage, self.user)
+        d = self._describe(self._last())
+        self.assertEqual((d['sheet_kind'], d['sheet_label'], d['sheet']), ('Contrôle', 'AB-123-CD — 03/10/2026', self.sheet))
+        d = self._field(self.sheet, 'oil_ok', True, False)
+        self.assertEqual(d['sheet'], self.sheet)
+        task = InterventionTask.objects.create(sheet=self.intervention, type='done', description='x')
+        d = self._field(task, 'description', 'a', 'b')
+        self.assertEqual((d['sheet_kind'], d['sheet_label']), ('Intervention', 'AB-123-CD — 01/09/2026'))
+
+    def test_entry_whose_object_was_deleted_never_fails(self):
+        damage = InspectionDamage.objects.create(sheet=self.sheet, description='Rayure')
+        self.audit.damage_deleted(damage, self.user)
+        damage.delete()
+        d = self._describe(self._last())
+        self.assertEqual((d['sheet_label'], d['sheet']), ('objet supprimé', None))
+        self.assertEqual(d['action'], "Suppression d'un dégât")
+
+    def test_author_falls_back_on_email_and_date_is_local(self):
+        self.user.first_name = self.user.last_name = ''
+        self.user.save()
+        d = self._field(self.sheet, 'oil_ok', True, False)
+        self.assertEqual(d['author'], 'k@test.com')
+        self.assertEqual(d['date'].utcoffset(), timezone.localtime(AuditLog.objects.get().created_at).utcoffset())
+
+    def _admin(self):
+        from .admin import AuditLogAdmin
+        return AuditLogAdmin(AuditLog, AdminSite())
+
+    def _request(self, **params):
+        request = RequestFactory().get('/admin/garage/auditlog/', params)
+        request.user = self.superuser
+        return request
+
+    def test_admin_is_read_only(self):
+        admin_obj, request = self._admin(), self._request()
+        self.assertFalse(admin_obj.has_add_permission(request))
+        self.assertFalse(admin_obj.has_change_permission(request))
+        self.assertFalse(admin_obj.has_delete_permission(request))
+        self.assertTrue(admin_obj.has_view_permission(request))
+
+    def test_admin_changelist_renders_every_kind_of_entry(self):
+        damage = InspectionDamage.objects.create(sheet=self.sheet, description='Rayure')
+        self.audit.damage_added(damage, self.user)
+        self.audit.damage_deleted(damage, self.user)
+        damage.delete()  # entrée orpheline : pas d'erreur 500
+        self.audit.field(self.sheet, 'oil_ok', True, False, self.user)
+        self.audit.field(self.intervention, 'start_date', datetime.date(2026, 9, 1), datetime.date(2026, 9, 2), self.user)
+        self.client.force_login(self.superuser)
+        response = self.client.get('/admin/garage/auditlog/')
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('OK → Défaut', content)
+        self.assertIn('Karim Garagiste', content)
+        self.assertIn('objet supprimé', content)
+        self.assertIn(f'/admin/garage/inspectionsheet/{self.sheet.pk}/change/', content)
+        self.assertEqual(self.client.get('/admin/garage/auditlog/?sheet_kind=inspection').status_code, 200)
+
+    def test_admin_filters_by_sheet_kind_and_action(self):
+        self.audit.field(self.sheet, 'oil_ok', True, False, self.user)
+        self.audit.field(self.intervention, 'start_date', datetime.date(2026, 9, 1), datetime.date(2026, 9, 2), self.user)
+        damage = InspectionDamage.objects.create(sheet=self.sheet, description='Rayure')
+        self.audit.damage_added(damage, self.user)
+        admin_obj = self._admin()
+
+        def filtered(**params):
+            request = self._request(**params)
+            changelist = admin_obj.get_changelist_instance(request)
+            return changelist.queryset.count()
+
+        self.assertEqual(filtered(), 3)
+        self.assertEqual(filtered(sheet_kind='inspection'), 2)
+        self.assertEqual(filtered(sheet_kind='intervention'), 1)
+        self.assertEqual(filtered(audit_action='damage_added'), 1)
+
+    def test_admin_searches_by_plate_and_author(self):
+        self.audit.field(self.sheet, 'oil_ok', True, False, self.user)
+        damage = InspectionDamage.objects.create(sheet=self.sheet, description='Rayure')
+        self.audit.damage_added(damage, self.user)
+        other_vehicle = Vehicle.objects.create(
+            brand='Renault', modele='Clio', year=2020, imat='ZZ-999-ZZ', fleet_id=32, kilometer=1,
+            status='available', parking=self.vehicle.parking, action=self.vehicle.action, fuel_type='essence',
+            transmission='manuelle', type='voiture',
+        )
+        other = InspectionSheet.objects.create(
+            vehicle=other_vehicle, created_by=self.user, status='validated', start_mileage=1, start_date=datetime.date(2026, 1, 1),
+        )
+        self.audit.field(other, 'oil_ok', True, False, self.user)
+        admin_obj = self._admin()
+        count = lambda term: admin_obj.get_changelist_instance(self._request(q=term)).queryset.count()
+        self.assertEqual(count('AB-123'), 2)  # fiche + dégât de la fiche
+        self.assertEqual(count('zz-999'), 1)
+        self.assertEqual(count('Karim'), 3)
+        self.assertEqual(count('introuvable'), 0)
+
+
+class ValidatedAtBackfillTestCase(TestCase):
+    def test_validated_sheets_get_updated_at_and_open_sheets_stay_empty(self):
+        import importlib
+        migration = importlib.import_module('garage.migrations.0022_inspection_validated_at_edit_window_help_texts')
+        action = Action.objects.create(name='Action A')
+        parking = Parking.objects.create(name='Dépôt')
+        user = User.objects.create_user(username='b@test.com', email='b@test.com', password='pass', phone='0600000041')
+        vehicle = Vehicle.objects.create(
+            brand='Renault', modele='Clio', year=2020, imat='BF-001-BF', fleet_id=41, kilometer=1,
+            status='available', parking=parking, action=action, fuel_type='essence', transmission='manuelle',
+            type='voiture',
+        )
+        validated = InspectionSheet.objects.create(
+            vehicle=vehicle, created_by=user, status='validated', start_mileage=1, start_date=datetime.date(2026, 1, 1),
+        )
+        opened = InspectionSheet.objects.create(vehicle=vehicle, created_by=user)
+        migration.backfill_validated_at(apps, None)
+        validated.refresh_from_db()
+        opened.refresh_from_db()
+        self.assertEqual(validated.validated_at, validated.updated_at)
+        self.assertIsNone(opened.validated_at)

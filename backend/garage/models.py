@@ -77,12 +77,12 @@ class MaintenanceConfig(models.Model):
     wear_alert_threshold = models.PositiveSmallIntegerField(
         default=5,
         validators=[MaxValueValidator(10)],
-        help_text="Niveau d'usure (sur 10) à partir duquel (et en dessous) l'élément est signalé « À prévoir »"
+        help_text="Seuil d'usure (sur 10) : un élément mesuré à ce niveau ou en dessous est signalé « À prévoir »"
     )
     wear_critical_threshold = models.PositiveSmallIntegerField(
         default=2,
         validators=[MaxValueValidator(10)],
-        help_text="Niveau d'usure (sur 10) à partir duquel (et en dessous) l'élément est signalé « En retard »"
+        help_text="Seuil d'usure (sur 10) : un élément mesuré à ce niveau ou en dessous est signalé « En retard »"
     )
     open_intervention_alert_days = models.PositiveIntegerField(
         default=1,
@@ -97,6 +97,11 @@ class MaintenanceConfig(models.Model):
         default=24,
         validators=[MinValueValidator(1)],
         help_text="Durée (heures) pendant laquelle une fiche de contrôle ouverte reste reprenable"
+    )
+    inspection_edit_days = models.PositiveSmallIntegerField(
+        default=3,
+        help_text="Délai (jours) après la validation pendant lequel tout garagiste peut modifier une fiche de contrôle ; "
+                  "au-delà, seule une personne autorisée à modifier une fiche validée le peut"
     )
 
     class Meta:
@@ -306,6 +311,7 @@ class InspectionSheet(models.Model):
     lights_notes = models.TextField(blank=True)
     road_test_done = models.BooleanField(null=True, blank=True)
     road_test_notes = models.TextField(blank=True)
+    validated_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -313,6 +319,8 @@ class InspectionSheet(models.Model):
         ordering = ['-created_at']
         permissions = [
             ('manage_inspection', "Peut créer et gérer les fiches de contrôle intermédiaire"),
+            ('edit_validated_inspection',
+             "Peut modifier une fiche de contrôle validée au-delà du délai d'édition"),
         ]
         constraints = [
             models.CheckConstraint(
@@ -333,6 +341,13 @@ class InspectionSheet(models.Model):
 
     def expires_at(self, config):
         return self.created_at + timedelta(hours=config.inspection_open_max_hours)
+
+    def edit_deadline(self, config):
+        """Fin de la fenêtre où tout garagiste peut modifier la fiche validée (None si elle n'est pas validée).
+        Donnée ancienne sans validated_at : retombe sur updated_at."""
+        if self.status != 'validated':
+            return None
+        return (self.validated_at or self.updated_at) + timedelta(days=config.inspection_edit_days)
 
 
 class InspectionWearMeasurement(models.Model):

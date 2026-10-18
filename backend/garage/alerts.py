@@ -406,6 +406,7 @@ def compute_task_statuses(data, vehicle, today, config, signalements=None) -> li
             'status': status, 'source': source, 'last_realization': last_realization,
             'km': km_axis, 'months': months_axis, 'main_axis': main_axis,
             'signalements': attached,
+            'measure_prevails': measure_prevails,
             'last_measurement': {
                 'sheet_id': last_measurement.sheet_id, 'date': last_measurement.sheet_start_date,
                 'km': last_measurement.sheet_start_mileage, 'level': last_measurement.level,
