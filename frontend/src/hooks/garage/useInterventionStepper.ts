@@ -67,12 +67,13 @@ export function useInterventionStepper(sheetId: number) {
   )
 
   // Suggestions : groupes « Dépassé » et « À prévoir » de la synthèse d'entretien (story 2.10). Absente
-  // (403, erreur) → aucune suggestion, sans bloquer le stepper.
-  const { data: maintenanceData } = useOne<MaintenanceSummary>({
+  // (403, erreur) → aucune suggestion, sans bloquer le stepper ; l'étape le dit (chargement / indisponible).
+  const { data: maintenanceData, isLoading: maintenanceLoading, isError: maintenanceError } = useOne<MaintenanceSummary>({
     resource: 'garage/maintenance',
     id: vehicle?.id,
-    queryOptions: { enabled: !!vehicle },
+    queryOptions: { enabled: !!vehicle, retry: false },
   })
+  const suggestionsState: 'loading' | 'error' | undefined = maintenanceLoading ? 'loading' : maintenanceError ? 'error' : undefined
   // Vue dérivée de la synthèse et des tâches faites, sans état propre ni identifiant local : les clés React viennent de catalog_task_id / task_id
   const suggestions = useMemo(() => pendingSuggestions(maintenanceData?.data, doneTasks), [maintenanceData, doneTasks])
 
@@ -250,6 +251,7 @@ export function useInterventionStepper(sheetId: number) {
     plannedTasks,
     suggestions,
     maintenanceSummary: maintenanceData?.data,
+    suggestionsState,
     history,
     catalogById,
     activeStep,

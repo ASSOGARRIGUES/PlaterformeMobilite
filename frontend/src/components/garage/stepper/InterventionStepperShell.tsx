@@ -14,12 +14,17 @@ type InterventionStepperShellProps = {
   onBack: () => void
   stepError: string | null
   extraAlert?: ReactNode
-  stepLabels: string[]
+  stepLabels?: string[]
   stepIcons?: InterventionStepIcon[]
-  activeStep: number
-  onStepClick: (step: number) => void
+  activeStep?: number
+  onStepClick?: (step: number) => void
   isStepLoading?: (step: number) => boolean
   footer: ReactNode
+  /** Variante compacte (fiche de contrôle mobile) : `progress` remplace le `Stepper` à icônes et la ligne « Étape X sur N »,
+   * marges réduites pour tenir sans défilement à 360 × 640. Sans `progress`, rendu inchangé. */
+  progress?: ReactNode
+  /** Alerte ancrée juste au-dessus de la barre de navigation (erreur d'enregistrement, près du pouce). */
+  footerAlert?: ReactNode
   /** Panneau de contexte véhicule (story 2.8) — desktop uniquement (≥1100px), non monté sous ce seuil (arbitrage 8, AC8). */
   sidePanel?: ReactNode
   children: ReactNode
@@ -33,12 +38,14 @@ export function InterventionStepperShell({
   onBack,
   stepError,
   extraAlert,
-  stepLabels,
+  stepLabels = [],
   stepIcons = INTERVENTION_STEP_ICONS,
-  activeStep,
+  activeStep = 0,
   onStepClick,
   isStepLoading,
   footer,
+  progress,
+  footerAlert,
   sidePanel,
   children,
 }: InterventionStepperShellProps) {
@@ -47,6 +54,7 @@ export function InterventionStepperShell({
   const isDesktop = useMediaQuery(`(min-width: ${theme.breakpoints.sm})`, false)
   const showSidePanel = !!sidePanel && isWorkshopLayout
   const stepIconSize = isDesktop ? 40 : 30
+  const compact = progress !== undefined
 
   return (
     <div
@@ -59,7 +67,7 @@ export function InterventionStepperShell({
         width: '100%',
       }}
     >
-      <Group gap="xs" px="xs" py="md" style={{ flexShrink: 0 }}>
+      <Group gap="xs" px="xs" py={compact ? 'xs' : 'md'} style={{ flexShrink: 0 }}>
         <ActionIcon variant="subtle" onClick={onBack} aria-label="Retour">
           <IconArrowLeft size={20} />
         </ActionIcon>
@@ -76,11 +84,12 @@ export function InterventionStepperShell({
 
       <Paper
         shadow="sm"
-        m={{ base: 'xs', sm: 'md' }}
+        m={compact ? { base: 0, sm: 'md' } : { base: 'xs', sm: 'md' }}
         mt={0}
         style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
       >
-        <div style={{ flexShrink: 0 }}>
+        {compact && <div style={{ flexShrink: 0 }}>{progress}</div>}
+        {!compact && <div style={{ flexShrink: 0 }}>
           <Stepper
             active={activeStep}
             onStepClick={onStepClick}
@@ -121,10 +130,10 @@ export function InterventionStepperShell({
           >
             Étape {activeStep + 1} sur {stepLabels.length} — {stepLabels[activeStep]}
           </Text>
-        </div>
+        </div>}
 
         <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
-          <ScrollArea style={{ flex: 1, minHeight: 0 }} p="md" scrollbarSize={isWorkshopLayout ? 11 : 4}>
+          <ScrollArea style={{ flex: 1, minHeight: 0 }} p={compact ? 'sm' : 'md'} scrollbarSize={isWorkshopLayout ? 11 : 4}>
             {/* Le contenu interne du ScrollArea est un `display: table` qui s'élargit au contenu le plus large : width 0 + min-width 100% l'en empêche */}
             <div style={{ width: 0, minWidth: '100%' }}>{children}</div>
           </ScrollArea>
@@ -148,13 +157,15 @@ export function InterventionStepperShell({
           )}
         </div>
 
+        {footerAlert}
+
         <Group
           justify="space-between"
-          p="md"
+          p={compact ? 'sm' : 'md'}
           style={{
             flexShrink: 0,
             borderTop: '1px solid var(--mantine-color-gray-2)',
-            paddingBottom: 'calc(var(--mantine-spacing-md) + env(safe-area-inset-bottom))',
+            paddingBottom: `calc(var(--mantine-spacing-${compact ? 'sm' : 'md'}) + env(safe-area-inset-bottom))`,
           }}
         >
           {footer}

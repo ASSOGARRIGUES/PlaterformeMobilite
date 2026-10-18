@@ -12,6 +12,7 @@ import {
   IconTool,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
+import { useStepperView } from '../../../hooks/garage/useStepperView'
 import { useValidatedInterventionEdit } from '../../../hooks/garage/useValidatedInterventionEdit'
 import { StepTasksDone } from '../../../components/garage/stepper/StepTasksDone'
 import { StepTasksPlanned } from '../../../components/garage/stepper/StepTasksPlanned'
@@ -52,8 +53,6 @@ export function InterventionEditStepper({ sheetId }: InterventionEditStepperProp
 
   const [startDate, setStartDate] = useState<Date | null>(null)
   const [endDate, setEndDate] = useState<Date | null>(null)
-  // Sous-vue locale de l'étape 3 (Dates/Récapitulatif) — même pattern que InterventionStepper
-  const [recapView, setRecapView] = useState(false)
 
   useEffect(() => {
     if (!sheet) return
@@ -62,11 +61,8 @@ export function InterventionEditStepper({ sheetId }: InterventionEditStepperProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet?.id])
 
-  useEffect(() => {
-    if (activeStep !== 3) setRecapView(false)
-  }, [activeStep])
-
-  const viewStep = activeStep === 3 && recapView ? 4 : activeStep
+  // Sous-vue locale de l'étape 3 (Dates/Récapitulatif) — même pattern que InterventionStepper
+  const { viewStep, setRecapView } = useStepperView(activeStep, 3)
 
   // Une date refusée par le serveur (ex : date de début effacée) est rétablie à l'écran
   const onStartDate = async (value: Date | null) => {

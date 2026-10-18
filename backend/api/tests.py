@@ -899,6 +899,46 @@ class WhoAmITest(BaseAPITest):
         r = self.client.get('/api/whoami/')
         self.assertTrue(r.data['is_superuser'])
 
+    def test_wear_input_defaults_to_slider(self):
+        r = self.client.get('/api/whoami/')
+        self.assertEqual(r.data['inspection_wear_input'], 'slider')
+
+    def test_user_can_update_own_wear_input(self):
+        r = self.client.patch('/api/whoami/preferences/', {'inspection_wear_input': 'slider'}, format='json')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.data['inspection_wear_input'], 'slider')
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.inspection_wear_input, 'slider')
+
+    def test_invalid_wear_input_is_refused(self):
+        r = self.client.patch('/api/whoami/preferences/', {'inspection_wear_input': 'dial'}, format='json')
+        self.assertEqual(r.status_code, 400)
+
+    def test_preferences_never_touch_other_fields_or_users(self):
+        other = get_user_model().objects.create_user(
+            username='autre', email='autre@example.com', password='x', first_name='A', last_name='B', phone='0',
+        )
+        regular = get_user_model().objects.create_user(
+            username='simple', email='simple@example.com', password='x', first_name='S', last_name='U', phone='0',
+        )
+        self.client.force_authenticate(user=regular)
+        r = self.client.patch('/api/whoami/preferences/', {
+            'inspection_wear_input': 'slider', 'is_superuser': True, 'email': 'hack@example.com', 'id': other.pk,
+        }, format='json')
+        self.assertEqual(r.status_code, 200)
+        regular.refresh_from_db()
+        other.refresh_from_db()
+        self.assertEqual(regular.inspection_wear_input, 'slider')
+        self.assertFalse(regular.is_superuser)
+        self.assertEqual(regular.email, 'simple@example.com')
+        self.assertEqual(other.inspection_wear_input, 'slider')
+        self.assertEqual(other.email, 'autre@example.com')
+
+    def test_unauthenticated_cannot_update_preferences(self):
+        self.client.force_authenticate(user=None)
+        r = self.client.patch('/api/whoami/preferences/', {'inspection_wear_input': 'slider'}, format='json')
+        self.assertEqual(r.status_code, 401)
+
 
 class UserActionViewSetTest(BaseAPITest):
     def test_list_returns_current_action(self):

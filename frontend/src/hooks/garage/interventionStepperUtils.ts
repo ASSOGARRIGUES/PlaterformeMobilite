@@ -225,15 +225,58 @@ export function dedupedHistorySummaries(
   return summaries
 }
 
-/** Extrait un message d'erreur lisible d'une erreur de mutation (400 backend ou HttpError Refine). */
+type HttpLikeError = { response?: { status?: number; data?: unknown }; statusCode?: number | string; code?: string; message?: string }
+
+const NETWORK_ERROR_MESSAGE = 'La connexion a échoué. Vos saisies sont gardées sur cet écran.'
+const SERVER_ERROR_MESSAGE = 'Le serveur a rencontré un problème. Réessayez dans un instant.'
+const GENERIC_ERROR_MESSAGE = 'Une erreur est survenue.'
+
+/** Statut HTTP numérique de l'erreur, `undefined` sans réponse du serveur. */
+export function errorStatus(error: unknown): number | undefined {
+  const err = error as HttpLikeError
+  const status = err?.response?.status ?? err?.statusCode
+  return typeof status === 'number' ? status : undefined
+}
+
+/** Pas de réponse HTTP du serveur (axios : `code` ERR_NETWORK, ECONNABORTED… ; le data provider le copie dans `statusCode`). */
+function isNetworkError(error: unknown): boolean {
+  const err = error as HttpLikeError
+  if (errorStatus(error) !== undefined) return false
+  const code = typeof err?.statusCode === 'string' ? err.statusCode : err?.code
+  return (typeof code === 'string' && /^(ERR_|ECONN|ETIMEDOUT)/.test(code)) || err?.message === 'Network Error'
+}
+
+/** Aplatit une valeur d'erreur DRF (chaîne, liste, objet imbriqué) en messages lisibles. */
+function flattenMessages(value: unknown): string[] {
+  if (typeof value === 'string') return [value]
+  if (Array.isArray(value)) return value.flatMap(flattenMessages)
+  if (value && typeof value === 'object') return Object.values(value).flatMap(flattenMessages)
+  return []
+}
+
+/** Échec réseau (pas de réponse) ou 5xx : la saisie est valide, on peut réessayer telle quelle. */
+export function isRetryableError(error: unknown): boolean {
+  const status = errorStatus(error)
+  return status === undefined ? isNetworkError(error) : status >= 500
+}
+
+/** Erreurs de validation 400 par champ ; vide pour un échec réseau, un 5xx ou un corps non JSON. */
+export function extractFieldErrors(error: unknown): { field: string; message: string }[] {
+  if (isRetryableError(error)) return []
+  const data = (error as HttpLikeError).response?.data
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return []
+  return Object.entries(data)
+    .map(([field, value]) => ({ field, message: flattenMessages(value).join(' ') }))
+    .filter((entry) => entry.message)
+}
+
+/** Message lisible pour une erreur de mutation : champ unique, multi-champs, imbriquée, 5xx/HTML ou réseau. */
 export function extractStepError(error: unknown): string {
-  const err = error as { response?: { data?: Record<string, unknown> }; message?: string }
-  const data = err?.response?.data
-  if (data && typeof data === 'object') {
-    const firstKey = Object.keys(data)[0]
-    const value = firstKey ? data[firstKey] : undefined
-    if (Array.isArray(value) && value.length) return String(value[0])
-    if (typeof value === 'string') return value
-  }
-  return err?.message ?? 'Une erreur est survenue.'
+  if (isNetworkError(error)) return NETWORK_ERROR_MESSAGE
+  if (isRetryableError(error)) return SERVER_ERROR_MESSAGE
+  const plainMessage = errorStatus(error) === undefined ? (error as HttpLikeError)?.message : undefined
+  if (plainMessage) return plainMessage
+  const data = (error as HttpLikeError).response?.data
+  const messages = typeof data === 'string' ? [] : flattenMessages(data)
+  return messages.length ? messages.join(' ') : GENERIC_ERROR_MESSAGE
 }

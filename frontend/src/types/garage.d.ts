@@ -78,3 +78,23 @@ type MaintenanceSignalement = components["schemas"]["MaintenanceSignalement"];
 type MaintenanceOtherWork = components["schemas"]["MaintenanceOtherWork"];
 type MaintenanceSheet = components["schemas"]["MaintenanceSheet"];
 type MaintenanceCounts = components["schemas"]["MaintenanceCounts"];
+
+// ── Fiches de contrôle (story 3.2) ───────────────────────────────────────────
+type InspectionSheet = components["schemas"]["InspectionSheet"];
+type InspectionWearMeasurement = components["schemas"]["InspectionWearMeasurement"];
+type InspectionDamage = components["schemas"]["InspectionDamage"];
+type InspectionTask = components["schemas"]["InspectionTask"];
+type MeasurableTask = components["schemas"]["MeasurableTask"];
+type GarageConfig = components["schemas"]["MaintenanceConfig"];
+type PatchInspectionPayload = components["schemas"]["PatchedMutationInspectionSheet"];
+// Le schéma OpenAPI ne reflète pas la clé "warnings" de InspectionSheetViewSet.validate()
+type ValidateInspectionResponse = InspectionSheet & { warnings: InterventionValidateWarning[] };
+
+// Dégât saisi à l'étape 5 : carte locale, écrite sur le serveur au passage d'étape (POST puis PATCH|DELETE)
+type LocalDamage = {
+    localId: string;
+    serverId?: number;
+    description: string;
+    photos: string[];             // URLs serveur ou data URLs base64 (nouvelles)
+    photoIds?: (number | null)[]; // aligné sur photos
+};

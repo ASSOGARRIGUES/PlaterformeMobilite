@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ActionIcon, Text, Stack, Popover, UnstyledButton, Box, Divider } from '@mantine/core'
+import { ActionIcon, Text, Stack, Popover, UnstyledButton, Box, Divider, useMantineTheme } from '@mantine/core'
 import {
   IconLayoutDashboard,
   IconCar,
@@ -13,11 +13,14 @@ import { useGetIdentity } from '@refinedev/core'
 import { WhoAmI } from '../../types/auth'
 import ActionSelector from '../actions/ActionSelector'
 import OpenBugReportButton from '../bugreporter/OpenBugReportButton'
+import CanAccess from '../CanAccess'
+import WearInputSetting from './WearInputSetting'
 
 const NAV_HEIGHT = 64
 
 export function GarageBottomNav() {
   const navigate = useNavigate()
+  const theme = useMantineTheme()
   const location = useLocation()
   const [fabOpen, setFabOpen] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
@@ -77,7 +80,7 @@ export function GarageBottomNav() {
             radius="xl"
             style={{
               backgroundColor: 'var(--mantine-color-cyan-8)',
-              border: '4px solid white',
+              border: `4px solid ${theme.white}`,
               position: 'absolute',
               top: -28,
               left: '50%',
@@ -88,7 +91,7 @@ export function GarageBottomNav() {
             }}
             aria-label="Créer"
           >
-            <IconPlus size={28} color="white" />
+            <IconPlus size={28} color={theme.white} />
           </ActionIcon>
         </Popover.Target>
 
@@ -111,23 +114,25 @@ export function GarageBottomNav() {
               <IconTool size={18} />
               <Text size="sm">Nouvelle intervention</Text>
             </UnstyledButton>
-            <UnstyledButton
-              onClick={() => {
-                setFabOpen(false)
-                // TODO: navigate('/controle/create') — Epic 3
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '10px 16px',
-                minHeight: 48,
-                borderRadius: 8,
-              }}
-            >
-              <IconClipboardList size={18} />
-              <Text size="sm">Nouveau contrôle</Text>
-            </UnstyledButton>
+            <CanAccess permKey="garage.manage_inspection">
+              <UnstyledButton
+                onClick={() => {
+                  setFabOpen(false)
+                  navigate('/garage/inspection/create')
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '10px 16px',
+                  minHeight: 48,
+                  borderRadius: 8,
+                }}
+              >
+                <IconClipboardList size={18} />
+                <Text size="sm">Nouveau contrôle</Text>
+              </UnstyledButton>
+            </CanAccess>
           </Stack>
         </Popover.Dropdown>
       </Popover>
@@ -170,6 +175,9 @@ export function GarageBottomNav() {
               )}
               <Divider />
               <ActionSelector />
+              <CanAccess permKey="garage.manage_inspection">
+                <WearInputSetting />
+              </CanAccess>
               <OpenBugReportButton />
             </Stack>
           </Popover.Dropdown>

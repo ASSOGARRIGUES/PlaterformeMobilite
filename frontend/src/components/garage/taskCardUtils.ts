@@ -37,6 +37,11 @@ export function buildTaskPickerRows(catalog: TaskCatalogItem[], query: string): 
   return rows
 }
 
-export function isWearLevelCritical(level: number, threshold = 3): boolean {
-  return level <= threshold
+export function readAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
 }

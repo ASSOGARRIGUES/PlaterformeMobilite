@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { computePartsSubtotal, buildTaskPickerRows, isWearLevelCritical, newLocalId, TaskCatalogItem } from '../components/garage/taskCardUtils';
+import { computePartsSubtotal, buildTaskPickerRows, newLocalId, TaskCatalogItem } from '../components/garage/taskCardUtils';
 
 describe('computePartsSubtotal', () => {
   it('returns 0 for an empty list', () => {
@@ -43,22 +43,6 @@ describe('buildTaskPickerRows', () => {
     const rows = buildTaskPickerRows(catalog, 'aucune tâche ne correspond');
     expect(rows).toHaveLength(1);
     expect(rows[0]).toEqual({ kind: 'free' });
-  });
-});
-
-describe('isWearLevelCritical', () => {
-  it('uses 3 as the default threshold', () => {
-    expect(isWearLevelCritical(3)).toBe(true);
-    expect(isWearLevelCritical(4)).toBe(false);
-  });
-
-  it('includes the threshold value itself (<=)', () => {
-    expect(isWearLevelCritical(3, 3)).toBe(true);
-  });
-
-  it('accepts an explicit custom threshold', () => {
-    expect(isWearLevelCritical(5, 6)).toBe(true);
-    expect(isWearLevelCritical(7, 6)).toBe(false);
   });
 });
 

@@ -1231,6 +1231,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/whoami/preferences/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["api_whoami_preferences_partial_update"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1462,6 +1478,12 @@ export interface components {
             readonly dismissed_at: string | null;
             readonly photos: components["schemas"]["GaragePhoto"][];
         };
+        /**
+         * @description * `segments` - Boutons
+         *     * `slider` - Curseur
+         * @enum {string}
+         */
+        InspectionWearInputEnum: InspectionWearInputEnum;
         InspectionWearMeasurement: {
             readonly id: number;
             catalog_task: number;
@@ -1526,9 +1548,9 @@ export interface components {
          */
         MaintenanceAxisEnum: MaintenanceAxisEnum;
         MaintenanceConfig: {
-            /** @description Niveau d'usure (sur 10) en-dessous duquel une alerte est générée */
+            /** @description Niveau d'usure (sur 10) à partir duquel (et en dessous) l'élément est signalé « À prévoir » */
             wear_alert_threshold?: number;
-            /** @description Niveau d'usure (sur 10) en-dessous duquel le véhicule passe en maintenance */
+            /** @description Niveau d'usure (sur 10) à partir duquel (et en dessous) l'élément est signalé « En retard » */
             wear_critical_threshold?: number;
         };
         MaintenanceCounts: {
@@ -2282,6 +2304,15 @@ export interface components {
             readonly created_at?: string;
             archived?: boolean;
         };
+        PatchedWhoAmIPreferences: {
+            /**
+             * @description Saisie de l'usure dans la fiche de contrôle : boutons ou curseur
+             *
+             *     * `segments` - Boutons
+             *     * `slider` - Curseur
+             */
+            inspection_wear_input?: components["schemas"]["InspectionWearInputEnum"];
+        };
         Payment: {
             readonly id: number;
             /** Format: date-time */
@@ -2480,6 +2511,13 @@ export interface components {
             readonly permissions: unknown[];
             actions?: number[];
             current_action?: number | null;
+            /**
+             * @description Saisie de l'usure dans la fiche de contrôle : boutons ou curseur
+             *
+             *     * `segments` - Boutons
+             *     * `slider` - Curseur
+             */
+            readonly inspection_wear_input: components["schemas"]["InspectionWearInputEnum"];
         };
     };
     responses: never;
@@ -5517,6 +5555,31 @@ export interface operations {
             };
         };
     };
+    api_whoami_preferences_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedWhoAmIPreferences"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedWhoAmIPreferences"];
+                "multipart/form-data": components["schemas"]["PatchedWhoAmIPreferences"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WhoAmI"];
+                };
+            };
+        };
+    };
 }
 export enum PathsApiSchemaGetParametersQueryFormat {
     json = "json",
@@ -5733,6 +5796,10 @@ export enum IconEnum {
     light = "light",
     engine = "engine",
     body = "body"
+}
+export enum InspectionWearInputEnum {
+    segments = "segments",
+    slider = "slider"
 }
 export enum InterventionSheetStatusEnum {
     open = "open",

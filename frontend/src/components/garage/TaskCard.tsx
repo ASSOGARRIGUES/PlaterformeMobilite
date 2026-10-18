@@ -6,7 +6,6 @@ import {
   Text,
   ActionIcon,
   Collapse,
-  Slider,
   TextInput,
   NumberInput,
   Textarea,
@@ -19,7 +18,10 @@ import {
 } from '@mantine/core'
 import { IconTrash, IconChevronDown, IconChevronUp, IconX, IconCameraFilled, IconPlus } from '@tabler/icons-react'
 import { LocalTask, LocalTaskPart } from '../../types/garage'
-import { computePartsSubtotal, isWearLevelCritical, newLocalId } from './taskCardUtils'
+import { computePartsSubtotal, newLocalId, readAsBase64 } from './taskCardUtils'
+import { WearSlider } from './WearSlider'
+import { wearZoneKey } from './wearUtils'
+import { useGarageConfig } from '../../hooks/garage/useGarageConfig'
 import { PhotoLightbox } from './PhotoLightbox'
 import { PeriodicityBadge } from './PeriodicityBadge'
 import { taskIcon } from './maintenance/taskIcons'
@@ -35,15 +37,8 @@ type TaskCardProps = {
   /** Mode contrôlé (grille desktop 2 colonnes) : synchronise l'ouverture avec `onToggleExpanded` au lieu de l'état interne */
   expanded?: boolean
   onToggleExpanded?: () => void
-}
-
-function readAsBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
+  /** `planned` : opération à prévoir d'une fiche de contrôle, sans pièces, sous-total ni usure (description et photos seulement). */
+  variant?: 'default' | 'planned'
 }
 
 export function TaskCard({
@@ -55,12 +50,16 @@ export function TaskCard({
   defaultExpanded = false,
   expanded: expandedProp,
   onToggleExpanded,
+  variant = 'default',
 }: TaskCardProps) {
+  const isPlanned = variant === 'planned'
   const [internalExpanded, setInternalExpanded] = useState(defaultExpanded)
   const expanded = expandedProp ?? internalExpanded
   const toggleExpanded = onToggleExpanded ?? (() => setInternalExpanded((e) => !e))
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   const TaskIcon = taskIcon(task.icon)
+  const { config: wearConfig } = useGarageConfig()
+  const wearIsCritical = wearConfig ? wearZoneKey(task.wearLevel ?? 10, wearConfig) === 'critical' : false
 
   const commit = (updated: LocalTask) => {
     onChange(updated)
@@ -113,6 +112,7 @@ export function TaskCard({
               <ActionIcon
                 variant="subtle"
                 color="red"
+                size={isPlanned ? 48 : undefined}
                 onClick={(e) => {
                   e.stopPropagation()
                   onRemove()
@@ -129,94 +129,93 @@ export function TaskCard({
 
       <Collapse in={expanded}>
         <Stack gap="md" mt="md">
-          {task.isWearTask && task.type === 'done' && (
+          {!isPlanned && task.isWearTask && task.type === 'done' && (
             <Stack gap={4}>
               <Text size="sm">
                 État de la pièce posée :{' '}
                 <Text
                   span
                   fw={600}
-                  c={isWearLevelCritical(task.wearLevel ?? 10) ? 'red' : undefined}
+                  c={wearIsCritical ? 'red.8' : undefined}
                 >
                   {task.wearLevel ?? 10}/10
                 </Text>
               </Text>
-              {!readOnly && (
-                <Slider
-                  min={0}
-                  max={10}
-                  step={1}
+              {!readOnly && wearConfig && (
+                <WearSlider
                   value={task.wearLevel ?? 10}
                   onChange={(value) => onChange({ ...task, wearLevel: value })}
                   onChangeEnd={(value) => onCommit?.({ ...task, wearLevel: value })}
-                  marks={Array.from({ length: 11 }, (_, i) => ({ value: i }))}
-                  color={isWearLevelCritical(task.wearLevel ?? 10) ? 'red' : (task.wearLevel ?? 10) <= 6 ? 'orange' : 'teal'}
+                  config={wearConfig}
+                  label={`État de la pièce posée : ${task.name}`}
                 />
               )}
             </Stack>
           )}
 
-          <Stack gap="xs">
-            <Text size="sm" fw={500}>
-              Pièces
-            </Text>
-            {readOnly && task.parts.length === 0 && (
-              <Text size="sm" c="dimmed">Aucune pièce</Text>
-            )}
-            {readOnly
-              ? task.parts.map((part) => (
-                  <Group key={part.localId} justify="space-between" wrap="nowrap">
-                    <Text size="sm">{part.name || '—'}</Text>
-                    <Text size="sm" ff="monospace" c="dimmed" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      {part.quantity} × {part.unitPrice.toFixed(2)} €
-                    </Text>
-                  </Group>
-                ))
-              : task.parts.map((part) => (
-                  <Group key={part.localId} wrap="nowrap" align="flex-end">
-                    <TextInput
-                      label="Désignation"
-                      value={part.name}
-                      onChange={(e) => updatePart(part.localId, { name: e.currentTarget.value })}
-                      onBlur={() => onCommit?.(task)}
-                      style={{ flex: 2 }}
-                    />
-                    <NumberInput
-                      label="P.U."
-                      min={0}
-                      decimalScale={2}
-                      value={part.unitPrice}
-                      onChange={(value) => updatePart(part.localId, { unitPrice: Math.max(0, Number(value) || 0) })}
-                      onBlur={() => onCommit?.(task)}
-                      style={{ flex: 1 }}
-                    />
-                    <NumberInput
-                      label="Qté"
-                      min={1}
-                      value={part.quantity}
-                      onChange={(value) => updatePart(part.localId, { quantity: Math.max(1, Number(value) || 1) })}
-                      onBlur={() => onCommit?.(task)}
-                      style={{ flex: 1 }}
-                    />
-                    <Input.Wrapper label=" ">
-                      <ActionIcon
-                        size="lg"
-                        color="red"
-                        variant="subtle"
-                        onClick={() => removePart(part.localId)}
-                        aria-label="Supprimer la pièce"
-                      >
-                        <IconX size={18} stroke={2} />
-                      </ActionIcon>
-                    </Input.Wrapper>
-                  </Group>
-                ))}
-            {!readOnly && (
-              <Button variant="light" leftSection={<IconPlus size={16} stroke={2} />} onClick={addPart}>
-                Ajouter une pièce
-              </Button>
-            )}
-          </Stack>
+          {!isPlanned && (
+            <Stack gap="xs">
+              <Text size="sm" fw={500}>
+                Pièces
+              </Text>
+              {readOnly && task.parts.length === 0 && (
+                <Text size="sm" c="dimmed">Aucune pièce</Text>
+              )}
+              {readOnly
+                ? task.parts.map((part) => (
+                    <Group key={part.localId} justify="space-between" wrap="nowrap">
+                      <Text size="sm">{part.name || '—'}</Text>
+                      <Text size="sm" ff="monospace" c="dimmed" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        {part.quantity} × {part.unitPrice.toFixed(2)} €
+                      </Text>
+                    </Group>
+                  ))
+                : task.parts.map((part) => (
+                    <Group key={part.localId} wrap="nowrap" align="flex-end">
+                      <TextInput
+                        label="Désignation"
+                        value={part.name}
+                        onChange={(e) => updatePart(part.localId, { name: e.currentTarget.value })}
+                        onBlur={() => onCommit?.(task)}
+                        style={{ flex: 2 }}
+                      />
+                      <NumberInput
+                        label="P.U."
+                        min={0}
+                        decimalScale={2}
+                        value={part.unitPrice}
+                        onChange={(value) => updatePart(part.localId, { unitPrice: Math.max(0, Number(value) || 0) })}
+                        onBlur={() => onCommit?.(task)}
+                        style={{ flex: 1 }}
+                      />
+                      <NumberInput
+                        label="Qté"
+                        min={1}
+                        value={part.quantity}
+                        onChange={(value) => updatePart(part.localId, { quantity: Math.max(1, Number(value) || 1) })}
+                        onBlur={() => onCommit?.(task)}
+                        style={{ flex: 1 }}
+                      />
+                      <Input.Wrapper label=" ">
+                        <ActionIcon
+                          size="lg"
+                          color="red"
+                          variant="subtle"
+                          onClick={() => removePart(part.localId)}
+                          aria-label="Supprimer la pièce"
+                        >
+                          <IconX size={18} stroke={2} />
+                        </ActionIcon>
+                      </Input.Wrapper>
+                    </Group>
+                  ))}
+              {!readOnly && (
+                <Button variant="light" leftSection={<IconPlus size={16} stroke={2} />} onClick={addPart}>
+                  Ajouter une pièce
+                </Button>
+              )}
+            </Stack>
+          )}
 
           <Stack gap={4}>
             <Text size="sm" fw={500}>
@@ -286,11 +285,13 @@ export function TaskCard({
             </Group>
           </Stack>
 
-          <Group justify="flex-end">
-            <Text ff="monospace" size="sm">
-              Sous-total : {computePartsSubtotal(task.parts).toFixed(2)} €
-            </Text>
-          </Group>
+          {!isPlanned && (
+            <Group justify="flex-end">
+              <Text ff="monospace" size="sm">
+                Sous-total : {computePartsSubtotal(task.parts).toFixed(2)} €
+              </Text>
+            </Group>
+          )}
         </Stack>
       </Collapse>
 

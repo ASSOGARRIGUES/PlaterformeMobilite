@@ -8,6 +8,7 @@ from django.test import TestCase, SimpleTestCase, RequestFactory
 from django.test.utils import CaptureQueriesContext
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
+from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APITestCase
@@ -106,6 +107,30 @@ class TaskCatalogAPITestCase(APITestCase):
         self.assertTrue(response.data['is_wear_task'])
 
 
+class WearThresholdsMigrationTestCase(TestCase):
+    def _run(self):
+        import importlib
+        importlib.import_module('garage.migrations.0021_wear_thresholds_2_5').update_default_thresholds(apps, None)
+
+    def _set(self, alert, critical):
+        MaintenanceConfig.objects.all().delete()
+        config = MaintenanceConfig(wear_alert_threshold=alert, wear_critical_threshold=critical)
+        config.save()
+        MaintenanceConfig.objects.filter(pk=1).update(wear_alert_threshold=alert, wear_critical_threshold=critical)
+
+    def test_old_defaults_become_2_5(self):
+        self._set(alert=4, critical=3)
+        self._run()
+        config = MaintenanceConfig.objects.get(pk=1)
+        self.assertEqual((config.wear_alert_threshold, config.wear_critical_threshold), (5, 2))
+
+    def test_customised_thresholds_are_left_untouched(self):
+        self._set(alert=6, critical=3)
+        self._run()
+        config = MaintenanceConfig.objects.get(pk=1)
+        self.assertEqual((config.wear_alert_threshold, config.wear_critical_threshold), (6, 3))
+
+
 class MaintenanceConfigTestCase(TestCase):
     def setUp(self):
         MaintenanceConfig.objects.all().delete()
@@ -113,8 +138,8 @@ class MaintenanceConfigTestCase(TestCase):
     def test_default_values(self):
         config = MaintenanceConfig.objects.create()
         self.assertEqual(config.ct_alert_days, 7)
-        self.assertEqual(config.wear_alert_threshold, 4)
-        self.assertEqual(config.wear_critical_threshold, 3)
+        self.assertEqual(config.wear_alert_threshold, 5)
+        self.assertEqual(config.wear_critical_threshold, 2)
         self.assertEqual(config.open_intervention_alert_days, 1)
         self.assertEqual(config.km_max_without_intervention, 8000)
 
@@ -151,6 +176,16 @@ class MaintenanceConfigTestCase(TestCase):
         config = MaintenanceConfig(wear_alert_threshold=2, wear_critical_threshold=5)
         with self.assertRaises(ValidationError):
             config.clean()
+
+    def test_clean_rejects_alert_threshold_of_ten(self):
+        from django.core.exceptions import ValidationError
+        config = MaintenanceConfig(wear_alert_threshold=10, wear_critical_threshold=2)
+        with self.assertRaises(ValidationError) as ctx:
+            config.clean()
+        self.assertIn('wear_alert_threshold', ctx.exception.message_dict)
+
+    def test_clean_accepts_alert_threshold_of_nine(self):
+        MaintenanceConfig(wear_alert_threshold=9, wear_critical_threshold=2).clean()
 
     def test_clean_accepts_valid_wear_thresholds(self):
         config = MaintenanceConfig(wear_alert_threshold=4, wear_critical_threshold=3)
@@ -1500,15 +1535,15 @@ class InterventionSheetAPITestCase(APITestCase):
         wear_task = self._make_wear_task()
         sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
         response = self.client.post(self._tasks_url(sheet), {
-            'type': 'done', 'catalog_task': wear_task.id, 'wear_level': 3,
+            'type': 'done', 'catalog_task': wear_task.id, 'wear_level': 4,
         }, format='json')
         self.assertEqual(response.status_code, 400)
         self.assertIn('wear_level', response.data)
-        self.assertIn('4/10', str(response.data['wear_level']))
+        self.assertIn('5/10', str(response.data['wear_level']))
         self.assertFalse(InterventionTask.objects.exists())
 
         response = self.client.post(self._tasks_url(sheet), {
-            'type': 'done', 'catalog_task': wear_task.id, 'wear_level': 4,
+            'type': 'done', 'catalog_task': wear_task.id, 'wear_level': 5,
         }, format='json')
         self.assertEqual(response.status_code, 201)
 
@@ -1529,14 +1564,14 @@ class InterventionSheetAPITestCase(APITestCase):
         wear_task = self._make_wear_task()
         sheet = self._make_validated_sheet()
         task = InterventionTask.objects.create(sheet=sheet, type='done', catalog_task=wear_task, wear_level=8)
-        response = self.client.patch(self._task_detail_url(sheet, task), {'wear_level': 2}, format='json')
+        response = self.client.patch(self._task_detail_url(sheet, task), {'wear_level': 4}, format='json')
         self.assertEqual(response.status_code, 400)
         self.assertIn('wear_level', response.data)
         task.refresh_from_db()
         self.assertEqual(task.wear_level, 8)
         self.assertFalse(AuditLog.objects.exists())
 
-        response = self.client.patch(self._task_detail_url(sheet, task), {'wear_level': 4}, format='json')
+        response = self.client.patch(self._task_detail_url(sheet, task), {'wear_level': 5}, format='json')
         self.assertEqual(response.status_code, 200)
 
     def test_planned_wear_task_below_threshold_is_accepted(self):
@@ -2800,7 +2835,7 @@ class InspectionSheetAPITestCase(APITestCase):
     def test_config_endpoint_exposes_thresholds(self):
         response = self.client.get('/api/garage/config/')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, {'wear_alert_threshold': 4, 'wear_critical_threshold': 3})
+        self.assertEqual(response.data, {'wear_alert_threshold': 5, 'wear_critical_threshold': 2})
         self.client.force_authenticate(user=None)
         self.assertIn(self.client.get('/api/garage/config/').status_code, (401, 403))
 

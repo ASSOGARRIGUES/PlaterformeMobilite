@@ -8,7 +8,7 @@ import ArchiveButton from "../ArchiveButton";
 import VehicleArchiveButton from "./VehicleArchiveButton";
 import VehicleTransferButton from "./VehicleTransferButton";
 import CanAccess from "../CanAccess";
-import {IconTool} from "@tabler/icons-react";
+import {IconClipboardCheck, IconTool} from "@tabler/icons-react";
 import {useGo, useList} from "@refinedev/core";
 import {InterventionSheet} from "../../types/garage";
 
@@ -36,6 +36,16 @@ const VehicleActions = ({ vehicle, style}: { vehicle: Vehicle  | undefined, styl
                         onClick={() => go({to: openSheet ? `/garage/intervention/${openSheet.id}` : `/garage/intervention/create?vehicle=${vehicle?.id}`})}
                     >
                         {openSheet ? "Continuer l'intervention" : "Nouvelle intervention"}
+                    </Button>
+                </CanAccess>
+                <CanAccess permKey="garage.manage_inspection">
+                    <Button
+                        variant="light"
+                        leftSection={<IconClipboardCheck size={18}/>}
+                        disabled={vehicle?.archived}
+                        onClick={() => go({to: `/garage/inspection/create?vehicle=${vehicle?.id}`})}
+                    >
+                        Nouveau contrôle
                     </Button>
                 </CanAccess>
                 <QuickStatusButton vehicle={vehicle} disabled={vehicle?.archived}/>

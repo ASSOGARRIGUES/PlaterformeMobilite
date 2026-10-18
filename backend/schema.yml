@@ -4004,6 +4004,32 @@ paths:
                 items:
                   $ref: '#/components/schemas/WhoAmI'
           description: ''
+  /api/whoami/preferences/:
+    patch:
+      operationId: api_whoami_preferences_partial_update
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedWhoAmIPreferences'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedWhoAmIPreferences'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedWhoAmIPreferences'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhoAmI'
+          description: ''
 components:
   schemas:
     Action:
@@ -4615,6 +4641,14 @@ components:
       - id
       - photos
       - sheet
+    InspectionWearInputEnum:
+      enum:
+      - segments
+      - slider
+      type: string
+      description: |-
+        * `segments` - Boutons
+        * `slider` - Curseur
     InspectionWearMeasurement:
       type: object
       properties:
@@ -4785,13 +4819,14 @@ components:
           type: integer
           maximum: 10
           minimum: 0
-          description: Niveau d'usure (sur 10) en-dessous duquel une alerte est générée
+          description: Niveau d'usure (sur 10) à partir duquel (et en dessous) l'élément
+            est signalé « À prévoir »
         wear_critical_threshold:
           type: integer
           maximum: 10
           minimum: 0
-          description: Niveau d'usure (sur 10) en-dessous duquel le véhicule passe
-            en maintenance
+          description: Niveau d'usure (sur 10) à partir duquel (et en dessous) l'élément
+            est signalé « En retard »
     MaintenanceCounts:
       type: object
       properties:
@@ -6534,6 +6569,17 @@ components:
           readOnly: true
         archived:
           type: boolean
+    PatchedWhoAmIPreferences:
+      type: object
+      properties:
+        inspection_wear_input:
+          allOf:
+          - $ref: '#/components/schemas/InspectionWearInputEnum'
+          description: |-
+            Saisie de l'usure dans la fiche de contrôle : boutons ou curseur
+
+            * `segments` - Boutons
+            * `slider` - Curseur
     Payment:
       type: object
       properties:
@@ -6938,9 +6984,19 @@ components:
         current_action:
           type: integer
           nullable: true
+        inspection_wear_input:
+          allOf:
+          - $ref: '#/components/schemas/InspectionWearInputEnum'
+          readOnly: true
+          description: |-
+            Saisie de l'usure dans la fiche de contrôle : boutons ou curseur
+
+            * `segments` - Boutons
+            * `slider` - Curseur
       required:
       - email
       - id
+      - inspection_wear_input
       - permissions
       - username
   securitySchemes:

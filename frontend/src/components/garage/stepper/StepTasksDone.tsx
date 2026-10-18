@@ -37,6 +37,8 @@ type StepTasksDoneProps = {
   tasks: LocalTask[]
   /** Absent en édition d'une fiche validée : pas de bloc Suggestions */
   suggestionBlock?: SuggestionBlock
+  /** Synthèse en chargement ou en échec (403 compris) : le bloc le dit au lieu de disparaître en silence. Sans effet en édition. */
+  suggestionsState?: 'loading' | 'error'
   onAddTask: (task: LocalTask) => Promise<void>
   onUpdateTask: (task: LocalTask) => void
   onCommitTask?: (task: LocalTask) => void
@@ -48,6 +50,7 @@ export function StepTasksDone({
   vehicle,
   tasks,
   suggestionBlock,
+  suggestionsState,
   onAddTask,
   onUpdateTask,
   onCommitTask,
@@ -198,6 +201,11 @@ export function StepTasksDone({
         <PhotoLightbox photos={lightboxPhotos} index={lightboxIndex} onIndexChange={setLightboxIndex} onClose={() => setLightboxPhotos(null)} />
       )}
       {suggestionBlock && suggestionsCount > 0 && renderSuggestions(suggestionBlock)}
+      {!suggestionBlock && suggestionsState && (
+        <Text c="dimmed" size="sm" role="status">
+          {suggestionsState === 'loading' ? 'Chargement des suggestions…' : 'Suggestions indisponibles'}
+        </Text>
+      )}
 
       <Group
         justify="space-between"

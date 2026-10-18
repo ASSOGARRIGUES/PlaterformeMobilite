@@ -16,7 +16,7 @@ import {useLocation} from "react-router-dom";
  * n'ont pas leur place ici (action hors-contexte, distraction sur un flow tactile linéaire) —
  * le stepper fournit sa propre sortie (flèche retour du header). */
 const isFocusedFlowPath = (pathname: string) =>
-    /^\/garage\/intervention\/(create|\d+)(\/edit)?\/?$/.test(pathname);
+    /^\/garage\/(intervention|inspection)\/(create|\d+)(\/edit)?\/?$/.test(pathname);
 
 export const Layout: React.FC<RefineThemedLayoutV2Props> = ({
                                                                 Title,

@@ -75,14 +75,14 @@ class MaintenanceConfig(models.Model):
         help_text="Nombre de jours avant expiration CT pour déclencher une alerte"
     )
     wear_alert_threshold = models.PositiveSmallIntegerField(
-        default=4,
+        default=5,
         validators=[MaxValueValidator(10)],
-        help_text="Niveau d'usure (sur 10) en-dessous duquel une alerte est générée"
+        help_text="Niveau d'usure (sur 10) à partir duquel (et en dessous) l'élément est signalé « À prévoir »"
     )
     wear_critical_threshold = models.PositiveSmallIntegerField(
-        default=3,
+        default=2,
         validators=[MaxValueValidator(10)],
-        help_text="Niveau d'usure (sur 10) en-dessous duquel le véhicule passe en maintenance"
+        help_text="Niveau d'usure (sur 10) à partir duquel (et en dessous) l'élément est signalé « En retard »"
     )
     open_intervention_alert_days = models.PositiveIntegerField(
         default=1,
@@ -118,9 +118,14 @@ class MaintenanceConfig(models.Model):
 
     def clean(self):
         errors = {}
-        for field in ('wear_alert_threshold', 'wear_critical_threshold'):
-            if getattr(self, field) > 10:
-                errors[field] = "Le seuil d'usure ne peut pas dépasser 10."
+        if self.wear_critical_threshold > 10:
+            errors['wear_critical_threshold'] = "Le seuil d'usure ne peut pas dépasser 10."
+        if self.wear_alert_threshold > 10:
+            errors['wear_alert_threshold'] = "Le seuil d'usure ne peut pas dépasser 10."
+        elif self.wear_alert_threshold == 10:
+            errors['wear_alert_threshold'] = (
+                "Le seuil d'alerte doit rester inférieur à 10, sinon la zone « Bon état » serait vide."
+            )
         if self.wear_critical_threshold >= self.wear_alert_threshold:
             errors['wear_critical_threshold'] = (
                 f"Le seuil critique ({self.wear_critical_threshold}) doit être "

@@ -18,7 +18,7 @@ from .filters import VehicleFilter
 from .models import Vehicle, Beneficiary, Contract, Parking, Payment
 from .serializers import VehicleSerializer, BeneficiarySerializer, ContractSerializer, UserSerializer, \
     EndContractSerializer, ParkingSerializer, MutationContractSerializer, MutationVehicleSerializer, PaymentSerializer, \
-    ContractPaymentSummarySerializer, WhoAmISerializer, UserActionSerializer, UserActionUpdateSerializer, \
+    ContractPaymentSummarySerializer, WhoAmISerializer, WhoAmIPreferencesSerializer, UserActionSerializer, UserActionUpdateSerializer, \
     ShortVehicleSerializer, VehicleActionTransferSerializer, ContractGroupByRefStatsSerializer, ReferentGroupSerializer, \
     RenewContractSerializer
 from core.models import Action
@@ -430,6 +430,14 @@ class WhoAmIViewSet(viewsets.ViewSet):
     def list(self, request):
         serializer = WhoAmISerializer(request.user)
         return Response(serializer.data)
+
+    @extend_schema(request=WhoAmIPreferencesSerializer, responses=WhoAmISerializer)
+    @action(detail=False, methods=['patch'], serializer_class=WhoAmIPreferencesSerializer)
+    def preferences(self, request):
+        serializer = WhoAmIPreferencesSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(WhoAmISerializer(request.user).data)
 
 #UserAction viewset is a viewset that returns the actions of the current user and the currenlty selected action
 class UserActionViewSet(viewsets.ViewSet):

@@ -7,6 +7,9 @@ import {
   localTaskFromSuggestion,
   sidePanelCardVisibility,
   dedupedHistorySummaries,
+  extractStepError,
+  extractFieldErrors,
+  isRetryableError,
 } from '../hooks/garage/interventionStepperUtils';
 import { LocalTask, InterventionTask, InterventionSheet, MaintenanceSummary, MaintenanceTask, MaintenanceSignalement } from '../types/garage';
 import { IconEnum, MaintenanceAxisEnum, MaintenanceSheetKindEnum, MaintenanceSourceEnum, MaintenanceStatusEnum } from '../types/schema.d';
@@ -365,5 +368,70 @@ describe('dedupedHistorySummaries', () => {
     const summaries = dedupedHistorySummaries(sheets, catalogById);
     expect(summaries).toHaveLength(1);
     expect(summaries[0].taskNames).toBe('Aucune tâche réalisée');
+  });
+});
+
+const httpError = (status: number, data: unknown) => ({ response: { status, data }, message: `Request failed with status code ${status}` });
+
+describe('extractStepError', () => {
+  it('reads a single-field error', () => {
+    expect(extractStepError(httpError(400, { start_mileage: ['Inférieur au dernier relevé.'] }))).toBe('Inférieur au dernier relevé.');
+  });
+
+  it('reads a plain string value and the DRF detail key', () => {
+    expect(extractStepError(httpError(400, { detail: 'Non autorisé.' }))).toBe('Non autorisé.');
+  });
+
+  it('joins several fields instead of keeping only the first one', () => {
+    const message = extractStepError(httpError(400, { start_mileage: ['Trop bas.'], start_date: ['Date dans le futur.'] }));
+    expect(message).toContain('Trop bas.');
+    expect(message).toContain('Date dans le futur.');
+  });
+
+  it('flattens nested errors (wear_measurements: [{level: [...]}]) without [object Object]', () => {
+    const message = extractStepError(httpError(400, { wear_measurements: [{}, { level: ['Doit être entre 0 et 10.'] }] }));
+    expect(message).toBe('Doit être entre 0 et 10.');
+  });
+
+  it('never leaks HTML for a 5xx page', () => {
+    const message = extractStepError(httpError(500, '<!doctype html><html><body>Server Error</body></html>'));
+    expect(message).not.toContain('<');
+    expect(message).toBe('Le serveur a rencontré un problème. Réessayez dans un instant.');
+  });
+
+  it('describes a network failure (no response)', () => {
+    expect(extractStepError({ message: 'Network Error' })).toBe('La connexion a échoué. Vos saisies sont gardées sur cet écran.');
+    expect(extractStepError({ statusCode: 'ERR_NETWORK', message: 'Network Error' })).toBe('La connexion a échoué. Vos saisies sont gardées sur cet écran.');
+  });
+
+  it('keeps the message of a plain Error that is not an HTTP failure', () => {
+    expect(extractStepError(new Error('Échec de la synchronisation de "Vidange" : Trop bas.'))).toBe('Échec de la synchronisation de "Vidange" : Trop bas.');
+  });
+
+  it('falls back to a generic message for an empty 400 body', () => {
+    expect(extractStepError(httpError(400, {}))).toBe('Une erreur est survenue.');
+  });
+});
+
+describe('extractFieldErrors', () => {
+  it('returns one entry per field with a flattened message', () => {
+    expect(extractFieldErrors(httpError(400, { start_mileage: ['Trop bas.'], wear_measurements: [{ level: ['Hors plage.'] }] }))).toEqual([
+      { field: 'start_mileage', message: 'Trop bas.' },
+      { field: 'wear_measurements', message: 'Hors plage.' },
+    ]);
+  });
+
+  it('returns nothing for a network or 5xx error', () => {
+    expect(extractFieldErrors({ message: 'Network Error' })).toEqual([]);
+    expect(extractFieldErrors(httpError(500, '<html></html>'))).toEqual([]);
+  });
+});
+
+describe('isRetryableError', () => {
+  it('is true for network and 5xx failures, false for validation errors', () => {
+    expect(isRetryableError({ message: 'Network Error' })).toBe(true);
+    expect(isRetryableError(new Error('boom'))).toBe(false);
+    expect(isRetryableError(httpError(503, ''))).toBe(true);
+    expect(isRetryableError(httpError(400, { a: ['b'] }))).toBe(false);
   });
 });

@@ -11,6 +11,7 @@ import {
   IconTool,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
+import { useStepperView } from '../../../hooks/garage/useStepperView'
 import { useInterventionStepper } from '../../../hooks/garage/useInterventionStepper'
 import { StepMileage } from '../../../components/garage/stepper/StepMileage'
 import { StepTasksDone } from '../../../components/garage/stepper/StepTasksDone'
@@ -42,6 +43,7 @@ const InterventionStepper = () => {
     plannedTasks,
     suggestions,
     maintenanceSummary,
+    suggestionsState,
     history,
     catalogById,
     activeStep,
@@ -59,7 +61,7 @@ const InterventionStepper = () => {
   const [maxReachedStep, setMaxReachedStep] = useState(activeStep)
   // Sous-vue locale de l'étape modèle 3 (Dates/Récapitulatif) — `current_step` persisté
   // ne dépasse jamais 4 (cf. commentaire STEP_LABELS ci-dessus)
-  const [recapView, setRecapView] = useState(false)
+  const { viewStep, setRecapView } = useStepperView(activeStep, 3)
 
   // Préremplissage des champs à partir de la fiche chargée (une fois).
   // La date de départ est par défaut la date de création de la fiche.
@@ -74,12 +76,6 @@ const InterventionStepper = () => {
   useEffect(() => {
     setMaxReachedStep((prev) => Math.max(prev, activeStep))
   }, [activeStep])
-
-  useEffect(() => {
-    if (activeStep !== 3) setRecapView(false)
-  }, [activeStep])
-
-  const viewStep = activeStep === 3 && recapView ? 4 : activeStep
 
   // Dernier relevé du véhicule (le modèle est trié par -date, -id) : si sa date est postérieure
   // à la date de début, le relevé créé à la validation ne mettra pas à jour Vehicle.kilometer.
@@ -222,6 +218,7 @@ const InterventionStepper = () => {
             vehicle={vehicle}
             tasks={doneTasks}
             suggestionBlock={maintenanceSummary ? { suggestions, maintenanceSummary, catalogById } : undefined}
+            suggestionsState={suggestionsState}
             onAddTask={(task) => addTask(task, 'done')}
             onUpdateTask={(task) => updateTask(task.localId, task, 'done')}
             onRemoveTask={(localId) => removeTask(localId, 'done')}

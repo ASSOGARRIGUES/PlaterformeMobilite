@@ -51,6 +51,8 @@ import VehicleReview from "./pages/VehicleReview";
 import GarageDashboard from "./pages/garage/GarageDashboard";
 import InterventionCreate from "./pages/garage/intervention/InterventionCreate";
 import InterventionStepper from "./pages/garage/intervention/InterventionStepper";
+import InspectionCreate from "./pages/garage/inspection/InspectionCreate";
+import InspectionStepper from "./pages/garage/inspection/InspectionStepper";
 import InterventionList from "./pages/garage/intervention/InterventionList";
 import InterventionEditStepperRoute from "./pages/garage/intervention/InterventionEditStepper";
 
@@ -165,6 +167,15 @@ function App() {
                                     icon: <IconClipboardList />,
                                     permKey: 'garage.view_interventionsheet',
                                 },
+                            },
+                            {
+                                name: "garage_inspection",
+                                show: "garage/inspection/:id",
+                                meta: {
+                                    label: "Contrôles",
+                                    permKey: 'garage.view_inspectionsheet',
+                                    hide: true,
+                                },
                             }
                         ]}
                         options={{
@@ -238,6 +249,8 @@ function App() {
                                         <Route path="intervention/create" element={<InterventionCreate />} />
                                         <Route path="intervention/:id" element={<InterventionStepper />} />
                                         <Route path="intervention/:id/edit" element={<InterventionEditStepperRoute />} />
+                                        <Route path="inspection/create" element={<InspectionCreate />} />
+                                        <Route path="inspection/:id" element={<InspectionStepper />} />
                                     </Route>
                                     <Route path={"/buglist"} element={<BugList/>} />
                                     <Route path="*" element={<ErrorComponent />} />

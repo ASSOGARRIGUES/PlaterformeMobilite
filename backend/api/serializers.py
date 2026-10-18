@@ -413,7 +413,16 @@ class WhoAmISerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_superuser', 'permissions', 'actions', 'current_action']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_superuser', 'permissions', 'actions', 'current_action',
+                  'inspection_wear_input']
+        read_only_fields = ['inspection_wear_input']
+
+
+# Seul champ du compte modifiable par l'utilisateur lui-même
+class WhoAmIPreferencesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ['inspection_wear_input']
 
 
 #UserActionSerializer is used to get the actions of the current user in the frontend and the currenlty selected action
