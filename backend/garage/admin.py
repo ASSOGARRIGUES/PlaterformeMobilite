@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib import admin
 from api.models import Vehicle
-from .models import TaskCatalog, MaintenanceConfig
+from .models import MileageEntry, TaskCatalog, MaintenanceConfig, InterventionSheet, InspectionSheet, AuditLog
 
 
 class TaskCatalogForm(forms.ModelForm):
@@ -20,10 +20,15 @@ class TaskCatalogForm(forms.ModelForm):
 @admin.register(TaskCatalog)
 class TaskCatalogAdmin(admin.ModelAdmin):
     form = TaskCatalogForm
-    list_display = ('name', 'vehicle_types', 'km_periodicity', 'month_periodicity', 'is_critical', 'archived')
-    list_filter = ('is_critical', 'archived')
+    list_display = ('name', 'icon', 'vehicle_types', 'km_periodicity', 'month_periodicity', 'soon_km', 'soon_months', 'is_critical', 'is_wear_task', 'measured_in_inspection', 'archived')
+    list_filter = ('is_critical', 'is_wear_task', 'measured_in_inspection', 'archived')
     search_fields = ('name',)
     list_editable = ('archived',)
+
+
+@admin.register(MileageEntry)
+class MileageEntryAdmin(admin.ModelAdmin):
+    list_display = ('vehicle', 'value', 'date', 'source', 'author')
 
 
 @admin.register(MaintenanceConfig)
@@ -39,3 +44,18 @@ class MaintenanceConfigAdmin(admin.ModelAdmin):
         if obj and (self.has_change_permission(request, obj) or self.has_view_permission(request, obj)):
             return self.change_view(request, str(obj.pk), extra_context=extra_context)
         return super().changelist_view(request, extra_context)
+
+
+@admin.register(InterventionSheet)
+class InterventionSheetAdmin(admin.ModelAdmin):
+    list_display = ('vehicle', 'status', 'current_step', 'created_by', 'created_at')
+
+
+@admin.register(InspectionSheet)
+class InspectionSheetAdmin(admin.ModelAdmin):
+    list_display = ('vehicle', 'status', 'current_step', 'created_by', 'start_date')
+
+
+@admin.register(AuditLog)
+class AuditLogAdmin(admin.ModelAdmin):
+    list_display = ('action', 'author', 'created_at', 'content_type', 'object_id')

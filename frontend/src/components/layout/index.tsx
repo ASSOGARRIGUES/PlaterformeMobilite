@@ -10,6 +10,13 @@ import {ErrorBoundary} from "react-error-boundary";
 import ErrorFallback from "../ErrorFallback";
 import {OfflineBanner} from "../garage/OfflineBanner";
 import {GarageBottomNav} from "../garage/GarageBottomNav";
+import {useLocation} from "react-router-dom";
+
+/** Flow plein écran (fiche d'intervention en cours de saisie) : la nav globale et le FAB
+ * n'ont pas leur place ici (action hors-contexte, distraction sur un flow tactile linéaire) —
+ * le stepper fournit sa propre sortie (flèche retour du header). */
+const isFocusedFlowPath = (pathname: string) =>
+    /^\/garage\/(intervention|inspection)\/(create|\d+)(\/edit)?\/?$/.test(pathname);
 
 export const Layout: React.FC<RefineThemedLayoutV2Props> = ({
                                                                 Title,
@@ -44,8 +51,10 @@ export const Layout: React.FC<RefineThemedLayoutV2Props> = ({
     const pinned = useHeadroom({fixedAt:headerHeight})
     const isMobile = useMediaQuery('(max-width: 768px)')
     const isStandalone = useMediaQuery('(display-mode: standalone)')
+    const location = useLocation()
 
     const isPWAMobile = isMobile && isStandalone
+    const showBottomNav = isPWAMobile && !isFocusedFlowPath(location.pathname)
 
     return (
         <>
@@ -65,7 +74,7 @@ export const Layout: React.FC<RefineThemedLayoutV2Props> = ({
                 layout="alt"
                 header={{height:52, collapsed: !pinned || isPWAMobile, offset: false}}
                 navbar={{width:navBarWidth, breakpoint:"md", collapsed:{mobile:!mobileSiderOpen}}}
-                footer={{height: bottomNavHeight, collapsed: !isPWAMobile}}
+                footer={{height: bottomNavHeight, collapsed: !showBottomNav}}
             >
                 <Header />
                 <NavBar Title={Title} />
@@ -85,7 +94,7 @@ export const Layout: React.FC<RefineThemedLayoutV2Props> = ({
 
                 </AppShell.Main>
 
-                {isPWAMobile && (
+                {showBottomNav && (
                     <AppShell.Footer style={{borderTop: 'none'}}>
                         <GarageBottomNav />
                     </AppShell.Footer>

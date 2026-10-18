@@ -8,5 +8,5 @@ class GarageMultiActionMixin:
         qs = super().get_queryset()
         user = self.request.user
         if user.has_perm('garage.view_vehicle'):
-            return qs.filter(vehicle__action__in=user.actions.all())
+            return qs.filter(vehicle__action__in=user.get_actions())
         return qs.filter(vehicle__action=user.current_action)
