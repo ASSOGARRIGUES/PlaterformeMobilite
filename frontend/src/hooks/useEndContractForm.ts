@@ -104,8 +104,8 @@ const useEndContractForm = (): UseEndContractFormType => {
         await onFinish(values);
         // La clôture relève le kilométrage du véhicule : sa fiche, l'historique et la synthèse d'entretien suivent
         // (comme useMileageCorrection) ; Refine n'invalide que « contract ».
-        invalidate({resource: "vehicle", invalidates: ["detail", "list"]});
-        invalidate({resource: "garage/maintenance", invalidates: ["detail"]});
+        invalidate({resource: "vehicle", invalidates: ["resourceAll"]});
+        invalidate({resource: "garage/maintenance", invalidates: ["resourceAll"]});
         closeModal();
     })
 

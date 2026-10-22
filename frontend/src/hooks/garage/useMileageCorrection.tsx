@@ -66,7 +66,7 @@ export const useMileageCorrection = (vehicleId: number) => {
                                 // Une correction modifie sheet.start_mileage, donc les échéances km (story 2.11)
                                 invalidate({ resource: "garage/maintenance", id: vehicleId, invalidates: ["detail"] });
                                 // ... et le km affiché des fiches de contrôle (liste et détail), story 3.3
-                                invalidate({ resource: "garage/inspection", invalidates: ["list", "detail"] });
+                                invalidate({ resource: "garage/inspection", invalidates: ["resourceAll"] });
                                 closeAllModals();
                             },
                         });

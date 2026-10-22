@@ -90,7 +90,7 @@ const InspectionShow = ({ origin }: { origin: Origin }) => {
   const byline = `${authorName(sheet)}${sheet.validated_at ? ` · ${dayjs(sheet.validated_at).format('HH:mm')}` : ''}`
 
   const actions = editing ? null : access === 'allowed' ? (
-    <Button variant="outline" color="cyan" mih={isMobile ? 48 : undefined} leftSection={<IconPencil size={18} />} onClick={() => setEditing(true)}>Modifier</Button>
+    <Button variant="outline" color="cyan" mih={isMobile ? 48 : undefined} leftSection={<IconPencil size={18} />} disabled={queryResult.isFetching} onClick={() => setEditing(true)}>Modifier</Button>
   ) : access === 'locked' ? (
     <Group gap={6} c="dimmed" wrap="nowrap" maw={isMobile ? 150 : 260}>
       <IconLock size={16} aria-hidden style={{ flexShrink: 0 }} />

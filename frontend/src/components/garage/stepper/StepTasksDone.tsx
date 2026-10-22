@@ -20,6 +20,7 @@ import { TaskPicker } from '../TaskPicker'
 import { PhotoLightbox } from '../PhotoLightbox'
 import { TaskCatalogItem } from '../taskCardUtils'
 import { MaintenanceSignalementRow, MaintenanceTaskRow } from '../maintenance/MaintenanceTaskRow'
+import { MaintenanceSheetKindEnum } from '../../../types/schema.d'
 import { MAINTENANCE_SECTION_COLORS, signalementAuthor } from '../maintenance/maintenanceUtils'
 import { WIDE_TASK_GRID_QUERY } from '../../../hooks/garage/breakpoints'
 import { PendingSuggestions, localTaskFromSuggestion } from '../../../hooks/garage/interventionStepperUtils'
@@ -133,7 +134,10 @@ export function StepTasksDone({
       showDate: false,
       authorOf: (signalement: MaintenanceSignalement) => signalementAuthor(maintenanceSummary, signalement),
       // Nouvel onglet : les saisies de l'étape courante ne sont enregistrées qu'au changement d'étape
-      onOpenSheet: isStandalone ? undefined : (sheetId: number) => window.open(`/garage/intervention/${sheetId}`, '_blank', 'noopener,noreferrer'),
+      onOpenSheet: isStandalone ? undefined : (sheetId: number, kind?: MaintenanceSheetKindEnum) => window.open(
+        kind === MaintenanceSheetKindEnum.inspection ? `/vehicle/${maintenanceSummary.vehicle_id}/inspection/${sheetId}` : `/garage/intervention/${sheetId}`,
+        '_blank', 'noopener,noreferrer',
+      ),
       onOpenPhotos: (photos: string[]) => {
         setLightboxIndex(0)
         setLightboxPhotos(photos)

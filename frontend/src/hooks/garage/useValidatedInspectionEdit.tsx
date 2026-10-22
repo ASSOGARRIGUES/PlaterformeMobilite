@@ -212,7 +212,11 @@ export function useValidatedInspectionEdit(sheet: InspectionSheet, { wearConfig,
           ...savedRef.current,
           damages: previous ? savedRef.current.damages.map((damage) => (damage.localId === localId ? rebuilt : damage)) : [...savedRef.current.damages, rebuilt],
         }
-        patchDamage(localId, { serverId: rebuilt.serverId, photos: rebuilt.photos, photoIds: rebuilt.photoIds })
+        // Les photos ajoutées pendant la requête (pas encore envoyées) et le texte tapé depuis restent : on ne prend que ce que le serveur a confirmé.
+        const sent = new Set(current.photos.filter((photo) => photo.startsWith('data:')))
+        const latest = valuesRef.current.damages.find((damage) => damage.localId === localId)
+        const extra = (latest?.photos ?? []).filter((photo) => photo.startsWith('data:') && !sent.has(photo))
+        patchDamage(localId, { serverId: rebuilt.serverId, photos: [...rebuilt.photos, ...extra], photoIds: [...rebuilt.photoIds ?? [], ...extra.map(() => null)] })
       },
       restore: () => {
         const previous = savedDamage(localId)
@@ -327,7 +331,16 @@ export function useValidatedInspectionEdit(sheet: InspectionSheet, { wearConfig,
         const response = await request(`tasks/${committed.serverId}/`, 'patch', payload)
         const rebuilt = { ...localPlannedTaskFromApi(response.data as never, catalogById), localId: committed.localId }
         savedRef.current = { ...savedRef.current, planned: savedRef.current.planned.map((task) => (task.localId === committed.localId ? rebuilt : task)) }
-        changePlannedLocal(rebuilt)
+        // Le texte tapé et les photos ajoutées pendant la requête restent : le serveur ne confirme que ce qu'il a reçu.
+        const latest = valuesRef.current.planned.find((task) => task.localId === committed.localId)
+        const sent = new Set(committed.photos.filter((photo) => photo.startsWith('data:')))
+        const extra = (latest?.photos ?? []).filter((photo) => photo.startsWith('data:') && !sent.has(photo))
+        changePlannedLocal({
+          ...rebuilt,
+          description: latest?.description ?? rebuilt.description,
+          photos: [...rebuilt.photos, ...extra],
+          photoIds: [...(rebuilt.photoIds ?? []), ...extra.map(() => null)],
+        })
       },
       // Seuls les champs du payload rejeté reprennent leur valeur enregistrée.
       restore: () => {
@@ -371,7 +384,7 @@ export function useValidatedInspectionEdit(sheet: InspectionSheet, { wearConfig,
 
   /** Sortie du mode édition : liste, détail et synthèse d'entretien sont rafraîchis (les saisies ne sont plus en vol). */
   const finish = () => {
-    invalidate({ resource: 'garage/inspection', invalidates: ['list', 'detail'] })
+    invalidate({ resource: 'garage/inspection', id: sheet.id, invalidates: ['list', 'detail'] })
     invalidate({ resource: 'garage/maintenance', id: sheet.vehicle.id, invalidates: ['detail'] })
   }
 

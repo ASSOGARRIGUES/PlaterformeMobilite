@@ -121,4 +121,21 @@ describe('useValidatedInspectionEdit', () => {
     await waitFor(() => expect(result.current.values.damages[0].serverId).toBe(5))
     expect(mutate.mock.calls[0][0]).toMatchObject({ url: 'http://api/garage/inspection/9/damages/', method: 'post', values: { description: 'Rayure' } })
   })
+
+  // Revue 3.3 : la réponse d'une requête ne doit pas effacer ce qui a été saisi pendant qu'elle était en vol.
+  it('une photo ajoutée pendant l’envoi de la précédente n’est pas perdue au retour du serveur', async () => {
+    const withDamage = { ...sheet, damages: [{ id: 5, sheet: 9, description: 'Rayure', photos: [] }] } as unknown as InspectionSheet
+    const { result } = renderHook(() => useValidatedInspectionEdit(withDamage, { wearConfig: CONFIG, vehicleType: 'voiture' }))
+    const localId = result.current.values.damages[0].localId
+    let release: (value: unknown) => void = () => {}
+    mutate.mockImplementationOnce(() => new Promise((resolve) => { release = resolve }))
+    act(() => result.current.addDamagePhoto(localId, 'data:image/png;base64,AAA'))
+    await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
+    act(() => result.current.addDamagePhoto(localId, 'data:image/png;base64,BBB')) // pendant l'envoi de la première
+    mutate.mockResolvedValue({ data: { id: 5, sheet: 9, description: 'Rayure', photos: [{ id: 1, url: 'http://x/1.jpg' }, { id: 2, url: 'http://x/2.jpg' }] } })
+    await act(async () => release({ data: { id: 5, sheet: 9, description: 'Rayure', photos: [{ id: 1, url: 'http://x/1.jpg' }] } }))
+    await waitFor(() => expect(mutate).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(result.current.engine.saving).toBe(false))
+    expect(result.current.values.damages[0].photos).toEqual(['http://x/1.jpg', 'http://x/2.jpg'])
+  })
 })
