@@ -1,4 +1,5 @@
 import {useOne, useShow} from "@refinedev/core";
+import {useParams, useSearchParams} from "react-router-dom";
 import {Beneficiary} from "../../types/beneficiary";
 import {useEffect, useMemo, useRef, useState} from "react";
 import {CompleteContract} from "../../types/contract";
@@ -25,7 +26,9 @@ import {useHeadroom, useMediaQuery} from "@mantine/hooks";
 import {ErrorComponent} from "../../components/ErrorComponent";
 import CanAccess from "../../components/CanAccess";
 import MileageHistoryChart from "../../components/garage/MileageHistoryChart";
-import {IconHistory, IconFileText, IconTool} from "@tabler/icons-react";
+import {IconHistory, IconFileText, IconTool, IconClipboardCheck} from "@tabler/icons-react";
+import {InspectionsPanel} from "../../components/garage/inspection/InspectionsPanel";
+import {MobileTabLabel, MOBILE_TAB_STYLE} from "../../components/garage/MobileTabLabel";
 import {MaintenanceSummary} from "../../types/garage";
 import useAccessControl from "../../hooks/useAccessControl";
 import {MaintenanceTab} from "../../components/garage/maintenance/MaintenanceTab";
@@ -33,7 +36,7 @@ import {maintenanceBadge} from "../../components/garage/maintenance/maintenanceU
 import {MaintenanceInfoLine} from "../../components/garage/maintenance/MaintenanceInfoLine";
 import VehicleMobileHeader from "../../components/Vehicle/VehicleMobileHeader";
 
-const VehicleShow = (props: any) => {
+const VehicleShowContent = () => {
 
     const theme = useMantineTheme();
     const smallerThanMd = useMediaQuery(`(max-width: ${theme.breakpoints.md})`);
@@ -67,7 +70,9 @@ const VehicleShow = (props: any) => {
     const badge = maintenance ? maintenanceBadge(maintenance.counts) : null;
 
     // Tabs contrôlés : le défaut dépend de whoami (asynchrone) tant que l'utilisateur n'a rien choisi
-    const [chosenTab, setChosenTab] = useState<string | null>(null);
+    // ?tab=inspections : retour depuis le détail d'un contrôle sur l'onglet Contrôles
+    const [searchParams] = useSearchParams();
+    const [chosenTab, setChosenTab] = useState<string | null>(searchParams.get('tab') === 'inspections' ? 'inspections' : null);
     const defaultTab = isAuthorized(['garage.view_vehicle', 'garage.manage_intervention']) ? 'maintenance' : 'contracts';
     const activeTab = chosenTab ?? defaultTab;
 
@@ -189,20 +194,31 @@ const VehicleShow = (props: any) => {
                 {/* L'onglet Entretien grandit avec son contenu (la page défile) ; les autres onglets restent à la hauteur de l'écran */}
                 <Paper ref={tabsRef} shadow="sm" p={isMobile ? "xs" : "md"} style={{flex: activeTab === 'maintenance' ? "0 0 auto" : "auto", minHeight:(smallerThanMd ? "100vh" : 0), display: "flex", flexDirection: "column"}}>
                     <Tabs variant="outline" value={activeTab} onChange={setChosenTab} keepMounted={false} style={{display: "flex", flexDirection: "column", flex: "1 1 auto"}}>
-                        <Tabs.List grow={isMobile} style={isMobile ? {position: "sticky", top: stickyTop, transition: "top 200ms ease", zIndex: 10, backgroundColor: "white"} : undefined}>
+                        <Tabs.List grow={isMobile} style={isMobile ? {position: "sticky", top: stickyTop, transition: "top 200ms ease", zIndex: 10, backgroundColor: "white", flexWrap: "nowrap"} : undefined}>
                             <CanAccess permKey="garage.view_vehicle">
                                 <Tabs.Tab
-                                    leftSection={<IconTool size={18}/>}
-                                    style={{backgroundColor: maintenanceTabFlash ? "var(--mantine-color-blue-1)" : undefined, transition: "background-color 600ms ease"}}
-                                    rightSection={badge ? <Badge size="sm" circle color={badge.color}>{badge.count}</Badge> : undefined}
+                                    leftSection={isMobile ? undefined : <IconTool size={18}/>}
+                                    style={{...(isMobile ? MOBILE_TAB_STYLE : {}), backgroundColor: maintenanceTabFlash ? "var(--mantine-color-blue-1)" : undefined, transition: "background-color 600ms ease"}}
+                                    rightSection={!isMobile && badge ? <Badge size="sm" circle color={badge.color}>{badge.count}</Badge> : undefined}
                                     value="maintenance"
                                 >
-                                    Entretien
+                                    {isMobile
+                                        ? <MobileTabLabel icon={<IconTool size={20}/>} label="Entretien" badge={badge ? <Badge size="xs" circle color={badge.color}>{badge.count}</Badge> : undefined}/>
+                                        : "Entretien"}
                                 </Tabs.Tab>
                             </CanAccess>
-                            <Tabs.Tab leftSection={<IconFileText size={18}/>} value="contracts">Contrats</Tabs.Tab>
                             <CanAccess permKey="garage.view_vehicle">
-                                <Tabs.Tab leftSection={<IconHistory size={18}/>} value="mileage">{isMobile ? "Km" : "Historique kilométrique"}</Tabs.Tab>
+                                <Tabs.Tab leftSection={isMobile ? undefined : <IconClipboardCheck size={18}/>} style={isMobile ? MOBILE_TAB_STYLE : undefined} value="inspections">
+                                    {isMobile ? <MobileTabLabel icon={<IconClipboardCheck size={20}/>} label="Contrôles"/> : "Contrôles"}
+                                </Tabs.Tab>
+                            </CanAccess>
+                            <Tabs.Tab leftSection={isMobile ? undefined : <IconFileText size={18}/>} style={isMobile ? MOBILE_TAB_STYLE : undefined} value="contracts">
+                                {isMobile ? <MobileTabLabel icon={<IconFileText size={20}/>} label="Contrats"/> : "Contrats"}
+                            </Tabs.Tab>
+                            <CanAccess permKey="garage.view_vehicle">
+                                <Tabs.Tab leftSection={isMobile ? undefined : <IconHistory size={18}/>} style={isMobile ? MOBILE_TAB_STYLE : undefined} value="mileage">
+                                    {isMobile ? <MobileTabLabel icon={<IconHistory size={20}/>} label="Km"/> : "Historique kilométrique"}
+                                </Tabs.Tab>
                             </CanAccess>
                         </Tabs.List>
 
@@ -215,6 +231,12 @@ const VehicleShow = (props: any) => {
                                         isError={maintenanceError}
                                     />
                                 )}
+                            </Tabs.Panel>
+                        </CanAccess>
+
+                        <CanAccess permKey="garage.view_vehicle">
+                            <Tabs.Panel value="inspections" p="md">
+                                {vehicle && <InspectionsPanel origin="vehicle" originId={vehicle.id}/>}
                             </Tabs.Panel>
                         </CanAccess>
 
@@ -255,5 +277,11 @@ const VehicleShow = (props: any) => {
     )
 
 }
+
+// Un autre véhicule = un autre état : onglet choisi, recherche, liste dépliée et visionneuse repartent de zéro (key)
+const VehicleShow = () => {
+    const {id} = useParams();
+    return <VehicleShowContent key={id}/>;
+};
 
 export default VehicleShow;

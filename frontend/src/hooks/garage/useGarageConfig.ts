@@ -18,5 +18,5 @@ export function useGarageConfig() {
     raw?.wear_critical_threshold != null && raw?.wear_alert_threshold != null
       ? { wear_critical_threshold: raw.wear_critical_threshold, wear_alert_threshold: raw.wear_alert_threshold }
       : undefined
-  return { config, isLoading, isError, refetch }
+  return { config, editDays: raw?.inspection_edit_days, isLoading, isError, refetch }
 }

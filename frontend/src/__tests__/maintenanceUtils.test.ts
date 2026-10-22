@@ -51,6 +51,7 @@ function makeTask(overrides: Partial<MaintenanceTask> = {}): MaintenanceTask {
     source: null,
     last_realization: { sheet_id: 41, task_id: 210, date: '2025-03-12', km: 62000, wear_level: null },
     last_measurement: null,
+    measure_prevails: false,
     km: { lifespan: 15000, due: 77000, remaining: 3000, progress: 0.8, soon: 2000 },
     months: null,
     main_axis: MaintenanceAxisEnum.km,

@@ -142,7 +142,7 @@ describe('pendingSuggestions', () => {
     return {
       catalog_task_id: 1, name: 'Vidange', icon: IconEnum.oil, periodicity: { km: 10000, months: null },
       is_critical: false, is_wear_task: false, status: MaintenanceStatusEnum.to_plan, source: null,
-      last_realization: null, last_measurement: null, km: null, months: null, main_axis: null, signalements: [],
+      last_realization: null, last_measurement: null, measure_prevails: false, km: null, months: null, main_axis: null, signalements: [],
       ...overrides,
     };
   }
@@ -232,7 +232,7 @@ describe('localTaskFromSuggestion', () => {
     return {
       catalog_task_id: 1, name: 'Vidange', icon: IconEnum.oil, periodicity: { km: 10000, months: null },
       is_critical: false, is_wear_task: false, status: MaintenanceStatusEnum.to_plan, source: null,
-      last_realization: null, last_measurement: null, km: null, months: null, main_axis: null, signalements: [],
+      last_realization: null, last_measurement: null, measure_prevails: false, km: null, months: null, main_axis: null, signalements: [],
       ...overrides,
     };
   }

@@ -8,10 +8,14 @@ import {
     Skeleton,
     Stack,
     Tabs,
+    Text,
+    useMantineTheme,
     Title,
     Tooltip
 } from "@mantine/core";
 import {useShow} from "@refinedev/core";
+import {useSearchParams} from "react-router-dom";
+import {useMediaQuery} from "@mantine/hooks";
 import {Contract} from "../../types/contract";
 import ContractCard from "../../components/contract/ContractCard";
 import ContractBadge from "../../components/contract/ContractBadge";
@@ -27,7 +31,10 @@ import usePayContract from "../../hooks/contract/usePayContract";
 import ContractComment from "../../components/contract/ContractComment";
 import {useGetToPath, useGo, useResource} from "@refinedev/core";
 import ContractArchiveButton from "../../components/contract/ContractArchiveButton";
-import {IconHistory, IconMessageCircle, IconReceiptEuro} from "@tabler/icons-react";
+import {IconCalendarEvent, IconClipboardCheck, IconHistory, IconMessageCircle, IconReceiptEuro} from "@tabler/icons-react";
+import {InspectionsPanel} from "../../components/garage/inspection/InspectionsPanel";
+import {MobileTabLabel, MOBILE_TAB_STYLE} from "../../components/garage/MobileTabLabel";
+import {humanizeDate} from "../../constants";
 import ContractRenewalTimeline from "../../components/contract/ContractRenewalTimeline";
 import ContractRenewButton from "../../components/contract/ContractRenewButton";
 import PaymentTable from "../../components/contract/PaymentTable";
@@ -43,6 +50,11 @@ const ContractShow = () => {
     const {modal: { show: showEndModal}} = endModalForm;
 
     const {handlePayContract} = usePayContract()
+
+    const theme = useMantineTheme();
+    const isMobile = !!useMediaQuery(`(max-width: ${theme.breakpoints.sm})`, false, {getInitialValueInEffect: false});
+    // ?tab=inspections : retour depuis le détail d'un contrôle sur l'onglet Contrôles
+    const [searchParams] = useSearchParams();
 
     const { queryResult: showResponse } = useShow<Contract>()
 
@@ -86,6 +98,10 @@ const ContractShow = () => {
         </Anchor>
     )
 
+    const tabLabel = (icon: React.ReactNode, label: string, mobileLabel = label) => isMobile ? <MobileTabLabel icon={icon} label={mobileLabel}/> : label;
+    const tabStyle = isMobile ? MOBILE_TAB_STYLE : undefined;
+    const ongoing = contractResponse?.status !== ContractStatusEnum.over && contractResponse?.status !== ContractStatusEnum.payed;
+
     const tabsBlock = contractResponse ? (
         <Tabs
             variant="outline"
@@ -94,13 +110,14 @@ const ContractShow = () => {
                 flexDirection:"column",
                 flex: "1 1 auto",
             }}
-            defaultValue={contractResponse.status==ContractStatusEnum.pending ? "comment" : "payments"}
+            defaultValue={searchParams.get('tab') === 'inspections' ? "inspections" : contractResponse.status==ContractStatusEnum.pending ? "comment" : "payments"}
             keepMounted={false}
         >
-            <Tabs.List>
-                <Tabs.Tab leftSection={<IconMessageCircle size={18} />} value={"comment"}>Commentaire d'équipe</Tabs.Tab>
-                <CanAccess permKey={'api.view_payment'}><Tabs.Tab leftSection={<IconReceiptEuro size={18}/>} value={"payments"}>Paiements</Tabs.Tab></CanAccess>
-                <Tabs.Tab leftSection={<IconHistory size={18}/>} value={"history"}>Historique</Tabs.Tab>
+            <Tabs.List grow={isMobile} style={isMobile ? {flexWrap: "nowrap"} : undefined}>
+                <Tabs.Tab leftSection={isMobile ? undefined : <IconMessageCircle size={18} />} style={tabStyle} value={"comment"}>{tabLabel(<IconMessageCircle size={20}/>, "Commentaire d'équipe", "Commentaire")}</Tabs.Tab>
+                <CanAccess permKey={'api.view_payment'}><Tabs.Tab leftSection={isMobile ? undefined : <IconReceiptEuro size={18}/>} style={tabStyle} value={"payments"}>{tabLabel(<IconReceiptEuro size={20}/>, "Paiements")}</Tabs.Tab></CanAccess>
+                <Tabs.Tab leftSection={isMobile ? undefined : <IconHistory size={18}/>} style={tabStyle} value={"history"}>{tabLabel(<IconHistory size={20}/>, "Historique")}</Tabs.Tab>
+                <CanAccess permKey={'garage.view_vehicle'}><Tabs.Tab leftSection={isMobile ? undefined : <IconClipboardCheck size={18}/>} style={tabStyle} value={"inspections"}>{tabLabel(<IconClipboardCheck size={20}/>, "Contrôles")}</Tabs.Tab></CanAccess>
             </Tabs.List>
 
             <Tabs.Panel style={{flex: "1 1 auto"}} value={"comment"}>
@@ -122,6 +139,24 @@ const ContractShow = () => {
             <Tabs.Panel value="history" style={{flex: "1 1 auto"}}>
                 <ContractRenewalTimeline contract={contractResponse}/>
             </Tabs.Panel>
+
+            <CanAccess permKey={'garage.view_vehicle'}>
+                <Tabs.Panel value="inspections" style={{flex: "1 1 auto"}} p="md">
+                    <InspectionsPanel
+                        origin="contract"
+                        originId={contractResponse.id}
+                        context={vehicle && (
+                            <Group gap={10} wrap="nowrap" align="flex-start" p="xs" bg="gray.0" style={{borderRadius: 10}}>
+                                <IconCalendarEvent size={19} color="var(--mantine-color-dimmed)" aria-hidden style={{flexShrink: 0, marginTop: 1}}/>
+                                <Text fz={13.5} lh={1.45}>
+                                    Contrôles du véhicule <b>{vehicle.brand} {vehicle.modele}</b> <Text component="span" ff="monospace" fz={12.5} className="sentry-mask">{vehicle.imat}</Text>
+                                    {" "}pendant le contrat, du {humanizeDate(contractResponse.start_date)} {ongoing ? "à aujourd'hui (contrat en cours)." : `au ${humanizeDate(contractResponse.end_date)}.`}
+                                </Text>
+                            </Group>
+                        )}
+                    />
+                </Tabs.Panel>
+            </CanAccess>
         </Tabs>
     ) : skeleton(2);
 

@@ -53,6 +53,7 @@ import InterventionCreate from "./pages/garage/intervention/InterventionCreate";
 import InterventionStepper from "./pages/garage/intervention/InterventionStepper";
 import InspectionCreate from "./pages/garage/inspection/InspectionCreate";
 import InspectionStepper from "./pages/garage/inspection/InspectionStepper";
+import InspectionShow from "./pages/garage/inspection/InspectionShow";
 import InterventionList from "./pages/garage/intervention/InterventionList";
 import InterventionEditStepperRoute from "./pages/garage/intervention/InterventionEditStepper";
 
@@ -233,12 +234,14 @@ function App() {
                                         <Route index element={<VehicleList />} />
                                         <Route path=":id" element={<VehicleShow />} />
                                         <Route path=":id/transfer" element={<VehicleTransfer />} />
+                                        <Route path=":id/inspection/:inspectionId" element={<InspectionShow origin="vehicle" />} />
                                     </Route>
                                     <Route path="/contract">
                                         <Route index element={<ContractList />} />
                                         <Route path=":id" element={<ContractShow />} />
                                         <Route path="create" element={<ContractForm />} />
                                         <Route path="renew/:id" element={<ContractForm />} />
+                                        <Route path=":id/inspection/:inspectionId" element={<InspectionShow origin="contract" />} />
                                     </Route>
                                     <Route path="/vehicle_review">
                                         <Route index element={<VehicleReview />} />
