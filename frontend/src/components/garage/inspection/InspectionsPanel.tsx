@@ -170,6 +170,9 @@ function DesktopTable({ sheets, total, config, page, onPage, onOpen }: {
       recordsPerPage={INSPECTION_PAGE_SIZE}
       page={page}
       onPageChange={onPage}
+      noRecordsText="Aucun contrôle"
+      paginationText={({ from, to, totalRecords }) => `${from} - ${to} sur ${totalRecords}`}
+      paginationWrapBreakpoint="sm"
       onRowClick={({ record }) => onOpen(record)}
       customRowAttributes={(record) => ({
         tabIndex: 0,

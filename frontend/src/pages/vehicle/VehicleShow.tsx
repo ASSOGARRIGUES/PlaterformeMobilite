@@ -203,7 +203,7 @@ const VehicleShowContent = () => {
                                     value="maintenance"
                                 >
                                     {isMobile
-                                        ? <MobileTabLabel icon={<IconTool size={20}/>} label="Entretien" badge={badge ? <Badge size="xs" circle color={badge.color}>{badge.count}</Badge> : undefined}/>
+                                        ? <MobileTabLabel icon={<IconTool size={20}/>} label="Entretien" badge={badge ? <Badge size="sm" color={badge.color} px={5} styles={{label: {overflow: "visible"}}}>{badge.count}</Badge> : undefined}/>
                                         : "Entretien"}
                                 </Tabs.Tab>
                             </CanAccess>

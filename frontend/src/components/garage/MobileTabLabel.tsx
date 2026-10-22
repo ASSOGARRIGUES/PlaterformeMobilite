@@ -14,7 +14,7 @@ export function MobileTabLabel({ icon, label, badge }: MobileTabLabelProps) {
     <Stack gap={3} align="center" justify="center" mih={44}>
       <Box pos="relative" style={{ display: 'flex' }}>
         {icon}
-        {badge && <Box pos="absolute" top={-8} left={12} style={{ lineHeight: 1 }}>{badge}</Box>}
+        {badge && <Box pos="absolute" top={-9} left={13} style={{ lineHeight: 1 }}>{badge}</Box>}
       </Box>
       <Text component="span" fz={12} fw={500} lh={1.1} style={{ whiteSpace: 'nowrap' }}>{label}</Text>
     </Stack>

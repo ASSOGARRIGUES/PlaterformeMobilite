@@ -150,7 +150,7 @@ const ContractShow = () => {
                                 <IconCalendarEvent size={19} color="var(--mantine-color-dimmed)" aria-hidden style={{flexShrink: 0, marginTop: 1}}/>
                                 <Text fz={13.5} lh={1.45}>
                                     Contrôles du véhicule <b>{vehicle.brand} {vehicle.modele}</b> <Text component="span" ff="monospace" fz={12.5} className="sentry-mask">{vehicle.imat}</Text>
-                                    {" "}pendant le contrat, du {humanizeDate(contractResponse.start_date)} {ongoing ? "à aujourd'hui (contrat en cours)." : `au ${humanizeDate(contractResponse.end_date)}.`}
+                                    {" "}pendant le contrat, du {humanizeDate(contractResponse.start_date)} {ongoing ? "à aujourd'hui (contrat en cours)." : `au ${humanizeDate(contractResponse.ended_at ?? contractResponse.end_date)}.`}
                                 </Text>
                             </Group>
                         )}
