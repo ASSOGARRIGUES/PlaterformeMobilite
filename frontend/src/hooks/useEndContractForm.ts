@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {FormErrors, useForm} from "@mantine/form";
 import {GetInputProps, IsValid} from "@mantine/form/lib/types";
-import {BaseKey, useForm as useRefineForm} from "@refinedev/core";
+import {BaseKey, useForm as useRefineForm, useInvalidate} from "@refinedev/core";
 import {EndContract, EndContractWritableFields} from "../types/contract";
 
 
@@ -31,6 +31,7 @@ const useEndContractForm = (): UseEndContractFormType => {
         redirect: false,
     })
 
+    const invalidate = useInvalidate();
     const data = queryResult?.data?.data as EndContract | undefined;
 
 
@@ -101,7 +102,11 @@ const useEndContractForm = (): UseEndContractFormType => {
 
     const formSubmit = form.onSubmit(async (values) => {
         await onFinish(values);
-         closeModal();
+        // La clôture relève le kilométrage du véhicule : sa fiche, l'historique et la synthèse d'entretien suivent
+        // (comme useMileageCorrection) ; Refine n'invalide que « contract ».
+        invalidate({resource: "vehicle", invalidates: ["resourceAll"]});
+        invalidate({resource: "garage/maintenance", invalidates: ["resourceAll"]});
+        closeModal();
     })
 
     const modal = {visible: modaVisible, title: modalTitle, close: closeModal, show: showModal, submit: formSubmit};

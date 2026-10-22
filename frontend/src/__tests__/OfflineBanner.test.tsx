@@ -25,6 +25,12 @@ function renderWithMantine(ui: React.ReactElement) {
 }
 
 describe('OfflineBanner', () => {
+  it('dit que les saisies ne sont pas enregistrées hors ligne', () => {
+    Object.defineProperty(window.navigator, 'onLine', { value: false, writable: true, configurable: true })
+    renderWithMantine(<OfflineBanner />)
+    expect(screen.getByText(/les saisies ne sont pas enregistrées tant que la connexion n'est pas revenue/)).toBeTruthy()
+  })
+
   const originalOnLine = window.navigator.onLine
 
   afterEach(() => {
@@ -43,7 +49,7 @@ describe('OfflineBanner', () => {
       configurable: true,
     })
     renderWithMantine(<OfflineBanner />)
-    expect(screen.queryByText(/Hors-ligne/)).toBeNull()
+    expect(screen.queryByText(/Hors ligne/)).toBeNull()
   })
 
   it('s\'affiche quand navigator.onLine est false', () => {
@@ -53,7 +59,7 @@ describe('OfflineBanner', () => {
       configurable: true,
     })
     renderWithMantine(<OfflineBanner />)
-    expect(screen.getAllByText(/Hors-ligne/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Hors ligne/).length).toBeGreaterThan(0)
   })
 
   it('apparaît quand l\'événement offline est déclenché', () => {
@@ -63,10 +69,10 @@ describe('OfflineBanner', () => {
       configurable: true,
     })
     renderWithMantine(<OfflineBanner />)
-    expect(screen.queryByText(/Hors-ligne/)).toBeNull()
+    expect(screen.queryByText(/Hors ligne/)).toBeNull()
 
     fireEvent(window, new Event('offline'))
-    expect(screen.getAllByText(/Hors-ligne/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Hors ligne/).length).toBeGreaterThan(0)
   })
 
   it('disparaît quand l\'événement online est déclenché', () => {
@@ -76,9 +82,9 @@ describe('OfflineBanner', () => {
       configurable: true,
     })
     renderWithMantine(<OfflineBanner />)
-    expect(screen.getAllByText(/Hors-ligne/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Hors ligne/).length).toBeGreaterThan(0)
 
     fireEvent(window, new Event('online'))
-    expect(screen.queryByText(/Hors-ligne/)).toBeNull()
+    expect(screen.queryByText(/Hors ligne/)).toBeNull()
   })
 })

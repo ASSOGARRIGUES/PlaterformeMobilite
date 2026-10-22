@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -17,7 +18,7 @@ from .filters import VehicleFilter
 from .models import Vehicle, Beneficiary, Contract, Parking, Payment
 from .serializers import VehicleSerializer, BeneficiarySerializer, ContractSerializer, UserSerializer, \
     EndContractSerializer, ParkingSerializer, MutationContractSerializer, MutationVehicleSerializer, PaymentSerializer, \
-    ContractPaymentSummarySerializer, WhoAmISerializer, UserActionSerializer, UserActionUpdateSerializer, \
+    ContractPaymentSummarySerializer, WhoAmISerializer, WhoAmIPreferencesSerializer, UserActionSerializer, UserActionUpdateSerializer, \
     ShortVehicleSerializer, VehicleActionTransferSerializer, ContractGroupByRefStatsSerializer, ReferentGroupSerializer, \
     RenewContractSerializer
 from core.models import Action
@@ -351,16 +352,26 @@ class ContractViewSet(ArchivableModelViewSet):
             serializer = EndContractSerializer(contract)
             return Response(serializer.data)
         elif request.method == 'PATCH':
+            from garage.models import MileageEntry
+
             serializer = EndContractSerializer(contract, data=request.data)
             if serializer.is_valid():
-                serializer.save()
-                contract.status = 'over'
-                contract.vehicle.kilometer = contract.end_kilometer
-                contract.ended_at = datetime.now()
-                contract.vehicle.status = 'available'
-                contract.save()
-                contract.vehicle.save()
-                contract.updateIfPaid()
+                with transaction.atomic():
+                    serializer.save()
+                    contract.status = 'over'
+                    contract.ended_at = datetime.now()
+                    contract.vehicle.status = 'available'
+                    contract.save()
+                    contract.vehicle.save()
+                    MileageEntry.objects.create(
+                        vehicle=contract.vehicle,
+                        value=contract.end_kilometer,
+                        date=contract.ended_at.date(),
+                        source='contract_end',
+                        source_id=contract.id,
+                        author=request.user,
+                    )
+                    contract.updateIfPaid()
                 return Response(serializer.data, status=200)
             return Response(serializer.errors, status=400)
 
@@ -427,6 +438,14 @@ class WhoAmIViewSet(viewsets.ViewSet):
     def list(self, request):
         serializer = WhoAmISerializer(request.user)
         return Response(serializer.data)
+
+    @extend_schema(request=WhoAmIPreferencesSerializer, responses=WhoAmISerializer)
+    @action(detail=False, methods=['patch'], serializer_class=WhoAmIPreferencesSerializer)
+    def preferences(self, request):
+        serializer = WhoAmIPreferencesSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(WhoAmISerializer(request.user).data)
 
 #UserAction viewset is a viewset that returns the actions of the current user and the currenlty selected action
 class UserActionViewSet(viewsets.ViewSet):

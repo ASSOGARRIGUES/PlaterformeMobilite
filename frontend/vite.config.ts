@@ -1,14 +1,14 @@
 import react from "@vitejs/plugin-react";
-import {defineConfig, loadEnv} from "vite";
+import { defineConfig, loadEnv } from "vite";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { VitePWA } from 'vite-plugin-pwa';
 
 
 const envAvailableKeys = [
-    'BASE_URL',
-    'VERSION',
-    'VITE_SENTRY_DSN',
-    ];
+  'BASE_URL',
+  'VERSION',
+  'VITE_SENTRY_DSN',
+];
 
 type processEnvKeys = typeof envAvailableKeys[number];
 
@@ -16,7 +16,7 @@ type processEnvType = {
   [key in processEnvKeys]: any;
 };
 
-export default defineConfig(({mode})=>{
+export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const processEnv = {} as processEnvType;
   envAvailableKeys.forEach(key => processEnv[key as processEnvKeys] = env[key]);
@@ -24,6 +24,24 @@ export default defineConfig(({mode})=>{
   return {
     build: {
       sourcemap: "hidden",
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            react: ['react', 'react-dom', 'react-router-dom'],
+            mantine: [
+              '@mantine/core',
+              '@mantine/dates',
+              '@mantine/dropzone',
+              '@mantine/form',
+              '@mantine/hooks',
+              '@mantine/modals',
+              '@mantine/notifications',
+              '@mantine/charts',
+            ],
+            recharts: ['recharts'],
+          },
+        },
+      },
     },
     define: {
       'process.env': processEnv,
@@ -32,6 +50,10 @@ export default defineConfig(({mode})=>{
       react(),
       VitePWA({
         registerType: 'autoUpdate',
+        devOptions: {
+          enabled: true,
+          type: 'module',
+        },
         includeAssets: ['favicon.ico', 'favicon.png'],
         manifest: {
           name: 'Plateforme Mobilité',
@@ -62,6 +84,7 @@ export default defineConfig(({mode})=>{
           navigateFallbackDenylist: [/^\/api\//],
           globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
           runtimeCaching: [],
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 Mo
         },
       }),
       sentryVitePlugin({

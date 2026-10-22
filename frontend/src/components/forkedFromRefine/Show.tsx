@@ -50,6 +50,7 @@ type ShowProps = {
     goBack?: React.ReactNode;
     breadcrumb?: React.ReactNode;
     title?: React.ReactNode;
+    hideButtonText?: boolean;
 };
 
 export const Show: React.FC<ShowProps> = (props) => {
@@ -69,6 +70,7 @@ export const Show: React.FC<ShowProps> = (props) => {
         goBack: goBackFromProps,
         breadcrumb: breadcrumbFromProps,
         title,
+        hideButtonText,
     } = props;
     const translate = useTranslate();
     const {
@@ -104,6 +106,7 @@ export const Show: React.FC<ShowProps> = (props) => {
     const listButtonProps: ListButtonProps | undefined = hasList
         ? {
             ...(isLoading ? { disabled: true } : {}),
+            ...(hideButtonText ? { hideText: true } : {}),
             resource: routerType === "legacy" ? resource?.route : identifier,
         }
         : undefined;
@@ -133,6 +136,7 @@ export const Show: React.FC<ShowProps> = (props) => {
         : undefined;
     const refreshButtonProps: RefreshButtonProps = {
         ...(isLoading ? { disabled: true } : {}),
+        ...(hideButtonText ? { hideText: true } : {}),
         resource: routerType === "legacy" ? resource?.route : identifier,
         recordItemId: id,
         dataProviderName,

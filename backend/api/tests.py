@@ -9,6 +9,7 @@ from rest_framework.test import APITestCase
 
 from core.models import Action
 from api.models import Beneficiary, Contract, Parking, Payment, PaymentMode, Vehicle
+from garage.models import MileageEntry
 
 User = get_user_model()
 
@@ -266,6 +267,39 @@ class VehicleViewSetTest(BaseAPITest):
         })
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Vehicle.objects.get(fleet_id=10).action, self.action)
+
+    def test_create_creates_initial_mileage_entry(self):
+        r = self.client.post('/api/vehicle/', {
+            'brand': 'Peugeot', 'modele': '208', 'year': 2021,
+            'imat': 'BB-222-BB', 'fleet_id': 20, 'kilometer': 5000,
+            'fuel_type': 'diesel', 'transmission': 'manuelle', 'type': 'voiture',
+            'parking': self.parking.pk,
+        })
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        vehicle = Vehicle.objects.get(fleet_id=20)
+        entries = MileageEntry.objects.filter(vehicle=vehicle)
+        self.assertEqual(entries.count(), 1)
+        entry = entries.first()
+        self.assertEqual(entry.source, 'creation')
+        self.assertEqual(entry.value, 5000)
+        self.assertEqual(entry.author, self.user)
+
+    def test_update_kilometer_creates_manual_edit_mileage_entry(self):
+        v = self.new_vehicle(kilometer=5000)
+        r = self.client.patch(f'/api/vehicle/{v.pk}/', {'kilometer': 5500})
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(r.data['kilometer'], 5500)
+        v.refresh_from_db()
+        self.assertEqual(v.kilometer, 5500)
+        entry = MileageEntry.objects.get(vehicle=v, source='manual_edit')
+        self.assertEqual(entry.value, 5500)
+        self.assertEqual(entry.author, self.user)
+
+    def test_update_without_kilometer_change_creates_no_mileage_entry(self):
+        v = self.new_vehicle(kilometer=5000)
+        r = self.client.patch(f'/api/vehicle/{v.pk}/', {'brand': 'Citroën'})
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertFalse(MileageEntry.objects.filter(vehicle=v, source='manual_edit').exists())
 
     def test_list_excludes_archived_by_default(self):
         active = self.new_vehicle()
@@ -532,6 +566,26 @@ class ContractViewSetTest(BaseAPITest):
         c = Contract.objects.get(pk=r.data['id'])
         self.assertEqual(c.start_kilometer, 12345)
 
+    def test_create_with_explicit_start_kilometer_creates_mileage_entry(self):
+        v = self.new_vehicle(kilometer=10000)
+        b = self.new_beneficiary()
+        payload = self._payload(v, b)
+        payload['start_kilometer'] = 10500
+        r = self.client.post('/api/contract/', payload)
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        entry = MileageEntry.objects.get(vehicle=v, source='contract_start')
+        self.assertEqual(entry.value, 10500)
+        self.assertEqual(entry.source_id, r.data['id'])
+        v.refresh_from_db()
+        self.assertEqual(v.kilometer, 10500)
+
+    def test_create_without_explicit_start_kilometer_creates_no_mileage_entry(self):
+        v = self.new_vehicle(kilometer=12345)
+        b = self.new_beneficiary()
+        r = self.client.post('/api/contract/', self._payload(v, b))
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        self.assertFalse(MileageEntry.objects.filter(vehicle=v).exists())
+
     def test_create_fails_if_vehicle_not_available(self):
         v = self.new_vehicle(vehicle_status='rented')
         b = self.new_beneficiary()
@@ -615,6 +669,35 @@ class ContractViewSetTest(BaseAPITest):
         v.refresh_from_db()
         self.assertEqual(v.kilometer, 11000)
         self.assertEqual(v.status, 'available')
+
+    def test_end_patch_creates_mileage_entry(self):
+        v = self.new_vehicle(kilometer=10000)
+        b = self.new_beneficiary()
+        c = make_contract(v, b, self.user, self.action, price=500)
+        r = self.client.patch(f'/api/contract/{c.pk}/end/', {
+            'end_kilometer': 11000, 'price': 500, 'deposit': 100, 'discount': 0,
+        })
+        self.assertEqual(r.status_code, 200)
+        entry = MileageEntry.objects.get(vehicle=v, source='contract_end')
+        self.assertEqual(entry.value, 11000)
+        self.assertEqual(entry.source_id, c.pk)
+
+    def test_renew_creates_mileage_entries_for_close_and_start(self):
+        v = self.new_vehicle(kilometer=10000)
+        b = self.new_beneficiary()
+        source = make_contract(v, b, self.user, self.action, price=500)
+        payload = self._payload(v, b)
+        payload['start_date'] = str(source.end_date)
+        payload['end_date'] = str(source.end_date + timedelta(days=30))
+        payload['closing'] = {'end_kilometer': 10800, 'price': 500, 'deposit': 100, 'discount': 0}
+        r = self.client.post(f'/api/contract/{source.pk}/renew/', payload, format='json')
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        end_entry = MileageEntry.objects.get(vehicle=v, source='contract_end')
+        self.assertEqual(end_entry.value, 10800)
+        self.assertEqual(end_entry.source_id, source.pk)
+        start_entry = MileageEntry.objects.get(vehicle=v, source='contract_start')
+        self.assertEqual(start_entry.value, 10800)
+        self.assertEqual(start_entry.source_id, r.data['id'])
 
     def test_end_patch_rejects_end_km_below_start_km(self):
         v = self.new_vehicle(kilometer=10000)
@@ -815,6 +898,46 @@ class WhoAmITest(BaseAPITest):
     def test_includes_is_superuser_flag(self):
         r = self.client.get('/api/whoami/')
         self.assertTrue(r.data['is_superuser'])
+
+    def test_wear_input_defaults_to_slider(self):
+        r = self.client.get('/api/whoami/')
+        self.assertEqual(r.data['inspection_wear_input'], 'slider')
+
+    def test_user_can_update_own_wear_input(self):
+        r = self.client.patch('/api/whoami/preferences/', {'inspection_wear_input': 'slider'}, format='json')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.data['inspection_wear_input'], 'slider')
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.inspection_wear_input, 'slider')
+
+    def test_invalid_wear_input_is_refused(self):
+        r = self.client.patch('/api/whoami/preferences/', {'inspection_wear_input': 'dial'}, format='json')
+        self.assertEqual(r.status_code, 400)
+
+    def test_preferences_never_touch_other_fields_or_users(self):
+        other = get_user_model().objects.create_user(
+            username='autre', email='autre@example.com', password='x', first_name='A', last_name='B', phone='0',
+        )
+        regular = get_user_model().objects.create_user(
+            username='simple', email='simple@example.com', password='x', first_name='S', last_name='U', phone='0',
+        )
+        self.client.force_authenticate(user=regular)
+        r = self.client.patch('/api/whoami/preferences/', {
+            'inspection_wear_input': 'slider', 'is_superuser': True, 'email': 'hack@example.com', 'id': other.pk,
+        }, format='json')
+        self.assertEqual(r.status_code, 200)
+        regular.refresh_from_db()
+        other.refresh_from_db()
+        self.assertEqual(regular.inspection_wear_input, 'slider')
+        self.assertFalse(regular.is_superuser)
+        self.assertEqual(regular.email, 'simple@example.com')
+        self.assertEqual(other.inspection_wear_input, 'slider')
+        self.assertEqual(other.email, 'autre@example.com')
+
+    def test_unauthenticated_cannot_update_preferences(self):
+        self.client.force_authenticate(user=None)
+        r = self.client.patch('/api/whoami/preferences/', {'inspection_wear_input': 'slider'}, format='json')
+        self.assertEqual(r.status_code, 401)
 
 
 class UserActionViewSetTest(BaseAPITest):
