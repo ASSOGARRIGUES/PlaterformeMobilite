@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useGo, useList, useShow } from '@refinedev/core'
 import { ActionIcon, Alert, Box, Button, Center, Group, Loader, Paper, SimpleGrid, Stack, Text, Textarea, Title, useMantineTheme } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
-import { IconArrowLeft, IconArrowUpRight, IconCheck, IconLock, IconPencil, IconPlus } from '@tabler/icons-react'
+import { IconArrowLeft, IconArrowUpRight, IconCheck, IconInfoCircle, IconLock, IconPencil, IconPlus } from '@tabler/icons-react'
 import { ErrorComponent } from '../../../components/ErrorComponent'
 import { humanizeNumber } from '../../../constants'
 import { BinaryToggle } from '../../../components/garage/inspection/BinaryToggle'
@@ -32,7 +32,7 @@ import { inspectionDate } from '../../../components/garage/inspection/Inspection
 import { useGarageConfig } from '../../../hooks/garage/useGarageConfig'
 import { localPlannedTaskFromApi } from '../../../hooks/garage/inspectionStepperUtils'
 import { useMileageCorrection } from '../../../hooks/garage/useMileageCorrection'
-import { useValidatedInspectionEdit } from '../../../hooks/garage/useValidatedInspectionEdit'
+import { confirmRemoval, useValidatedInspectionEdit } from '../../../hooks/garage/useValidatedInspectionEdit'
 import { useWearInput } from '../../../hooks/garage/useWearInput'
 import useAccessControl from '../../../hooks/useAccessControl'
 import { InspectionSheet, MileageEntry } from '../../../types/garage'
@@ -288,6 +288,9 @@ function EditMode({ sheet, config, isMobile, onDone, onOpenPhoto, header }: {
   const main = (
     <>
       {isMobile && <EditBar engine={engine} />}
+      <Alert color="orange" variant="light" icon={<IconInfoCircle size={18} />} p="xs">
+        <Text fz={13.5}>Modifier cette fiche peut changer le statut d&apos;entretien du véhicule (usures, signalements).</Text>
+      </Alert>
       {forbidden && <Alert color="red" icon={<IconLock size={18} />} role="alert">{forbidden}</Alert>}
       <InspectionSection id="km" title="Kilométrage">
         <Group gap="sm" wrap="wrap">
@@ -371,7 +374,14 @@ function EditMode({ sheet, config, isMobile, onDone, onOpenPhoto, header }: {
           <Stack gap="sm">
             {values.planned.map((task) => (
               <EditField key={task.localId} engine={engine} groups={[`ops.${task.localId}`]}>
-                <TaskCard variant="planned" task={task} onChange={edit.changePlannedLocal} onCommit={edit.persistPlanned} onRemove={() => edit.removePlanned(task.localId)} />
+                <TaskCard
+                  variant="planned"
+                  task={task}
+                  onChange={edit.changePlannedLocal}
+                  onCommit={edit.persistPlanned}
+                  onRemove={() => edit.removePlanned(task.localId)}
+                  onConfirmPhotoRemoval={(proceed) => confirmRemoval('Supprimer cette photo ?', "La photo sera retirée de l'opération. Cette action est tracée.", proceed)}
+                />
               </EditField>
             ))}
             <Button variant="light" mih={52} leftSection={<IconPlus size={18} />} disabled={!edit.catalogReady} onClick={() => setPickerOpen(true)}>Ajouter une opération</Button>

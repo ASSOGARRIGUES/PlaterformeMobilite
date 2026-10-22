@@ -44,7 +44,7 @@ export function wearText(level: number | undefined, config: WearConfig): string 
   return `${level}/10${zone ? ` · ${WEAR_ZONES[zone].label}` : ''}`
 }
 
-function confirmRemoval(title: string, message: string, onConfirm: () => void) {
+export function confirmRemoval(title: string, message: string, onConfirm: () => void) {
   openConfirmModal({
     title,
     children: <Text size="sm">{message}</Text>,
