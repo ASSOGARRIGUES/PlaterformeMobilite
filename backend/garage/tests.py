@@ -2278,7 +2278,7 @@ class ComputeOpenSignalementsTestCase(SimpleTestCase):
         self.assertEqual(result['standalone'], [{
             'task_id': 1, 'sheet_id': 1, 'sheet_kind': 'intervention', 'sheet_date': datetime.date(2026, 1, 1),
             'catalog_task_id': 2,
-            'name': 'Nettoyage', 'description': '', 'source': 'signalement', 'photos': [],
+            'name': 'Nettoyage', 'description': '', 'source': 'signalement', 'photos': [], 'author_display': '',
         }])
         closed = open_signalement + [_occurrence(2, 2, catalog_task_id=2, name='Nettoyage', date=datetime.date(2026, 2, 1))]
         self.assertEqual(self._open_ids(closed), ([], []))
@@ -3127,6 +3127,12 @@ class InspectionSheetAPITestCase(APITestCase):
         self.assertEqual(response.status_code, 201, response.data)
         correction = MileageEntry.objects.get(corrects=root)
         self.assertEqual(self.client.get(self._url(sheet)).data['mileage_entry'], {'id': correction.id, 'value': 10150})
+
+    def test_inspection_signalement_carries_its_author(self):
+        sheet = self._validated_sheet(start_date=datetime.date(2026, 3, 1))
+        InspectionTask.objects.create(sheet=sheet, name='Phares')
+        signalements = self._maintenance()['signalements']
+        self.assertEqual([(s['sheet_kind'], s['author_display']) for s in signalements], [('inspection', 'Jean Garagiste')])
 
     def test_wear_measurement_exposes_catalog_task_icon(self):
         sheet = self._validated_sheet()

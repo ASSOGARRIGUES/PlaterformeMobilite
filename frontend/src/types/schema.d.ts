@@ -1668,6 +1668,7 @@ export interface components {
             name: string;
             description: string;
             source: components["schemas"]["MaintenanceSourceEnum"];
+            author_display: string;
             readonly photos: string[];
         };
         /**

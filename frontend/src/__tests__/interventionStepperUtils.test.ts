@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  restoreRejectedFields,
   localTaskToCreatePayload,
   localTaskToUpdatePayload,
   localTaskFromApiTask,
@@ -133,7 +134,7 @@ describe('pendingSuggestions', () => {
   function makeSig(overrides: Partial<MaintenanceSignalement> = {}): MaintenanceSignalement {
     return {
       task_id: 230, sheet_id: 44, sheet_kind: MaintenanceSheetKindEnum.intervention, sheet_date: '2026-09-12', catalog_task_id: null, name: 'Bruit train avant',
-      description: '', source: MaintenanceSourceEnum.signalement, photos: [],
+      description: '', source: MaintenanceSourceEnum.signalement, author_display: '', photos: [],
       ...overrides,
     };
   }
@@ -223,7 +224,7 @@ describe('localTaskFromSuggestion', () => {
   function makeSig(overrides: Partial<MaintenanceSignalement> = {}): MaintenanceSignalement {
     return {
       task_id: 230, sheet_id: 44, sheet_kind: MaintenanceSheetKindEnum.intervention, sheet_date: '2026-09-12', catalog_task_id: null, name: 'Bruit train avant',
-      description: '', source: MaintenanceSourceEnum.signalement, photos: [],
+      description: '', source: MaintenanceSourceEnum.signalement, author_display: '', photos: [],
       ...overrides,
     };
   }
@@ -435,3 +436,30 @@ describe('isRetryableError', () => {
     expect(isRetryableError(httpError(400, { a: ['b'] }))).toBe(false);
   });
 });
+
+describe('restoreRejectedFields', () => {
+  const synced: LocalTask = {
+    localId: 'a', name: 'Plaquettes', type: 'done', isWearTask: true, wearLevel: 8, description: 'ok',
+    parts: [{ localId: 'p', name: 'Kit', unitPrice: 10, quantity: 1 }], photos: ['http://x/1.jpg'], photoIds: [1],
+  }
+  const edited: LocalTask = {
+    ...synced, wearLevel: 2, description: 'brouillon', parts: [], photos: ['data:image/png;base64,AAA'], photoIds: [null],
+  }
+
+  it('ne remet que les champs présents dans le payload rejeté', () => {
+    expect(restoreRejectedFields(edited, synced, { wear_level: 2 })).toEqual({ ...edited, wearLevel: 8 })
+    expect(restoreRejectedFields(edited, synced, { description: 'brouillon' })).toEqual({ ...edited, description: 'ok' })
+  })
+
+  it('les photos (ajoutées ou retirées) reviennent avec leurs identifiants', () => {
+    expect(restoreRejectedFields(edited, synced, { add_photos: ['data:image/png;base64,AAA'] })).toEqual({
+      ...edited, photos: synced.photos, photoIds: synced.photoIds,
+    })
+    expect(restoreRejectedFields(edited, synced, { remove_photo_ids: [1] }).photoIds).toEqual([1])
+  })
+
+  it('un payload à plusieurs champs rétablit chacun d’eux', () => {
+    const restored = restoreRejectedFields(edited, synced, { wear_level: 2, parts: [] })
+    expect([restored.wearLevel, restored.parts, restored.description]).toEqual([8, synced.parts, 'brouillon'])
+  })
+})

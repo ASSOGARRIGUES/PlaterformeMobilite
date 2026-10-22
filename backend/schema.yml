@@ -5111,6 +5111,8 @@ components:
           type: string
         source:
           $ref: '#/components/schemas/MaintenanceSourceEnum'
+        author_display:
+          type: string
         photos:
           type: array
           items:
@@ -5118,6 +5120,7 @@ components:
             format: uri
           readOnly: true
       required:
+      - author_display
       - catalog_task_id
       - description
       - name

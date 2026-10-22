@@ -681,6 +681,7 @@ class MaintenanceSignalementSerializer(serializers.Serializer):
     name = serializers.CharField()
     description = serializers.CharField(allow_blank=True)
     source = serializers.ChoiceField(choices=PLANNING_SOURCE_CHOICES)
+    author_display = serializers.CharField(allow_blank=True)
     photos = serializers.SerializerMethodField()
 
     @extend_schema_field(serializers.ListField(child=serializers.URLField()))

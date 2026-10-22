@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useShow, useList, useCustomMutation, useUpdate, useInvalidate, useApiUrl } from '@refinedev/core'
 import { InterventionSheet, InterventionTask, LocalTask } from '../../types/garage'
 import { TaskCatalogItem } from '../../components/garage/taskCardUtils'
-import { localTaskToUpdatePayload, localTaskFromApiTask, extractStepError } from './interventionStepperUtils'
+import { localTaskToUpdatePayload, localTaskFromApiTask, extractStepError, restoreRejectedFields } from './interventionStepperUtils'
 
 type Section = 'done' | 'planned'
 
@@ -164,9 +164,9 @@ export function useValidatedInterventionEdit(sheetId: number) {
       setter((prev) => prev.map((task) => (task.localId === localId ? rebuilt : task)))
       syncedSetter((prev) => prev.map((task) => (task.localId === localId ? rebuilt : task)))
     } catch (error) {
-      // rétablit la dernière valeur connue du serveur (ex : usure refusée) au lieu de garder la valeur locale rejetée
+      // rétablit la dernière valeur connue du serveur des seuls champs rejetés (ex : usure refusée) : le reste de la saisie reste
       const setter = section === 'done' ? setDoneTasks : setPlannedTasks
-      setter((prev) => prev.map((task) => (task.localId === localId ? synced : task)))
+      setter((prev) => prev.map((task) => (task.localId === localId ? restoreRejectedFields(task, synced, payload) : task)))
       setStepError(extractStepError(error))
     }
   }

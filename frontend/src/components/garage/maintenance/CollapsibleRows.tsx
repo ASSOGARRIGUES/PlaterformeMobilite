@@ -62,7 +62,7 @@ export function CollapsibleTaskRow({ task, color, today, authorOf, onOpenSheet, 
   task: MaintenanceTask
   color: string
   today: string
-  authorOf: (sheetId: number) => string
+  authorOf: (signalement: MaintenanceSignalement) => string
   onOpenSheet?: OpenSheet
   onOpenPhotos: OpenPhotos
   action?: ReactNode
@@ -91,7 +91,7 @@ export function CollapsibleTaskRow({ task, color, today, authorOf, onOpenSheet, 
       )}
       {firstSignalement && (
         <Group gap={6} wrap="nowrap">
-          <Avatar size={16} radius="xl" color="blue" styles={{ placeholder: { fontSize: 7 } }}>{initials(authorOf(firstSignalement.sheet_id))}</Avatar>
+          <Avatar size={16} radius="xl" color="blue" styles={{ placeholder: { fontSize: 7 } }}>{initials(authorOf(firstSignalement))}</Avatar>
           <Text size="xs" c="dimmed" truncate="end">{firstSignalement.description || 'À faire au prochain passage'}</Text>
         </Group>
       )}
@@ -110,7 +110,7 @@ export function CollapsibleTaskRow({ task, color, today, authorOf, onOpenSheet, 
       <SignalementBlock
         key={signalement.task_id}
         signalement={signalement}
-        author={authorOf(signalement.sheet_id)}
+        author={authorOf(signalement)}
         today={today}
         onOpenSheet={onOpenSheet}
         onOpenPhotos={onOpenPhotos}

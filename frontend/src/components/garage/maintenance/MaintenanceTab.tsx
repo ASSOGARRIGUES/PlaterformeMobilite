@@ -31,8 +31,8 @@ import {
   IconSearch,
   IconTool,
 } from '@tabler/icons-react'
-import { MaintenanceSheet, MaintenanceSummary } from '../../../types/garage'
-import { InterventionSheetStatusEnum } from '../../../types/schema.d'
+import { MaintenanceSheet, MaintenanceSignalement, MaintenanceSummary } from '../../../types/garage'
+import { InterventionSheetStatusEnum, MaintenanceSheetKindEnum } from '../../../types/schema.d'
 import { humanizeDate, humanizeNumber, plural } from '../../../constants'
 import useAccessControl from '../../../hooks/useAccessControl'
 import { useDismissSignalement } from '../../../hooks/garage/useDismissSignalement'
@@ -47,7 +47,7 @@ import {
   mainFigure,
   nextDueTask,
   referentSummary,
-  sheetAuthor,
+  signalementAuthor,
   showNothingToPlan,
   sortedSignalements,
 } from './maintenanceUtils'
@@ -137,12 +137,13 @@ export function MaintenanceTab({ summary, isLoading, isError }: MaintenanceTabPr
 
   const { today } = summary
   const showDate = !isMobile
-  const openSheetById = (sheetId: number) => go({ to: `/garage/intervention/${sheetId}` })
+  const openSheetById = (sheetId: number, kind: MaintenanceSheetKindEnum = MaintenanceSheetKindEnum.intervention) =>
+    go({ to: kind === MaintenanceSheetKindEnum.inspection ? `/vehicle/${summary.vehicle_id}/inspection/${sheetId}` : `/garage/intervention/${sheetId}` })
   const openPhotos = (photos: string[]) => {
     setLightboxIndex(0)
     setLightboxPhotos(photos)
   }
-  const authorOf = (sheetId: number) => sheetAuthor(summary, sheetId)
+  const authorOf = (signalement: MaintenanceSignalement) => signalementAuthor(summary, signalement)
   const rowProps = { today, showDate, stacked: isMobile, authorOf, onOpenSheet: openSheetById, onOpenPhotos: openPhotos, onDismiss: canManage ? confirmDismiss : undefined }
 
   const notRecordedSection = groups.notRecorded.length > 0 && (
@@ -241,7 +242,7 @@ export function MaintenanceTab({ summary, isLoading, isError }: MaintenanceTabPr
               <MaintenanceSignalementRow
                 key={signalement.task_id}
                 signalement={signalement}
-                author={authorOf(signalement.sheet_id)}
+                author={authorOf(signalement)}
                 today={today}
                 onOpenSheet={openSheetById}
                 onOpenPhotos={openPhotos}

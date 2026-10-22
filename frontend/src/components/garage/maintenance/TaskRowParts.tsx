@@ -1,21 +1,22 @@
 import { ReactNode } from 'react'
 import { Anchor, Avatar, Badge, Button, Group, Image, Paper, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core'
-import { IconAlertOctagon, IconArrowRight, IconHistory, IconX } from '@tabler/icons-react'
+import { IconAlertOctagon, IconArrowRight, IconGauge, IconHistory, IconX } from '@tabler/icons-react'
 import { humanizeDate, humanizeNumber } from '../../../constants'
 import { MaintenanceSignalement } from '../../../types/garage'
 import { MaintenanceSheetKindEnum } from '../../../types/schema.d'
 import { formatShortDate, initials, sinceLabel } from './maintenanceUtils'
+import { formatMeasuredAt } from '../inspection/inspectionConsultUtils'
 
-export type OpenSheet = (sheetId: number) => void
+export type OpenSheet = (sheetId: number, kind?: MaintenanceSheetKindEnum) => void
 export type OpenPhotos = (photos: string[]) => void
 export type OnDismiss = (signalement: MaintenanceSignalement) => void
 
 /** Lien explicite vers une fiche : les cartes elles-mêmes ne sont pas cliquables. Rien sans `onOpenSheet` (ex. PWA installée dans le stepper). */
-export function SheetLink({ sheetId, onOpenSheet }: { sheetId: number; onOpenSheet?: OpenSheet }) {
+export function SheetLink({ sheetId, onOpenSheet, kind = MaintenanceSheetKindEnum.intervention }: { sheetId: number; onOpenSheet?: OpenSheet; kind?: MaintenanceSheetKindEnum }) {
   if (!onOpenSheet) return null
   return (
-    <Anchor component="button" inherit fw={600} onClick={() => onOpenSheet(sheetId)}>
-      Fiche #{sheetId} <IconArrowRight size={12} style={{ verticalAlign: '-2px' }} />
+    <Anchor component="button" inherit fw={600} onClick={() => onOpenSheet(sheetId, kind)}>
+      {kind === MaintenanceSheetKindEnum.inspection ? 'Contrôle' : 'Fiche'} #{sheetId} <IconArrowRight size={12} style={{ verticalAlign: '-2px' }} />
     </Anchor>
   )
 }
@@ -57,12 +58,14 @@ export function WearBadge({ wearLevel, wearIsReason = false, inline = true }: { 
 }
 
 /** Sous-ligne : ⟲ [date] · il y a 4 mois · 128 000 km · Fiche #41 → [État 4/10]. */
-export function RealizationLine({ date, km, wearLevel, wearIsReason = false, today, showDate, sheetLink }: {
+export function RealizationLine({ date, km, wearLevel, wearIsReason = false, plainWear = false, today, showDate, sheetLink }: {
   date: string
   km: number | null
   wearLevel?: number | null
   /** L'état de la pièce explique la présence dans « À prévoir » : pastille encadrée */
   wearIsReason?: boolean
+  /** Ligne d'usure : l'état de la pose reste en texte simple (« Usure 10/10 ») tant qu'il n'explique pas le statut. */
+  plainWear?: boolean
   today: string
   showDate: boolean
   sheetLink?: ReactNode
@@ -74,8 +77,35 @@ export function RealizationLine({ date, km, wearLevel, wearIsReason = false, tod
       <IconHistory size={14} style={{ verticalAlign: '-3px', marginRight: 4 }} />
       {parts.filter(Boolean).join(' · ')}
       {sheetLink && <> · {sheetLink}</>}
-      {wearLevel != null && <WearBadge wearLevel={wearLevel} wearIsReason={wearIsReason} />}
+      {wearLevel != null && (plainWear && !wearIsReason ? <> · Usure {wearLevel}/10</> : <WearBadge wearLevel={wearLevel} wearIsReason={wearIsReason} />)}
     </Text>
+  )
+}
+
+/** « Mesuré à 5/10 le 3 oct. » : la mesure d'un contrôle qui prévaut sur la dernière pose ; ouvre ce contrôle (une seule cible par ligne). */
+export function MeasuredLine({ taskName, measurement, onOpen }: {
+  taskName: string
+  measurement: { sheet_id: number; date: string; level: number }
+  onOpen?: () => void
+}) {
+  const label = `Mesuré à ${measurement.level}/10 le ${formatMeasuredAt(measurement.date)}`
+  const content = (
+    <Group gap={5} wrap="nowrap">
+      <IconGauge size={15} color="var(--mantine-color-dimmed)" aria-hidden style={{ flexShrink: 0 }} />
+      <Text size="xs" fw={700} component="span">{label}</Text>
+      {onOpen && <IconArrowRight size={12} aria-hidden />}
+    </Group>
+  )
+  if (!onOpen) return content
+  return (
+    <UnstyledButton
+      onClick={onOpen}
+      mih={44}
+      aria-label={`${taskName}, ouvrir le contrôle du ${humanizeDate(measurement.date)} : ${label}`}
+      style={{ display: 'flex', alignItems: 'center' }}
+    >
+      {content}
+    </UnstyledButton>
   )
 }
 
@@ -90,7 +120,7 @@ export function PhotoThumb({ photos, onOpenPhotos, size }: { photos: string[]; o
   )
 }
 
-/** « Sim Gal · 15/07 · Fiche #10 → » ; pas de lien pour un signalement de contrôle (pas de page de détail avant la 3.3). */
+/** « Sim Gal · 15/07 · Fiche #10 → » ou « Contrôle #12 → » selon le genre de fiche. */
 export function SignalementMeta({ signalement, author, today, onOpenSheet }: {
   signalement: MaintenanceSignalement
   author: string
@@ -100,7 +130,7 @@ export function SignalementMeta({ signalement, author, today, onOpenSheet }: {
   return (
     <Text size="xs" c="dimmed">
       {[author, formatShortDate(signalement.sheet_date, today)].filter(Boolean).join(' · ')}
-      {onOpenSheet && signalement.sheet_kind === MaintenanceSheetKindEnum.intervention && <> · <SheetLink sheetId={signalement.sheet_id} onOpenSheet={onOpenSheet} /></>}
+      {onOpenSheet && <> · <SheetLink sheetId={signalement.sheet_id} kind={signalement.sheet_kind} onOpenSheet={onOpenSheet} /></>}
     </Text>
   )
 }

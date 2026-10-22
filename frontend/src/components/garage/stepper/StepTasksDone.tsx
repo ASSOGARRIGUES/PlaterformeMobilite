@@ -20,7 +20,7 @@ import { TaskPicker } from '../TaskPicker'
 import { PhotoLightbox } from '../PhotoLightbox'
 import { TaskCatalogItem } from '../taskCardUtils'
 import { MaintenanceSignalementRow, MaintenanceTaskRow } from '../maintenance/MaintenanceTaskRow'
-import { MAINTENANCE_SECTION_COLORS, sheetAuthor } from '../maintenance/maintenanceUtils'
+import { MAINTENANCE_SECTION_COLORS, signalementAuthor } from '../maintenance/maintenanceUtils'
 import { WIDE_TASK_GRID_QUERY } from '../../../hooks/garage/breakpoints'
 import { PendingSuggestions, localTaskFromSuggestion } from '../../../hooks/garage/interventionStepperUtils'
 
@@ -131,7 +131,7 @@ export function StepTasksDone({
       collapsible: true as const,
       today: maintenanceSummary.today,
       showDate: false,
-      authorOf: (sheetId: number) => sheetAuthor(maintenanceSummary, sheetId),
+      authorOf: (signalement: MaintenanceSignalement) => signalementAuthor(maintenanceSummary, signalement),
       // Nouvel onglet : les saisies de l'étape courante ne sont enregistrées qu'au changement d'étape
       onOpenSheet: isStandalone ? undefined : (sheetId: number) => window.open(`/garage/intervention/${sheetId}`, '_blank', 'noopener,noreferrer'),
       onOpenPhotos: (photos: string[]) => {
@@ -181,7 +181,7 @@ export function StepTasksDone({
               <MaintenanceSignalementRow
                 key={signalement.task_id}
                 signalement={signalement}
-                author={rowProps.authorOf(signalement.sheet_id)}
+                author={rowProps.authorOf(signalement)}
                 today={rowProps.today}
                 onOpenSheet={rowProps.onOpenSheet}
                 onOpenPhotos={rowProps.onOpenPhotos}

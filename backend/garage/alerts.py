@@ -88,6 +88,7 @@ class TaskOccurrence:
     photo_urls: tuple = ()  # chemins des photos (GaragePhoto.image.url), chargés pour les tâches « à prévoir »
     dismissed: bool = False  # signalement écarté (dismissed_at renseigné) : n'est plus ouvert
     sheet_kind: str = 'intervention'  # 'intervention' | 'inspection'
+    author_display: str = ''  # auteur de la fiche de contrôle (les fiches d'intervention : voir SheetSummary)
 
 
 @dataclass(frozen=True)
@@ -162,7 +163,7 @@ def load_maintenance_data(vehicles) -> dict:
     inspection_tasks = list(
         InspectionTask.objects
         .filter(sheet__vehicle_id__in=vehicle_ids, sheet__status='validated', sheet__start_date__isnull=False)
-        .select_related('sheet', 'catalog_task')
+        .select_related('sheet__created_by', 'catalog_task')
     )
 
     # Photos des signalements des deux genres de fiche, en une requête (jointure sur le content type
@@ -201,6 +202,7 @@ def load_maintenance_data(vehicles) -> dict:
             catalog_icon=task.catalog_task.icon if task.catalog_task else None,
             photo_urls=tuple(photo_urls.get(('inspectiontask', task.id), ())),
             dismissed=task.dismissed_at is not None, sheet_kind='inspection',
+            author_display=f"{task.sheet.created_by.first_name} {task.sheet.created_by.last_name}".strip(),
         ))
 
     measurements_by_vehicle = {vehicle_id: [] for vehicle_id in vehicle_ids}
@@ -306,7 +308,7 @@ def compute_open_signalements(data, vehicle) -> dict:
         signalement = {
             'task_id': planned.task_id, 'sheet_id': planned.sheet_id, 'sheet_kind': planned.sheet_kind, 'sheet_date': planned.sheet_start_date,
             'catalog_task_id': planned.catalog_task_id, 'name': planned.name, 'description': planned.description,
-            'source': 'signalement', 'photos': list(planned.photo_urls),
+            'source': 'signalement', 'photos': list(planned.photo_urls), 'author_display': planned.author_display,
         }
         if planned.catalog_task_id in cyclic_ids:
             by_task.setdefault(planned.catalog_task_id, []).append(signalement)

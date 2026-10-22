@@ -19,6 +19,7 @@ import {
   filterOtherWork,
   toPlanReason,
   mainAxisProgress,
+  measureDrivesStatus,
 } from '../components/garage/maintenance/maintenanceUtils';
 import {
   MaintenanceSummary,
@@ -69,6 +70,7 @@ function makeSignalement(overrides: Partial<MaintenanceSignalement> = {}): Maint
     name: 'Bruit train avant',
     description: '',
     source: MaintenanceSourceEnum.signalement,
+    author_display: '',
     photos: [],
     ...overrides,
   };
@@ -443,5 +445,45 @@ describe('toPlanReason', () => {
   it('highlights nothing outside of to_plan', () => {
     expect(toPlanReason(makeTask({ status: MaintenanceStatusEnum.overdue }))).toBeNull();
     expect(toPlanReason(makeTask())).toBeNull();
+  });
+});
+
+
+describe('measureDrivesStatus', () => {
+  const config = { wear_critical_threshold: 2, wear_alert_threshold: 5 };
+  const measure = (level: number) => ({ sheet_id: 12, date: '2026-10-03', km: 61000, level });
+
+  it('mesure critique qui prévaut sur une échéance dans les temps : la mesure fixe le statut « Dépassé »', () => {
+    const task = makeTask({ status: MaintenanceStatusEnum.overdue, measure_prevails: true, last_measurement: measure(1) });
+    expect(measureDrivesStatus(task, config)).toBe(true);
+  });
+
+  it('échéance déjà dépassée : la mesure n’explique pas le classement', () => {
+    const task = makeTask({
+      status: MaintenanceStatusEnum.overdue, measure_prevails: true, last_measurement: measure(1),
+      km: { lifespan: 15000, due: 77000, remaining: -500, progress: 1.1, soon: 2000 },
+    });
+    expect(measureDrivesStatus(task, config)).toBe(false);
+  });
+
+  it('mesure à surveiller : « À prévoir » issu de la mesure', () => {
+    const task = makeTask({ status: MaintenanceStatusEnum.to_plan, source: MaintenanceSourceEnum.mesure, measure_prevails: true, last_measurement: measure(4) });
+    expect(measureDrivesStatus(task, config)).toBe(true);
+    expect(measureDrivesStatus({ ...task, source: MaintenanceSourceEnum.echeance }, config)).toBe(false);
+  });
+
+  it('la pose prévaut, ou aucune mesure : jamais', () => {
+    expect(measureDrivesStatus(makeTask({ status: MaintenanceStatusEnum.overdue, measure_prevails: false, last_measurement: measure(1) }), config)).toBe(false);
+    expect(measureDrivesStatus(makeTask({ status: MaintenanceStatusEnum.overdue, measure_prevails: true, last_measurement: null }), config)).toBe(false);
+  });
+
+  it('mesure correcte : la ligne reste à jour, rien à griser', () => {
+    expect(measureDrivesStatus(makeTask({ measure_prevails: true, last_measurement: measure(8) }), config)).toBe(false);
+  });
+
+  it('les seuils suivent la configuration', () => {
+    const task = makeTask({ status: MaintenanceStatusEnum.overdue, measure_prevails: true, last_measurement: measure(3) });
+    expect(measureDrivesStatus(task, config)).toBe(false);
+    expect(measureDrivesStatus(task, { wear_critical_threshold: 3, wear_alert_threshold: 6 })).toBe(true);
   });
 });
