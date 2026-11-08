@@ -8,6 +8,7 @@ import {
 } from '../../../types/garage'
 import {
   MaintenanceAxisEnum,
+  MaintenanceSheetKindEnum,
   MaintenanceSourceEnum,
   MaintenanceStatusEnum,
 } from '../../../types/schema.d'
@@ -164,6 +165,13 @@ export function sheetAuthor(summary: MaintenanceSummary, sheetId: number): strin
   return summary.sheets.find((sheet) => sheet.id === sheetId)?.created_by_display ?? ''
 }
 
+/** Auteur d'un signalement : celui de sa fiche d'intervention (summary.sheets), ou de sa fiche de contrôle (porté par le signalement). */
+export function signalementAuthor(summary: MaintenanceSummary, signalement: MaintenanceSignalement): string {
+  return signalement.sheet_kind === MaintenanceSheetKindEnum.inspection
+    ? signalement.author_display
+    : sheetAuthor(summary, signalement.sheet_id)
+}
+
 export function maintenanceBadge(counts: MaintenanceCounts): { count: number; color: 'red' | 'orange' } | null {
   const count = counts.overdue + counts.to_plan
   if (count === 0) return null
@@ -224,4 +232,23 @@ export function filterOtherWork(items: MaintenanceOtherWork[], query: string): M
   const normalizedQuery = normalize(query.trim())
   if (!normalizedQuery) return items
   return items.filter((item) => normalize(item.name).includes(normalizedQuery))
+}
+
+
+/**
+ * La mesure d'usure fixe-t-elle le statut de la ligne ? Oui si elle prévaut sur la pose et qu'elle est critique (ligne « Dépassé »
+ * alors que l'échéance ne l'est pas) ou à surveiller (« À prévoir » issu de la mesure). L'échéance km à droite passe alors en gris :
+ * elle reste exacte mais n'explique pas le classement. Le booléen `measure_prevails` vient de l'API : la règle n'est pas recalculée.
+ */
+export function measureDrivesStatus(task: MaintenanceTask, config: { wear_critical_threshold: number; wear_alert_threshold: number }): boolean {
+  if (!task.measure_prevails || !task.last_measurement) return false
+  const level = task.last_measurement.level
+  if (task.status === MaintenanceStatusEnum.overdue) {
+    const periodOverdue = (task.km?.remaining ?? 1) <= 0 || (task.months?.remaining_days ?? 1) <= 0
+    return level <= config.wear_critical_threshold && !periodOverdue
+  }
+  if (task.status === MaintenanceStatusEnum.to_plan) {
+    return level <= config.wear_alert_threshold && task.source === MaintenanceSourceEnum.mesure
+  }
+  return false
 }

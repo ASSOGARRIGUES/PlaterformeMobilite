@@ -1,6 +1,8 @@
 import { KeyboardEvent, PointerEvent, useRef } from 'react'
 import { Box, Group, Text } from '@mantine/core'
 import { IconHandFinger } from '@tabler/icons-react'
+import dayjs from 'dayjs'
+import 'dayjs/locale/fr'
 import { WEAR_ZONES, WearConfig, wearTrackBands, wearZoneKey } from './wearUtils'
 
 type WearSliderProps = {
@@ -11,17 +13,25 @@ type WearSliderProps = {
   onChangeEnd?: (value: number) => void
   config: WearConfig
   label: string
+  /** Dernier relevé connu : repère sur la piste, date en dessous (sans texte de plus sur mobile). */
+  last?: { level: number; date: string | null } | null
 }
 
 const THUMB = 32
 const TICKS = Array.from({ length: 11 }, (_, i) => i)
+
+/** Date courte du repère : « 28 sept. », avec l'année quand elle n'est pas l'année courante. */
+function markerDate(date: string): string {
+  const day = dayjs(date).locale('fr')
+  return day.format(day.year() === dayjs().year() ? 'D MMM' : 'D MMM YY')
+}
 
 /**
  * Curseur d'usure 0-10 : piste en 3 bandes à bords francs qui suivent les seuils, état « pas de mesure ».
  * Sur mesure plutôt que `Slider` de Mantine : celui-ci exige une valeur numérique (pas d'état vide) et
  * n'expose pas `aria-valuetext`.
  */
-export function WearSlider({ value, onChange, onChangeEnd, config, label }: WearSliderProps) {
+export function WearSlider({ value, onChange, onChangeEnd, config, label, last }: WearSliderProps) {
   const trackRef = useRef<HTMLDivElement>(null)
   const draggingRef = useRef(false)
   const unset = value == null
@@ -113,6 +123,39 @@ export function WearSlider({ value, onChange, onChangeEnd, config, label }: Wear
               style={{ left: `${tick * 10}%`, display: tick === 0 || tick === 10 ? 'none' : undefined }}
             />
           ))}
+          {last && (
+            <>
+              <Box
+                aria-hidden
+                data-testid="wear-last-marker"
+                pos="absolute"
+                top={-4}
+                bottom={-4}
+                w={4}
+                bg="gray.8"
+                style={{ left: `${last.level * 10}%`, transform: 'translateX(-50%)', borderRadius: 2, boxShadow: '0 0 0 2px white' }}
+              />
+              {last.date && (
+                <Text
+                  aria-hidden
+                  size="xs"
+                  c="dimmed"
+                  pos="absolute"
+                  style={{
+                    // Sans poignée, la date passe au-dessus de la piste : la ligne du bas porte « Touchez la barre ».
+                    ...(unset ? { bottom: 'calc(100% + 5px)' } : { top: 'calc(100% + 9px)' }),
+                    left: `${last.level * 10}%`,
+                    // Collé au bord près des extrémités pour rester dans le cadre de la carte.
+                    transform: `translateX(${last.level <= 2 ? '-25%' : last.level >= 8 ? '-75%' : '-50%'})`,
+                    whiteSpace: 'nowrap',
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {markerDate(last.date)}
+                </Text>
+              )}
+            </>
+          )}
           {!unset && (
             <Box
               pos="absolute"
@@ -132,14 +175,14 @@ export function WearSlider({ value, onChange, onChangeEnd, config, label }: Wear
         </Box>
       </Box>
       <Group justify="space-between" mt={-6}>
-        <Text size="xs" c="dimmed">0</Text>
+        <Text size="xs" c="dimmed" style={{ visibility: !unset && last?.date && last.level === 0 ? 'hidden' : undefined }}>0</Text>
         {unset && (
           <Group gap={4} c="dimmed">
             <IconHandFinger size={15} aria-hidden />
             <Text size="xs" fw={600}>Touchez la barre</Text>
           </Group>
         )}
-        <Text size="xs" c="dimmed">10</Text>
+        <Text size="xs" c="dimmed" style={{ visibility: !unset && last?.date && last.level === 10 ? 'hidden' : undefined }}>10</Text>
       </Group>
     </div>
   )

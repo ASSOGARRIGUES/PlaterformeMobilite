@@ -342,6 +342,20 @@ export function useInspectionStepper(sheetId: number, perPage: number) {
       setWearPage(currentWearPage + 1)
       return
     }
+    // Toutes les usures du type de véhicule doivent être mesurées pour continuer (l'API le refuse aussi à la validation).
+    if (activeStep === WEAR_STEP) {
+      const missing = measurableTasks.filter((task) => draft.wear[task.id] == null)
+      if (missing.length) {
+        const first = chunkWearTasks(measurableTasks, perPage).findIndex((page) => page.some((task) => task.id === missing[0].id))
+        setWearPage(Math.max(first, 0))
+        setStepError({
+          message: `Mesurez toutes les usures avant de continuer. Manquantes : ${missing.map((task) => task.name).join(', ')}.`,
+          retryable: false,
+          fields: [],
+        })
+        return
+      }
+    }
     if (activeStep === PLANNED_STEP) {
       await transition(PLANNED_STEP, () => setRecapView(true))
       return

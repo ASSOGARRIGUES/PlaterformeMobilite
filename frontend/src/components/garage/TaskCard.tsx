@@ -39,6 +39,8 @@ type TaskCardProps = {
   onToggleExpanded?: () => void
   /** `planned` : opération à prévoir d'une fiche de contrôle, sans pièces, sous-total ni usure (description et photos seulement). */
   variant?: 'default' | 'planned'
+  /** Confirmation avant de retirer une photo (édition d'une fiche validée, story 3.3) ; absent : retrait immédiat. */
+  onConfirmPhotoRemoval?: (proceed: () => void) => void
 }
 
 export function TaskCard({
@@ -51,6 +53,7 @@ export function TaskCard({
   expanded: expandedProp,
   onToggleExpanded,
   variant = 'default',
+  onConfirmPhotoRemoval,
 }: TaskCardProps) {
   const isPlanned = variant === 'planned'
   const [internalExpanded, setInternalExpanded] = useState(defaultExpanded)
@@ -91,7 +94,9 @@ export function TaskCard({
   }
 
   const removePhoto = (index: number) => {
-    commit({ ...task, photos: task.photos.filter((_, i) => i !== index) })
+    const proceed = () => commit({ ...task, photos: task.photos.filter((_, i) => i !== index) })
+    if (onConfirmPhotoRemoval) onConfirmPhotoRemoval(proceed)
+    else proceed()
   }
 
   return (

@@ -14,6 +14,7 @@ import {
   OpenPhotos,
   OpenSheet,
   PhotoThumb,
+  MeasuredLine,
   RealizationLine,
   RowCard,
   SheetLink,
@@ -25,9 +26,12 @@ import {
   initials,
   mainAxisProgress,
   mainFigure,
+  measureDrivesStatus,
   secondaryFigure,
   toPlanReason,
 } from './maintenanceUtils'
+import { useGarageConfig } from '../../../hooks/garage/useGarageConfig'
+import { MaintenanceSheetKindEnum } from '../../../types/schema.d'
 
 type MaintenanceTaskRowProps = {
   task: MaintenanceTask
@@ -37,7 +41,7 @@ type MaintenanceTaskRowProps = {
   /** Mobile : la sous-ligne passe en pleine largeur sous l'en-tête, pour ne pas être écrasée par l'écart à droite */
   stacked?: boolean
   dense?: boolean
-  authorOf: (sheetId: number) => string
+  authorOf: (signalement: MaintenanceSignalement) => string
   /** Absent : aucun lien « Fiche #n » (stepper dans la PWA installée) */
   onOpenSheet?: OpenSheet
   onOpenPhotos: OpenPhotos
@@ -62,6 +66,10 @@ function FullTaskRow({ task, color, today, showDate, stacked = false, dense = fa
   const isUpToDate = task.status === MaintenanceStatusEnum.up_to_date
   const reason = toPlanReason(task)
   const realization = task.last_realization
+  // Mesure d'un contrôle plus récente que la pose : elle prévaut (calcul côté API) et la ligne ouvre ce contrôle, pas la fiche de pose.
+  const measurement = task.measure_prevails ? task.last_measurement : null
+  const { config } = useGarageConfig()
+  const measureDrives = !!config && measureDrivesStatus(task, config)
   // Tâche signalée mais jamais réalisée : pas d'échéance calculable, on rappelle pourquoi et la périodicité
   const realizationLine = realization ? (
     <RealizationLine
@@ -69,16 +77,24 @@ function FullTaskRow({ task, color, today, showDate, stacked = false, dense = fa
       km={realization.km}
       wearLevel={realization.wear_level}
       wearIsReason={reason === 'usure'}
+      plainWear={task.is_wear_task}
       today={today}
       showDate={showDate}
-      sheetLink={<SheetLink sheetId={realization.sheet_id} onOpenSheet={onOpenSheet} />}
+      sheetLink={measurement ? null : <SheetLink sheetId={realization.sheet_id} onOpenSheet={onOpenSheet} />}
     />
   ) : (
     <Text size="xs" c="dimmed">
       <IconHistoryOff size={14} style={{ verticalAlign: '-3px', marginRight: 4 }} />
-      Jamais enregistrée
+      {measurement ? 'Pose jamais enregistrée' : 'Jamais enregistrée'}
       <PeriodicityBadge label={periodicityLabel(task.periodicity)} style={{ marginLeft: 6, verticalAlign: 'middle' }} />
     </Text>
+  )
+  const measuredLine = measurement && (
+    <MeasuredLine
+      taskName={task.name}
+      measurement={measurement}
+      onOpen={onOpenSheet ? () => onOpenSheet(measurement.sheet_id, MaintenanceSheetKindEnum.inspection) : undefined}
+    />
   )
 
   return (
@@ -93,7 +109,7 @@ function FullTaskRow({ task, color, today, showDate, stacked = false, dense = fa
               <Text fw={dense ? 600 : 700} size={dense ? 'sm' : 'md'}>{task.name}</Text>
               {task.is_critical && <CriticalMark />}
             </Group>
-            {!stacked && realizationLine}
+            {!stacked && <>{realizationLine}{measuredLine}</>}
           </Stack>
           {figure && (
             <Stack
@@ -108,13 +124,13 @@ function FullTaskRow({ task, color, today, showDate, stacked = false, dense = fa
               }}
               aria-label={reason === 'echeance' ? `Raison : échéance, ${figure}` : undefined}
             >
-              <Text fw={isUpToDate ? 700 : 800} size={isUpToDate ? 'sm' : 'md'} c={isUpToDate ? 'dimmed' : `${color}.8`}>{figure}</Text>
+              <Text fw={isUpToDate ? 700 : 800} size={isUpToDate ? 'sm' : 'md'} c={isUpToDate || measureDrives ? 'dimmed' : `${color}.8`}>{figure}</Text>
               {secondary && <Text size="xs" c="dimmed">{secondary}</Text>}
             </Stack>
           )}
           {action}
         </Group>
-        {stacked && realizationLine}
+        {stacked && <>{realizationLine}{measuredLine}</>}
         {progress != null && (
           <Progress size={dense ? 4 : 6} color={color} value={Math.max(4, clampProgress(progress) * 100)} />
         )}
@@ -122,7 +138,7 @@ function FullTaskRow({ task, color, today, showDate, stacked = false, dense = fa
           <SignalementBlock
             key={signalement.task_id}
             signalement={signalement}
-            author={authorOf(signalement.sheet_id)}
+            author={authorOf(signalement)}
             today={today}
             onOpenSheet={onOpenSheet}
             onOpenPhotos={onOpenPhotos}
@@ -149,9 +165,10 @@ export function MaintenanceUnknownRow({ task }: { task: MaintenanceTask }) {
             <Text fw={600} size="sm">{task.name}</Text>
             {task.is_critical && <CriticalMark />}
           </Group>
+          {task.is_wear_task && <Text size="xs" c="dimmed">Aucune pose ni mesure enregistrée</Text>}
           {periodicity && <PeriodicityBadge label={periodicity} style={{ alignSelf: 'flex-start' }} />}
         </Stack>
-        <Text size="xs" c="dimmed">Inconnu</Text>
+        <Text size="xs" c="dimmed">{task.is_wear_task ? 'Non renseigné' : 'Inconnu'}</Text>
       </Group>
     </RowCard>
   )

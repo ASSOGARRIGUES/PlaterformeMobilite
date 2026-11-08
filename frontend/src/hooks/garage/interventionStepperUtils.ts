@@ -64,6 +64,23 @@ export function localTaskToUpdatePayload(current: LocalTask, previous: LocalTask
   return payload
 }
 
+/**
+ * Rétablit, sur la tâche locale courante, les seuls champs du payload rejeté (valeur enregistrée `synced`) : les autres
+ * modifications faites pendant la requête restent (story 3.3, reprise du tri 2.7).
+ */
+export function restoreRejectedFields(current: LocalTask, synced: LocalTask, payload: UpdateInterventionTaskPayload): LocalTask {
+  const restored: LocalTask = { ...current }
+  if ('name' in payload) restored.name = synced.name
+  if ('description' in payload) restored.description = synced.description
+  if ('wear_level' in payload) restored.wearLevel = synced.wearLevel
+  if ('parts' in payload) restored.parts = synced.parts
+  if ('add_photos' in payload || 'remove_photo_ids' in payload) {
+    restored.photos = synced.photos
+    restored.photoIds = synced.photoIds
+  }
+  return restored
+}
+
 /** Reconstruit une LocalTask complète depuis une tâche renvoyée par l'API (AC3/AC4). */
 export function localTaskFromApiTask(
   apiTask: InterventionTask,

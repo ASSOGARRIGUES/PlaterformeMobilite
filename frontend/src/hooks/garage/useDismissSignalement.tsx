@@ -31,7 +31,9 @@ export function useDismissSignalement(vehicleId: number) {
       title: 'Écarter ce signalement ?',
       children: (
         <Text size="sm">
-          Le signalement disparaîtra de « À prévoir ». L&apos;action est tracée (auteur et date).
+          À utiliser uniquement si ce signalement est une erreur (saisi par erreur, doublon). S&apos;il est réel,
+          planifiez une intervention plutôt que de l&apos;écarter. Le signalement disparaîtra de « À prévoir ».
+          L&apos;action est tracée (auteur et date).
         </Text>
       ),
       labels: { confirm: 'Écarter', cancel: 'Annuler' },

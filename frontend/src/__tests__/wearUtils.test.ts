@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { wearZoneKey, wearSegmentValues, wearTrackBands, WEAR_ZONES } from '../components/garage/wearUtils';
+import { isWearZoneImproved, wearZoneKey, wearSegmentValues, wearTrackBands, WEAR_ZONES } from '../components/garage/wearUtils';
 
 const cfg = (critical: number, alert: number) => ({ wear_critical_threshold: critical, wear_alert_threshold: alert });
 
@@ -72,5 +72,21 @@ describe('WEAR_ZONES', () => {
     expect(WEAR_ZONES.critical.label).toBe('Critique');
     expect(WEAR_ZONES.watch.label).toBe('À surveiller');
     expect(WEAR_ZONES.good.label).toBe('Bon état');
+  });
+});
+
+describe('isWearZoneImproved', () => {
+  it('is true only when the value is in a better zone than the last level', () => {
+    expect(isWearZoneImproved(3, 2, cfg(2, 5))).toBe(true); // critique -> à surveiller
+    expect(isWearZoneImproved(8, 4, cfg(2, 5))).toBe(true); // à surveiller -> bon
+    expect(isWearZoneImproved(9, 1, cfg(2, 5))).toBe(true); // critique -> bon
+  });
+
+  it('stays quiet within the same zone, when worse, or without a measurement', () => {
+    expect(isWearZoneImproved(5, 3, cfg(2, 5))).toBe(false); // même zone, +2
+    expect(isWearZoneImproved(1, 2, cfg(2, 5))).toBe(false);
+    expect(isWearZoneImproved(2, 8, cfg(2, 5))).toBe(false);
+    expect(isWearZoneImproved(null, 2, cfg(2, 5))).toBe(false);
+    expect(isWearZoneImproved(7, null, cfg(2, 5))).toBe(false);
   });
 });

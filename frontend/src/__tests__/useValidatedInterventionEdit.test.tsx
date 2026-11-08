@@ -59,4 +59,23 @@ describe('useValidatedInterventionEdit.persistTask', () => {
       values: { wear_level: 4 },
     })
   })
+
+  // Reprise du tri 2.7 : un rejet ne doit pas effacer les autres modifications locales de la tâche.
+  it('un rejet ne rétablit que le champ du payload rejeté', async () => {
+    const { result } = renderHook(() => useValidatedInterventionEdit(7))
+    await waitFor(() => expect(result.current.doneTasks).toHaveLength(1))
+
+    const task = result.current.doneTasks[0]
+    customMutate.mockRejectedValueOnce({ response: { status: 400, data: { wear_level: ['Valeur refusée.'] } } })
+    // La description est modifiée localement (sans être envoyée) pendant que l'usure est rejetée.
+    const edited = { ...task, wearLevel: 2, description: 'Brouillon pas encore envoyé' }
+    await act(async () => {
+      result.current.updateTaskLocal(task.localId, edited, 'done')
+      await result.current.persistTask(task.localId, 'done', { ...task, wearLevel: 2 })
+    })
+
+    const after = result.current.doneTasks[0]
+    expect(after.wearLevel).toBe(task.wearLevel)
+    expect(after.description).toBe('Brouillon pas encore envoyé')
+  })
 })

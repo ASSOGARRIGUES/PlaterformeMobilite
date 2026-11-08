@@ -223,14 +223,18 @@ export function localPlannedTaskFromApi(task: InspectionTask, catalogById: Map<n
 
 // ── Dernier relevé d'usure (carte « aérée » d'une tâche unique) ──────────────
 
-/** Dernière mesure par tâche : la mesure d'un contrôle, sinon l'état de la pièce posée à la dernière réalisation. */
+/**
+ * Dernière mesure par tâche : la mesure d'un contrôle si elle est plus récente que la dernière réalisation
+ * (même règle que `alerts.py`), sinon l'état de la pièce posée à la dernière réalisation.
+ */
 export function lastWearByTask(summary: MaintenanceSummary | undefined): Record<number, { level: number; date: string | null }> {
   const result: Record<number, { level: number; date: string | null }> = {}
   summary?.tasks.forEach((task) => {
-    if (task.last_measurement) {
-      result[task.catalog_task_id] = { level: task.last_measurement.level, date: task.last_measurement.date }
-    } else if (task.last_realization?.wear_level != null) {
-      result[task.catalog_task_id] = { level: task.last_realization.wear_level, date: task.last_realization.date }
+    const { last_measurement: measurement, last_realization: realization } = task
+    if (measurement && (!realization || measurement.date > realization.date)) {
+      result[task.catalog_task_id] = { level: measurement.level, date: measurement.date }
+    } else if (realization?.wear_level != null) {
+      result[task.catalog_task_id] = { level: realization.wear_level, date: realization.date }
     }
   })
   return result

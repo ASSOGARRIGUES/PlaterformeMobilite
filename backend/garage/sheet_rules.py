@@ -77,18 +77,32 @@ def create_sheet_mileage_entry(sheet, source, user):
     return warnings
 
 
+def sheet_mileage_chain(source, source_id):
+    """Relevé km d'une fiche suivi de ses corrections successives (vide si la fiche n'en a pas)."""
+    entry = MileageEntry.objects.filter(source=source, source_id=source_id, corrects__isnull=True).first()
+    if entry is None:
+        return []
+    chain = [entry]
+    while True:
+        correction = MileageEntry.objects.filter(corrects=chain[-1]).first()
+        if correction is None:
+            return chain
+        chain.append(correction)
+
+
+def chain_root(entry):
+    """Relevé d'origine d'une correction (le relevé lui-même s'il n'en corrige aucun)."""
+    while entry.corrects_id:
+        entry = entry.corrects
+    return entry
+
+
 def sync_sheet_mileage_date(sheet, source):
     """Reporte un changement de `start_date` d'une fiche validée sur son relevé km (et ses corrections)."""
     with transaction.atomic():
-        entry = MileageEntry.objects.filter(source=source, source_id=sheet.id, corrects__isnull=True).first()
-        if entry is None:
+        chain = sheet_mileage_chain(source, sheet.id)
+        if not chain:
             return
-        chain = [entry]
-        while True:
-            correction = MileageEntry.objects.filter(corrects=chain[-1]).first()
-            if correction is None:
-                break
-            chain.append(correction)
         MileageEntry.objects.filter(pk__in=[e.pk for e in chain]).update(date=sheet.start_date)
         latest = MileageEntry.objects.filter(
             vehicle=sheet.vehicle, is_corrected=False

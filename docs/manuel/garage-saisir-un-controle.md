@@ -21,13 +21,26 @@ Un indicateur « 3 / 7 » reste affiché en haut, avec « Enregistré » ou « N
 |---|---|---|
 | 1 | Kilométrage | Je note le compteur. |
 | 2 | Niveaux | Huile, refroidissement, lave-glace : un appui = OK, deux appuis = défaut, trois appuis = non vérifié. |
-| 3 | Usure | Pour chaque pièce (plaquettes, pneus…), j'appuie sur **À changer**, **À surveiller** ou **Bon**. Je retouche le bouton choisi pour effacer. Une pièce « critique » passe en rouge, sans bloquer le contrôle. |
+| 3 | Usure | Pour chaque pièce (plaquettes, pneus…), j'appuie sur **À changer**, **À surveiller** ou **Bon**. Je retouche le bouton choisi pour effacer. Une pièce « critique » passe en rouge, sans bloquer le contrôle. **Toutes les pièces doivent être mesurées** pour passer à l'étape suivante : l'application me dit lesquelles manquent. |
 | 4 | Éclairage | **OK** ou **Défaut** (je peux préciser le défaut). |
 | 5 | Dégâts | **Aucun**, ou **À signaler** : une carte par dégât avec photos et description. |
 | 6 | Essai | **Réalisé** ou **Non réalisé**, avec des observations facultatives. |
 | 7 | À prévoir | J'ajoute les opérations à programmer. |
 
 Puis le **Récapitulatif** : je relis, puis j'appuie sur **Valider la fiche**.
+
+## Je corrige un contrôle déjà validé
+
+Un contrôle validé se rouvre depuis la fiche du véhicule : onglet **Contrôles**, je touche la ligne, puis **Modifier**.
+
+- Le bouton n'est là que **pendant 3 jours** après la validation (le **responsable garagiste** peut corriger au-delà).
+- En mode édition, **chaque changement est enregistré aussitôt**. Le champ affiche « Enregistrement… » puis « Enregistré ». Il n'y a pas de bouton « Annuler » : je corrige simplement la valeur.
+- Je touche **Terminer** quand j'ai fini.
+- Le **kilométrage** ne se change pas ici : le lien **Corriger le kilométrage** (réservé aux responsables) ouvre la correction kilométrique.
+- Supprimer un dégât, une photo ou une opération demande une confirmation.
+- Si un enregistrement échoue (réseau coupé, serveur), **seul le champ concerné** revient à sa valeur précédente et s'entoure de rouge. Un message dit ce qui s'est passé, avec **Réessayer**. Les autres modifications sont conservées. Sur téléphone, un bandeau en bas rappelle les champs non enregistrés.
+- Un message rappelle que modifier la fiche peut changer le statut d'entretien du véhicule.
+- Une pièce déjà mesurée ne peut pas être « démesurée » : je corrige sa valeur.
 
 ## 3. Si le réseau coupe
 

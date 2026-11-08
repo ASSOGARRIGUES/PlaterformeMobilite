@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Navigate, useParams } from 'react-router-dom'
 import { useGo } from '@refinedev/core'
 import { Alert, Box, Button, Center, Group, Loader, Paper, Stack, Text, Textarea, Title } from '@mantine/core'
 import { IconAlertTriangle, IconArrowRight, IconBulb, IconBulbOff, IconCheck, IconCircleCheck, IconCloudCheck, IconHome, IconRefresh, IconRoad, IconWifiOff } from '@tabler/icons-react'
@@ -95,13 +95,9 @@ const InspectionStepper = () => {
     )
   }
 
+  // Une fiche validée se consulte (et se corrige) depuis la fiche du véhicule : plus de cul-de-sac « déjà validée » (story 3.3).
   if (s.sheet?.status === 'validated') {
-    return (
-      <Stack align="center" gap="md" p="lg" ta="center">
-        <Text>Cette fiche de contrôle est déjà validée.</Text>
-        <Button mih={48} onClick={s.goHome}>Retour au garage</Button>
-      </Stack>
-    )
+    return <Navigate to={`/vehicle/${s.sheet.vehicle.id}/inspection/${s.sheet.id}`} replace />
   }
 
   if (s.isExpired && s.sheet) {
