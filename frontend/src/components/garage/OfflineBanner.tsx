@@ -25,7 +25,7 @@ export function OfflineBanner() {
       radius={0}
       style={{ position: 'fixed', top: 'env(safe-area-inset-top)', left: 0, right: 0, zIndex: 9999 }}
     >
-      Hors-ligne — la saisie reste possible, mais la soumission échouera
+      Hors ligne — les saisies ne sont pas enregistrées tant que la connexion n'est pas revenue
     </Alert>
   )
 }

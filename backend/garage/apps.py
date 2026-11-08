@@ -8,6 +8,7 @@ class GarageAppConfig(AppConfig):
     def ready(self):
         from django.db.models.signals import post_migrate
         post_migrate.connect(_setup_garage_groups, sender=self)
+        import garage.signals  # noqa — connecte les receivers
 
 
 def _setup_garage_groups(sender, **kwargs):

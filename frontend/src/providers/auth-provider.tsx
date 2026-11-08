@@ -156,6 +156,7 @@ export const authProvider: AuthProvider = {
         phone: data.phone,
         email: data.email,
         avatar: data.avatar,
+        inspection_wear_input: data.inspection_wear_input,
     };
   },
 

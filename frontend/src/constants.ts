@@ -6,6 +6,7 @@ import {
     PaymentModeEnum,
     ReasonEnum, VehicleStatusEnum,
     VehicleTypeEnum,
+    SourceEnum,
 } from "./types/schema.d";
 import {axiosInstance} from "./providers/rest-data-provider/utils";
 import {DateInputProps} from "@mantine/dates";
@@ -77,6 +78,18 @@ export const bugSeverityLabelMap: Record<string,string> = {
     [BugSeverityEnum.critical]: "Bloquant: je suis bloqué(e) dans mon travail",
 }
 
+export const mileageSourceLabelMap: Record<SourceEnum, string> = {
+    [SourceEnum.contract]: "Contrat (historique)",
+    [SourceEnum.contract_start]: "Régularisation à la création du contrat",
+    [SourceEnum.contract_end]: "Clôture du contrat",
+    [SourceEnum.intervention]: "Fiche d'intervention",
+    [SourceEnum.inspection]: "Fiche de contrôle",
+    [SourceEnum.correction]: "Correction",
+    [SourceEnum.migration]: "Migration initiale",
+    [SourceEnum.creation]: "Création du véhicule",
+    [SourceEnum.manual_edit]: "Modification manuelle",
+};
+
 export const StatusConsideredOngoing = [ContractStatusEnum.pending,ContractStatusEnum.over,ContractStatusEnum.waiting];
 
 
@@ -90,6 +103,10 @@ export function humanizeDate(date: string) {
 
 export function humanizeNumber(number: number) {
     return number.toLocaleString('fr-FR');
+}
+
+export function plural(count: number, singular: string, pluralForm: string) {
+    return count > 1 ? pluralForm : singular;
 }
 
 export function humanizeFirstName(name: string | undefined){

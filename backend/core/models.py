@@ -33,6 +33,15 @@ class User(AbstractUser):
             "unique": _("A user with that email already exists."),
         },)
 
+    INSPECTION_WEAR_INPUT_CHOICES = [
+        ('segments', 'Boutons'),
+        ('slider', 'Curseur'),
+    ]
+    inspection_wear_input = models.CharField(
+        max_length=10, choices=INSPECTION_WEAR_INPUT_CHOICES, default='slider',
+        help_text="Saisie de l'usure dans la fiche de contrôle : boutons ou curseur",
+    )
+
     actions = models.ManyToManyField(Action, blank=True, related_name='users')
 
     current_action = models.ForeignKey(Action, on_delete=models.SET_NULL, related_name='currently_connected_users', null=True)

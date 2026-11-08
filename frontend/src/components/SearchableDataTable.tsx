@@ -65,6 +65,7 @@ type SearchableDataTableProps<T> = {
     defaultArchived?: boolean;
     withArchivedSwitch?: boolean;
     withTableBorder?: boolean;
+    syncWithLocation?: boolean;
 } & Omit<DataTableProps<T>, "columns" | "groups" | "withTableBorder" | "customLoader">
 
 function SearchableDataTable<T extends BaseRecord>({
@@ -91,6 +92,7 @@ function SearchableDataTable<T extends BaseRecord>({
                                                        withArchivedSwitch = true,
                                                        withTableBorder = false,
                                                        addPermKey,
+                                                       syncWithLocation = true,
                                                        ...othersProps
                                                    }: SearchableDataTableProps<T>)
 {
@@ -133,7 +135,7 @@ function SearchableDataTable<T extends BaseRecord>({
         setSorters,
         setFilters,
     } = useTable<T, HttpError>({
-        syncWithLocation: true,
+        syncWithLocation,
         pagination: {pageSize: pageSize},
         resource: resource,
         sorters: {initial: [{field: String(sortStatus.columnAccessor), order: sortStatus.direction}]},
