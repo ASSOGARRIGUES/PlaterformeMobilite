@@ -121,7 +121,7 @@ export function WearTaskCard({ task, value, onChange, readOnly = false, input = 
         {last && isWearZoneImproved(value, last.level, config) && (
           <Group gap={6} wrap="nowrap" role="status" data-testid="wear-improved-warning">
             <IconAlertCircle size={17} color="var(--mantine-color-orange-7)" style={{ flexShrink: 0 }} aria-hidden />
-            <Text fz={13} fw={600} lh={1.2}>Pièce remplacée depuis le dernier relevé ?</Text>
+            <Text fz={13} fw={600} lh={1.2}>Attention : meilleur état qu'au dernier relevé</Text>
           </Group>
         )}
 

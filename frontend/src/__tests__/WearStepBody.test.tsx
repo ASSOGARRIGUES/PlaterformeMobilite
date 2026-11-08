@@ -92,7 +92,7 @@ describe('WearStepBody pagination', () => {
   it('warns when the value is in a better zone than the last measurement', () => {
     renderWithLast(2, { 1: 7, 2: 9 }) // tâche 1 : critique -> bon ; tâche 2 : bon -> bon
     expect(screen.getAllByTestId('wear-improved-warning')).toHaveLength(1)
-    expect(screen.getByText('Pièce remplacée depuis le dernier relevé ?')).toBeTruthy()
+    expect(screen.getByText("Attention : meilleur état qu'au dernier relevé")).toBeTruthy()
   })
 
   it('stays quiet when worse, within the same zone or unmeasured', () => {
