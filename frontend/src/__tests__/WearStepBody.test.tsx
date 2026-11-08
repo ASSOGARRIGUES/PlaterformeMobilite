@@ -65,4 +65,46 @@ describe('WearStepBody pagination', () => {
     )
     expect(screen.getByText(/Dernier relevé : Bon état \(9\/10\)/)).toBeTruthy()
   })
+
+  const renderWithLast = (count: number, values: Record<number, number>, input: 'slider' | 'segments' = 'slider') =>
+    render(
+      <MantineProvider>
+        <WearStepBody
+          tasks={makeTasks(count)}
+          values={values}
+          onSet={() => {}}
+          page={0}
+          perPage={2}
+          input={input}
+          config={config}
+          last={{ 1: { level: 2, date: '2026-01-05' }, 2: { level: 8, date: '2026-01-05' } }}
+        />
+      </MantineProvider>,
+    )
+
+  it('keeps the detailed last measurement line to the single-task card, but marks every slider', () => {
+    renderWithLast(2, {})
+    expect(screen.queryByText(/Dernier relevé :/)).toBeNull()
+    expect(screen.getAllByTestId('wear-last-marker')).toHaveLength(2)
+    expect(screen.getAllByText(/5 janv/)).toHaveLength(2)
+  })
+
+  it('warns when the value is in a better zone than the last measurement', () => {
+    renderWithLast(2, { 1: 7, 2: 9 }) // tâche 1 : critique -> bon ; tâche 2 : bon -> bon
+    expect(screen.getAllByTestId('wear-improved-warning')).toHaveLength(1)
+    expect(screen.getByText('Pièce remplacée depuis le dernier relevé ?')).toBeTruthy()
+  })
+
+  it('stays quiet when worse, within the same zone or unmeasured', () => {
+    renderWithLast(2, { 1: 1, 2: 3 }) // tâche 1 : critique -> critique ; tâche 2 : bon -> à surveiller
+    expect(screen.queryByTestId('wear-improved-warning')).toBeNull()
+    cleanup()
+    renderWithLast(2, {})
+    expect(screen.queryByTestId('wear-improved-warning')).toBeNull()
+  })
+
+  it('also warns with the segment input', () => {
+    renderWithLast(1, { 1: 8 }, 'segments')
+    expect(screen.getAllByTestId('wear-improved-warning')).toHaveLength(1)
+  })
 })

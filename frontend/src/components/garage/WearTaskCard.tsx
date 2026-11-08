@@ -1,5 +1,5 @@
 import { Box, Group, Paper, Stack, Text } from '@mantine/core'
-import { IconHistory, IconMinus } from '@tabler/icons-react'
+import { IconAlertCircle, IconHistory, IconMinus } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/fr'
@@ -7,7 +7,7 @@ import { MeasurableTask } from '../../types/garage'
 import { taskIcon } from './maintenance/taskIcons'
 import { WearSegments } from './WearSegments'
 import { WearSlider } from './WearSlider'
-import { WEAR_ZONES, WearConfig, wearZoneKey } from './wearUtils'
+import { WEAR_ZONES, WearConfig, isWearZoneImproved, wearZoneKey } from './wearUtils'
 
 dayjs.extend(relativeTime)
 dayjs.locale('fr')
@@ -24,6 +24,7 @@ type WearTaskCardProps = {
   config: WearConfig
   /** Une seule tâche sur la page : carte « aérée », avec la ligne de dernier relevé. */
   roomy?: boolean
+  /** Dernier relevé connu : repère sur le curseur et avertissement d'incohérence ; le texte détaillé n'apparaît qu'en `roomy`. */
   last?: { level: number; date: string | null } | null
 }
 
@@ -112,9 +113,16 @@ export function WearTaskCard({ task, value, onChange, readOnly = false, input = 
         </Group>
 
         {input === 'slider' ? (
-          <WearSlider value={value} onChange={(next) => onChange?.(next)} config={config} label={task.name} />
+          <WearSlider value={value} onChange={(next) => onChange?.(next)} config={config} label={task.name} last={last} />
         ) : (
           <WearSegments value={value} onChange={(next) => onChange?.(next)} config={config} label={task.name} />
+        )}
+
+        {last && isWearZoneImproved(value, last.level, config) && (
+          <Group gap={6} wrap="nowrap" role="status" data-testid="wear-improved-warning">
+            <IconAlertCircle size={17} color="var(--mantine-color-orange-7)" style={{ flexShrink: 0 }} aria-hidden />
+            <Text fz={13} fw={600} lh={1.2}>Pièce remplacée depuis le dernier relevé ?</Text>
+          </Group>
         )}
 
         {roomy && last && lastZone && (

@@ -14,7 +14,7 @@ type WearStepBodyProps = {
   perPage: number
   input: WearInput
   config: WearConfig
-  /** Dernière mesure connue par tâche (affichée seulement quand il n'y a qu'une tâche). */
+  /** Dernière mesure connue par tâche : repère et avertissement sur chaque carte, détail en clair quand il n'y a qu'une tâche. */
   last?: Record<number, { level: number; date: string | null }>
 }
 
@@ -49,7 +49,7 @@ export function WearStepBody({ tasks, values, onSet, page, perPage, input, confi
               input={input}
               config={config}
               roomy={single}
-              last={single ? last?.[task.id] : null}
+              last={last?.[task.id]}
             />
           ))}
         </Stack>

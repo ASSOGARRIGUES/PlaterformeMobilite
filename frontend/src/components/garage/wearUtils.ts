@@ -33,6 +33,19 @@ export function wearZoneKey(level: number | null | undefined, config: WearConfig
   return 'good'
 }
 
+/** Rang d'une zone : plus il est haut, meilleur est l'état. */
+const ZONE_RANK: Record<WearZoneKey, number> = { critical: 0, watch: 1, good: 2 }
+
+/**
+ * Vrai quand la valeur saisie est dans une meilleure zone que le dernier relevé : sans remplacement de
+ * la pièce depuis, c'est incohérent (une pièce ne s'use pas à l'envers). Un simple écart au sein d'une zone n'alerte pas.
+ */
+export function isWearZoneImproved(value: number | null | undefined, lastLevel: number | null | undefined, config: WearConfig): boolean {
+  const zone = wearZoneKey(value, config)
+  const lastZone = wearZoneKey(lastLevel, config)
+  return zone !== null && lastZone !== null && ZONE_RANK[zone] > ZONE_RANK[lastZone]
+}
+
 /** Valeur stockée par chaque bouton : le milieu de sa zone, arrondi à l'entier inférieur (jamais hors zone). */
 export function wearSegmentValues(config: WearConfig): Record<WearZoneKey, number> {
   const critical = config.wear_critical_threshold

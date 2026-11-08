@@ -201,6 +201,20 @@ describe('lastWearByTask', () => {
     expect(lastWearByTask(summary)[2]).toEqual({ level: 8, date: '2026-03-01' });
   });
 
+  it('prefers the wear level of a realization more recent than the last measurement (part replaced since)', () => {
+    const replaced = {
+      tasks: [
+        { catalog_task_id: 1, last_measurement: { level: 2, date: '2026-03-01', sheet_id: 1, km: null }, last_realization: { wear_level: 10, date: '2026-04-01' } },
+        { catalog_task_id: 2, last_measurement: { level: 2, date: '2026-04-01', sheet_id: 1, km: null }, last_realization: { wear_level: 10, date: '2026-04-01' } },
+        { catalog_task_id: 3, last_measurement: { level: 2, date: '2026-03-01', sheet_id: 1, km: null }, last_realization: { wear_level: null, date: '2026-04-01' } },
+      ],
+    } as unknown as MaintenanceSummary;
+    const result = lastWearByTask(replaced);
+    expect(result[1]).toEqual({ level: 10, date: '2026-04-01' });
+    expect(result[2]).toEqual({ level: 10, date: '2026-04-01' });
+    expect(result[3]).toBeUndefined();
+  });
+
   it('omits tasks without any known level, and an absent summary', () => {
     expect(Object.keys(lastWearByTask(summary))).toEqual(['1', '2']);
     expect(lastWearByTask(undefined)).toEqual({});
