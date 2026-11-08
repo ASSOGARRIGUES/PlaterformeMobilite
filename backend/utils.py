@@ -27,12 +27,12 @@ def link_callback(uri, rel):
         if settings.PROD:
             path = os.path.join(sRoot, uri.replace(sUrl, ""))
         else:
-            path = os.path.join(settings.STATICFILES_DIRS[0], uri.replace(sUrl, ""))
+            path = finders.find(uri.replace(sUrl, ""))
     else:
         return uri
 
     # make sure that file exists
-    if not os.path.isfile(path):
+    if not path or not os.path.isfile(path):
         raise RuntimeError(
             'media URI must start with %s or %s. Uri: %s Path: %s' % (sUrl, mUrl,uri,path)
         )
