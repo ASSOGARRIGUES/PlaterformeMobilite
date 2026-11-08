@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
@@ -84,7 +84,7 @@ class ArchivableModelViewSet(viewsets.ModelViewSet):
     # action for archive get
     @action(detail=False, methods=['get'])
     def get_archived(self, request):
-        queryset = self.queryset.filter(archived=True)
+        queryset = self.get_queryset().filter(archived=True)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -114,7 +114,7 @@ class VehicleViewSet(ArchivableModelViewSet):
     filterset_class = VehicleFilter
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().select_related('action', 'parking').prefetch_related('parking__actions')
         user_currect_action = self.request.user.current_action
         if user_currect_action:
             return queryset.filter(action=user_currect_action)
@@ -203,7 +203,7 @@ class BeneficiaryViewSet(ArchivableModelViewSet):
     }
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().select_related('action')
         user_currect_action = self.request.user.current_action
         if user_currect_action:
             return queryset.filter(action=user_currect_action)
@@ -359,7 +359,7 @@ class ContractViewSet(ArchivableModelViewSet):
                 with transaction.atomic():
                     serializer.save()
                     contract.status = 'over'
-                    contract.ended_at = datetime.now()
+                    contract.ended_at = timezone.now()
                     contract.vehicle.status = 'available'
                     contract.save()
                     contract.vehicle.save()
@@ -489,6 +489,7 @@ class ParkingViewSet(viewsets.ModelViewSet):
 ###################
 
 class VehicleStatsViewSet(viewsets.ViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
     @extend_schema(
     responses={200: serializers.DictField()}
     )
@@ -507,6 +508,7 @@ class VehicleStatsViewSet(viewsets.ViewSet):
 
 
 class ContractStatsViewSet(viewsets.ViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
     @extend_schema(
     responses={200: serializers.DictField()}
     )

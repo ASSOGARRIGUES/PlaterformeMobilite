@@ -602,6 +602,19 @@ class ContractViewSetTest(BaseAPITest):
         r = self.client.post('/api/contract/', payload)
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_create_succeeds_if_referent_belongs_to_action_but_has_other_current_action(self):
+        other_action = make_action('Other')
+        referent = make_user('referent@test.com', action=self.action)
+        referent.actions.add(other_action)
+        referent.current_action = other_action
+        referent.save()
+        v = self.new_vehicle()
+        b = self.new_beneficiary()
+        payload = self._payload(v, b)
+        payload['referent'] = referent.pk
+        r = self.client.post('/api/contract/', payload)
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+
     def test_delete_within_15_minutes_succeeds(self):
         v = self.new_vehicle()
         b = self.new_beneficiary()
@@ -850,6 +863,18 @@ class PaymentViewSetTest(BaseAPITest):
         self.assertEqual(r.data['total_due'], 500)
         self.assertEqual(r.data['nb_payments'], 2)
         self.assertFalse(r.data['is_payed'])
+
+    def test_get_participation_pdf_for_garrigues_action(self):
+        garrigues_action = make_action('Garrigues')
+        parking = make_parking(action=garrigues_action)
+        user = make_user('garrigues@test.com', action=garrigues_action)
+        v = make_vehicle(garrigues_action, parking, fleet_id=42)
+        b = make_beneficiary(garrigues_action, email='garrigues-b@test.com')
+        contract = make_contract(v, b, user, garrigues_action, price=500, contract_status='over')
+        payment = make_payment(contract, amount=100)
+        r = self.client.get(f'/api/contract/{contract.pk}/payment/{payment.pk}/get_participation_pdf/')
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(r['Content-Type'], 'application/pdf')
 
     def test_summary_is_payed_true_when_fully_paid(self):
         self.contract.status = 'payed'

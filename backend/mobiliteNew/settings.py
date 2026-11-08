@@ -15,6 +15,10 @@ from datetime import timedelta
 from pathlib import Path
 from os import getenv
 from dotenv import load_dotenv
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
 
 
 load_dotenv(".env")
@@ -33,6 +37,29 @@ DEBUG = getenv("DEBUG", "False") == "True"
 PROD = getenv("PROD", "False") == "True"
 
 BASE_URL = getenv("BASE_URL", "http://localhost:8000")
+
+# Endpoints hit repeatedly by infra (Docker HEALTHCHECK, uptime monitors) rather
+# than real user traffic: tracing them at full rate just buries actual requests.
+SENTRY_UNTRACED_PATH_PREFIXES = ("/status/",)
+
+
+def _sentry_traces_sampler(sampling_context):
+    path = sampling_context.get("wsgi_environ", {}).get("PATH_INFO", "")
+    if path.startswith(SENTRY_UNTRACED_PATH_PREFIXES):
+        return 0.0
+    return 1.0
+
+
+if getenv("SENTRY_DSN"):
+    sentry_sdk.init(
+        dsn=getenv("SENTRY_DSN"),
+        environment="production" if PROD else "development",
+        release=getenv("VERSION", "0.0.0-dev"),
+        integrations=[DjangoIntegration()],
+        traces_sampler=_sentry_traces_sampler,
+        send_default_pii=False,
+        ignore_errors=[Http404, PermissionDenied],
+    )
 
 ALLOWED_HOSTS = ["*"]
 CSRF_TRUSTED_ORIGINS = ["http://localhost:5173", "http://localhost:4173", "https://localhost:4173", getenv("URL_CSRF", "http://localhost:8000")] if DEBUG and not PROD else [getenv("URL_CSRF", "http://localhost:8000")]
@@ -216,7 +243,8 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
-    ]
+    ],
+    'EXCEPTION_HANDLER': 'mobiliteNew.sentry_handler.sentry_user_context_exception_handler',
 }
 
 SIMPLE_JWT = {
@@ -233,7 +261,7 @@ DBBACKUP_STORAGE_OPTIONS = {'location': os.path.join(BASE_DIR, 'db_backups')}
 ADMINS = [("Simon", "simon.galand43@gmail.com")]
 
 CRONJOBS = [
-    ('0 22 */ * *', 'core.crons.dbBackup')
+    ('0 22 * * *', 'core.crons.dbBackup')
 ]
 
 

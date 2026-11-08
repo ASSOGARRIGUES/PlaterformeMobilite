@@ -3,8 +3,6 @@ services:
     container_name: "mobilite-backend"
     image: ghcr.io/assogarrigues/platerformemobilite_back:latest
     restart: unless-stopped
-    ports:
-      - "3005:8000"
     links:
       - postgres
     depends_on:
@@ -25,7 +23,7 @@ services:
     image: ghcr.io/assogarrigues/platerformemobilite_front:latest
     restart: unless-stopped
     ports:
-      - "8214:80"
+      - "127.0.0.1:8214:80"
     networks:
       - external
       - mobilite-internal
