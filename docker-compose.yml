@@ -4,7 +4,7 @@ services:
     build: ./backend
     restart: no
     ports:
-      - "3005:8000"
+      - "127.0.0.1:3005:8000"
     links:
       - postgres
     depends_on:
@@ -30,7 +30,7 @@ services:
         - SENTRY_AUTH_TOKEN=${SENTRY_AUTH_TOKEN}
     restart: unless-stopped
     ports:
-      - "8214:80"
+      - "127.0.0.1:8214:80"
     networks:
       - external
       - mobilite-internal
