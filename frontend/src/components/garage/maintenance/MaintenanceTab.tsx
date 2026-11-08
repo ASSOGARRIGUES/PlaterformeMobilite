@@ -114,6 +114,7 @@ export function MaintenanceTab({ summary, isLoading, isError }: MaintenanceTabPr
   const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`, false)
   const { isAuthorized } = useAccessControl()
   const canManage = !!isAuthorized('garage.manage_intervention')
+  const canDismiss = !!isAuthorized('garage.dismiss_signalement')
   const { confirmDismiss } = useDismissSignalement(summary?.vehicle_id ?? 0)
   const [otherWorkQuery, setOtherWorkQuery] = useState('')
   const [allSheetsShown, setAllSheetsShown] = useState(false)
@@ -144,7 +145,7 @@ export function MaintenanceTab({ summary, isLoading, isError }: MaintenanceTabPr
     setLightboxPhotos(photos)
   }
   const authorOf = (signalement: MaintenanceSignalement) => signalementAuthor(summary, signalement)
-  const rowProps = { today, showDate, stacked: isMobile, authorOf, onOpenSheet: openSheetById, onOpenPhotos: openPhotos, onDismiss: canManage ? confirmDismiss : undefined }
+  const rowProps = { today, showDate, stacked: isMobile, authorOf, onOpenSheet: openSheetById, onOpenPhotos: openPhotos, onDismiss: canDismiss ? confirmDismiss : undefined }
 
   const notRecordedSection = groups.notRecorded.length > 0 && (
     <MaintenanceSection kind="notRecorded" count={groups.notRecorded.length}>

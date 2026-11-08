@@ -111,6 +111,7 @@ class MaintenanceConfig(models.Model):
             ('view_dashboard', "Peut accéder au tableau de bord garage"),
             ('view_vehicle', "Peut voir les véhicules dans le module garage"),
             ('override_maintenance_block', "Peut forcer le passage d'un véhicule en disponible malgré un blocage maintenance"),
+            ('dismiss_signalement', "Peut écarter un signalement d'entretien (erreur de saisie uniquement)"),
         ]
 
     def __str__(self):

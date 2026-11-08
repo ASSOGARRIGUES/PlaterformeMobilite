@@ -1764,6 +1764,9 @@ class InterventionSheetAPITestCase(APITestCase):
 
     # ── Écarter un signalement (story 2.13) ──
 
+    def _allow_dismiss(self):
+        self.garagiste.user_permissions.add(Permission.objects.get(codename='dismiss_signalement'))
+
     def _dismiss_url(self, sheet, task):
         return f'/api/garage/intervention/{sheet.id}/tasks/{task.id}/dismiss/'
 
@@ -1773,6 +1776,7 @@ class InterventionSheetAPITestCase(APITestCase):
         return sheet, InterventionTask.objects.create(sheet=sheet, type='planned', **kwargs)
 
     def test_dismiss_free_signalement_returns_204_and_audits(self):
+        self._allow_dismiss()
         self.client.force_authenticate(user=self.garagiste)
         sheet, task = self._planned_task()
         self.assertEqual(len(self._maintenance()['signalements']), 1)
@@ -1791,6 +1795,7 @@ class InterventionSheetAPITestCase(APITestCase):
         self.assertEqual(data['counts']['to_plan'], before - 1)
 
     def test_dismiss_signalement_attached_to_task_removes_it_from_the_row(self):
+        self._allow_dismiss()
         self.client.force_authenticate(user=self.garagiste)
         done_sheet = self._make_validated_sheet(start_mileage=10000, start_date=datetime.date(2026, 1, 1))
         InterventionTask.objects.create(sheet=done_sheet, type='done', catalog_task=self.catalog_task_periodic)
@@ -1807,6 +1812,7 @@ class InterventionSheetAPITestCase(APITestCase):
         self.assertEqual(AuditLog.objects.get(action='task_dismissed').new_value, 'Vidange')
 
     def test_dismiss_twice_returns_400_with_single_audit(self):
+        self._allow_dismiss()
         self.client.force_authenticate(user=self.garagiste)
         sheet, task = self._planned_task()
         self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 204)
@@ -1814,32 +1820,37 @@ class InterventionSheetAPITestCase(APITestCase):
         self.assertEqual(AuditLog.objects.filter(action='task_dismissed').count(), 1)
 
     def test_dismiss_done_task_returns_400(self):
+        self._allow_dismiss()
         self.client.force_authenticate(user=self.garagiste)
         sheet = self._make_validated_sheet()
         task = InterventionTask.objects.create(sheet=sheet, type='done', name='Pneus')
         self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 400)
 
     def test_dismiss_task_of_open_sheet_returns_400(self):
+        self._allow_dismiss()
         self.client.force_authenticate(user=self.garagiste)
         sheet = InterventionSheet.objects.create(vehicle=self.vehicle_a, created_by=self.garagiste)
         _, task = self._planned_task(sheet=sheet)
         self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 400)
 
-    def test_dismiss_requires_manage_intervention(self):
+    def test_dismiss_requires_dismiss_signalement(self):
         sheet, task = self._planned_task()
         self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 401)
-        self.client.force_authenticate(user=self.referent)
-        self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 403)
+        for user in (self.referent, self.garagiste):
+            self.client.force_authenticate(user=user)
+            self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 403)
         task.refresh_from_db()
         self.assertIsNone(task.dismissed_at)
 
     def test_dismiss_sheet_of_vehicle_outside_user_actions_returns_404(self):
+        self._allow_dismiss()
         self.client.force_authenticate(user=self.garagiste)
         sheet = self._make_validated_sheet(vehicle=self.vehicle_c, start_mileage=8000)
         _, task = self._planned_task(sheet=sheet)
         self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 404)
 
     def test_dismiss_unknown_task_or_task_of_other_sheet_returns_404(self):
+        self._allow_dismiss()
         self.client.force_authenticate(user=self.garagiste)
         sheet, task = self._planned_task()
         other_sheet = self._make_validated_sheet(start_date=datetime.date(2026, 3, 1))
@@ -2747,6 +2758,9 @@ class InspectionSheetAPITestCase(APITestCase):
         kwargs.setdefault('name', 'Bruit train avant')
         return sheet, InspectionTask.objects.create(sheet=sheet, **kwargs)
 
+    def _allow_dismiss(self):
+        self.garagiste.user_permissions.add(Permission.objects.get(codename='dismiss_signalement'))
+
     def _dismiss_url(self, sheet, task):
         return self._url(sheet, f'tasks/{task.id}/dismiss/')
 
@@ -2760,6 +2774,7 @@ class InspectionSheetAPITestCase(APITestCase):
         self.assertEqual(row['signalements'][0]['sheet_kind'], 'inspection')
 
     def test_dismiss_inspection_signalement(self):
+        self._allow_dismiss()
         sheet, task = self._inspection_signalement()
         response = self.client.post(self._dismiss_url(sheet, task))
         self.assertEqual(response.status_code, 204)
@@ -2772,6 +2787,7 @@ class InspectionSheetAPITestCase(APITestCase):
         self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 400)  # déjà écarté
 
     def test_dismiss_already_closed_signalement_is_refused_without_audit(self):
+        self._allow_dismiss()
         sheet, task = self._inspection_signalement(name='', catalog_task=self.oil)
         later = InterventionSheet.objects.create(
             vehicle=self.vehicle, created_by=self.garagiste, status='validated',
@@ -2782,6 +2798,7 @@ class InspectionSheetAPITestCase(APITestCase):
         self.assertEqual(AuditLog.objects.count(), 0)
 
     def test_dismiss_closed_intervention_signalement_is_refused_without_audit(self):
+        self._allow_dismiss()
         old = InterventionSheet.objects.create(
             vehicle=self.vehicle, created_by=self.garagiste, status='validated',
             start_mileage=10100, start_date=datetime.date(2026, 1, 1),
@@ -2806,14 +2823,18 @@ class InspectionSheetAPITestCase(APITestCase):
         self.assertEqual(self.client.post(f'/api/garage/intervention/{intervention.id}/tasks/abc/dismiss/').status_code, 404)
 
     def test_open_inspection_sheet_task_cannot_be_dismissed(self):
+        self._allow_dismiss()
         sheet = self._open_sheet()
         task = InspectionTask.objects.create(sheet=sheet, name='Bruit')
         self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 400)
 
-    def test_dismiss_requires_manage_intervention(self):
+    def test_dismiss_requires_dismiss_signalement(self):
         sheet, task = self._inspection_signalement()
-        self.client.force_authenticate(user=self.referent)
-        self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 403)
+        for user in (self.referent, self.garagiste):
+            self.client.force_authenticate(user=user)
+            self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 403)
+        self.client.force_authenticate(user=self._responsible())
+        self.assertEqual(self.client.post(self._dismiss_url(sheet, task)).status_code, 204)
 
     def test_is_signalement_open_distinguishes_sheet_kinds(self):
         sheet, task = self._inspection_signalement()
@@ -3104,6 +3125,11 @@ class InspectionSheetAPITestCase(APITestCase):
         self.client.force_authenticate(user=self._responsible())
         response = self.client.post(self._url(sheet, f'tasks/{task.id}/dismiss/'))
         self.assertEqual(response.status_code, 204, getattr(response, 'data', None))
+
+    def test_dismiss_signalement_permission_belongs_to_responsable_garagiste_only(self):
+        self.assertTrue(self._responsible().has_perm('garage.dismiss_signalement'))
+        self.assertFalse(self.garagiste.has_perm('garage.dismiss_signalement'))
+        self.assertFalse(self.referent.has_perm('garage.dismiss_signalement'))
 
     def test_edit_validated_inspection_permission_belongs_to_responsable_garagiste_only(self):
         self.assertTrue(self._responsible().has_perm('garage.edit_validated_inspection'))

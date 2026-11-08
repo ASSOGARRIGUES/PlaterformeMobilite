@@ -135,7 +135,7 @@ export function SignalementMeta({ signalement, author, today, onOpenSheet }: {
   )
 }
 
-/** Bouton « Écarter » : rendu seulement si l'utilisateur peut gérer les interventions (onDismiss défini). */
+/** Bouton « Écarter » : rendu seulement si l'utilisateur peut écarter un signalement (onDismiss défini). */
 export function DismissButton({ signalement, onDismiss }: { signalement: MaintenanceSignalement; onDismiss?: OnDismiss }) {
   if (!onDismiss) return null
   return (

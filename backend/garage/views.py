@@ -166,9 +166,10 @@ class InterventionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
 
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
-        if self.action in ('create', 'update', 'partial_update', 'destroy', 'tasks', 'task_detail', 'validate',
-                           'dismiss_task') \
+        if self.action in ('create', 'update', 'partial_update', 'destroy', 'tasks', 'task_detail', 'validate') \
                 and not request.user.has_perm('garage.manage_intervention'):
+            raise PermissionDenied()
+        if self.action == 'dismiss_task' and not request.user.has_perm('garage.dismiss_signalement'):
             raise PermissionDenied()
 
     def perform_update(self, serializer):
@@ -316,7 +317,7 @@ class InspectionSheetViewSet(GarageMultiActionMixin, viewsets.ModelViewSet):
         super().initial(request, *args, **kwargs)
         if self.action in self.MANAGE_ACTIONS and not request.user.has_perm('garage.manage_inspection'):
             raise PermissionDenied()
-        if self.action == 'dismiss_task' and not request.user.has_perm('garage.manage_intervention'):
+        if self.action == 'dismiss_task' and not request.user.has_perm('garage.dismiss_signalement'):
             raise PermissionDenied()
 
     @staticmethod
